@@ -18,14 +18,9 @@ function createScene() {
 /* CREATE CAMERA(S) */
 //////////////////////
 function createCameras() {
-  "use strict";
+  'use strict';
 
-  camera = new THREE.PerspectiveCamera(
-    70,
-    window.innerWidth / window.innerHeight,
-    1,
-    1000
-  );
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
 
   controls = new THREE.OrbitControls(camera, renderer.domElement);
 
@@ -94,9 +89,8 @@ function init() {
 
   render();
 
-  window.addEventListener("keydown", onKeyDown);
-  window.addEventListener("resize", onResize);
-
+  window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('resize', onResize);
 }
 
 /////////////////////
