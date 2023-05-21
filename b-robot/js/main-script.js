@@ -60,12 +60,12 @@ function createScene() {
 
 function createRobot() {
   const robot = createGroup({ y: 8, parent: scene });
-  const chest = createBoxMesh({
+  createBoxMesh({
     name: 'chest',
     anchor: [0, 1, 0],
     parent: robot,
   });
-  const back = createBoxMesh({
+  createBoxMesh({
     name: 'back',
     z: GEOMETRY.chest.h / 2,
     anchor: [0, 1, 1],
@@ -73,14 +73,14 @@ function createRobot() {
   });
 
   const abdomenGroup = createGroup({ y: -GEOMETRY.abdomen.h, parent: robot });
-  const abdomen = createBoxMesh({
+  createBoxMesh({
     name: 'abdomen',
     anchor: [0, 1, -1],
     parent: abdomenGroup,
   });
 
   const waistGroup = createGroup({ y: -GEOMETRY.waist.h, parent: abdomenGroup });
-  const waist = createBoxMesh({
+  createBoxMesh({
     name: 'waist',
     anchor: [0, 1, -1],
     parent: waistGroup,
@@ -94,7 +94,7 @@ function createRobot() {
   // TODO add head's degree of movement
   const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
 
-  const head = createBoxMesh({
+  createBoxMesh({
     name: 'head',
     anchor: [0, 1, 0],
     parent: headGroup,
@@ -104,7 +104,8 @@ function createRobot() {
 }
 
 function createLowerLimbs(waistGroup) {
-  const waistWheel = createCylinderMesh({
+  // front wheel (on the waist)
+  createCylinderMesh({
     name: 'wheel',
     x: GEOMETRY.wheel.h / 2 + GEOMETRY.waist.w / 2,
     parent: waistGroup,
@@ -116,7 +117,7 @@ function createLowerLimbs(waistGroup) {
     y: -GEOMETRY.thigh.h,
     parent: waistGroup,
   });
-  const thigh = createBoxMesh({
+  createBoxMesh({
     name: 'thigh',
     anchor: [1, 1, -1],
     parent: lowerLimbsGroup,
@@ -126,21 +127,22 @@ function createLowerLimbs(waistGroup) {
     y: -GEOMETRY.shank.h,
     parent: lowerLimbsGroup,
   });
-  const shank = createBoxMesh({
+  createBoxMesh({
     name: 'shank',
     anchor: [1, 1, 0],
     parent: shankGroup,
   });
 
   // TODO add feet's degree of movement
-  const foot = createBoxMesh({
+  createBoxMesh({
     name: 'feet',
     z: -GEOMETRY.shank.d / 2,
     anchor: [1, 1, -1],
     parent: shankGroup,
   });
 
-  const middleWheel = createCylinderMesh({
+  // middle wheel (on the shank)
+  createCylinderMesh({
     name: 'wheel',
     x: GEOMETRY.shank.w + GEOMETRY.wheel.h / 2,
     y: 3 * GEOMETRY.wheel.r + GEOMETRY.wheelGap,
@@ -148,7 +150,8 @@ function createLowerLimbs(waistGroup) {
     parent: shankGroup,
   });
 
-  const rearWheel = createCylinderMesh({
+  // rear wheel (on the shank)
+  createCylinderMesh({
     name: 'wheel',
     x: GEOMETRY.shank.w + GEOMETRY.wheel.h / 2,
     y: GEOMETRY.wheel.r,
@@ -166,19 +169,19 @@ function createUpperLimbs(chestGroup) {
     parent: chestGroup,
   });
 
-  const arm = createBoxMesh({
+  createBoxMesh({
     name: 'arm',
     anchor: [1, -1, 1],
     parent: armGroup,
   });
-  const forearm = createBoxMesh({
+  createBoxMesh({
     name: 'forearm',
     anchor: [1, -1, -1],
     y: -GEOMETRY.arm.h,
     z: GEOMETRY.arm.d,
     parent: armGroup,
   });
-  const exhaust = createCylinderMesh({
+  createCylinderMesh({
     name: 'exhaust',
     x: GEOMETRY.arm.w + GEOMETRY.exhaust.r,
     z: GEOMETRY.arm.d / 2,
@@ -187,7 +190,7 @@ function createUpperLimbs(chestGroup) {
 }
 
 function createHeadElements(headGroup) {
-  const eye = createCylinderMesh({
+  createCylinderMesh({
     name: 'eye',
     x: GEOMETRY.eyeGap / 2 + GEOMETRY.eye.r,
     y: GEOMETRY.head.h - GEOMETRY.foreheadHeight - GEOMETRY.eye.r,
@@ -195,7 +198,7 @@ function createHeadElements(headGroup) {
     parent: headGroup,
   });
 
-  const antenna = createCylinderMesh({
+  createCylinderMesh({
     name: 'antenna',
     x: GEOMETRY.antennaGap / 2 + GEOMETRY.antenna.r,
     y: GEOMETRY.head.h + GEOMETRY.antenna.h / 2,
