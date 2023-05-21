@@ -75,12 +75,10 @@ function createRobot() {
     parent: waistGroup,
   });
   createLowerLimbs(waistGroup, false);
-  createLowerLimbs(waistGroup, true);
+  buildSymetric(createLowerLimbs, waistGroup);
 }
 
-function createLowerLimbs(waistGroup, symetric) {
-  let group = symetric ? createGroup({ scale: [-1, 1, 1], parent: waistGroup }) : waistGroup;
-
+function createLowerLimbs(waistGroup) {
   const waistWheel = createCylinderMesh({
     ...GEOMETRY.wheel,
     material: MATERIAL.wheel,
@@ -315,4 +313,8 @@ function createCylinderMesh({
 
   parent.add(cylinder);
   return cylinder;
+}
+
+function buildSymetric(func, group) {
+  return func(createGroup({ scale: [-1, 1, 1], parent: group }));
 }
