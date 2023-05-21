@@ -10,6 +10,12 @@ const MATERIAL = Object.freeze({
   thigh: new THREE.MeshBasicMaterial({ color: 0xfffecb }),
   shank: new THREE.MeshBasicMaterial({ color: 0xff2e00 }),
   feet: new THREE.MeshBasicMaterial({ color: 0x6c9a8b }),
+  arm: new THREE.MeshBasicMaterial({ color: 0x0f8b8d }),
+  forearm: new THREE.MeshBasicMaterial({ color: 0x336699 }),
+  exhaust: new THREE.MeshBasicMaterial({ color: 0xdad2d8 }),
+  head: new THREE.MeshBasicMaterial({ color: 0x9ec1a3 }),
+  eye: new THREE.MeshBasicMaterial({ color: 0x904e55 }),
+  antenna: new THREE.MeshBasicMaterial({ color: 0x6320ee }),
 });
 
 const GEOMETRY = Object.freeze({
@@ -23,6 +29,15 @@ const GEOMETRY = Object.freeze({
   legGap: 1,
   shank: { w: 1.5, h: 4.5, d: 1 },
   feet: { w: 1.5, h: 1, d: 2 },
+  arm: { w: 1, h: 2, d: 1 },
+  forearm: { w: 1, h: 1, d: 3 },
+  exhaust: { r: 0.125, h: 2 },
+  head: { w: 1, h: 1, d: 1 },
+  eye: { r: 0.1, h: 0.1, rx: -Math.PI / 2 },
+  eyeGap: 0.2,
+  antenna: { r: 0.1, h: 0.5 },
+  antennaGap: 0.2,
+  foreheadHeight: 0.2,
 });
 
 //////////////////////
@@ -72,6 +87,20 @@ function createRobot() {
   });
   createLowerLimbs(waistGroup, false);
   buildSymetric(createLowerLimbs, waistGroup);
+
+  createUpperLimbs(robot, false);
+  buildSymetric(createUpperLimbs, robot);
+
+  // TODO add head's degree of movement
+  const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
+
+  const head = createBoxMesh({
+    name: 'head',
+    anchor: [0, 1, 0],
+    parent: headGroup,
+  });
+  createHeadElements(headGroup);
+  buildSymetric(createHeadElements, headGroup);
 }
 
 function createLowerLimbs(waistGroup) {
@@ -128,12 +157,50 @@ function createLowerLimbs(waistGroup) {
   });
 }
 
-function createUpperLimbs() {
-  // TODO
+function createUpperLimbs(chestGroup) {
+  // TODO add arms' degree of movement
+  const armGroup = createGroup({
+    x: GEOMETRY.chest.w / 2,
+    y: GEOMETRY.chest.h,
+    z: GEOMETRY.chest.d / 2,
+    parent: chestGroup,
+  });
+
+  const arm = createBoxMesh({
+    name: 'arm',
+    anchor: [1, -1, 1],
+    parent: armGroup,
+  });
+  const forearm = createBoxMesh({
+    name: 'forearm',
+    anchor: [1, -1, -1],
+    y: -GEOMETRY.arm.h,
+    z: GEOMETRY.arm.d,
+    parent: armGroup,
+  });
+  const exhaust = createCylinderMesh({
+    name: 'exhaust',
+    x: GEOMETRY.arm.w + GEOMETRY.exhaust.r,
+    z: GEOMETRY.arm.d / 2,
+    parent: armGroup,
+  });
 }
 
-function createHead() {
-  // TODO
+function createHeadElements(headGroup) {
+  const eye = createCylinderMesh({
+    name: 'eye',
+    x: GEOMETRY.eyeGap / 2 + GEOMETRY.eye.r,
+    y: GEOMETRY.head.h - GEOMETRY.foreheadHeight - GEOMETRY.eye.r,
+    z: -GEOMETRY.head.h / 2 - GEOMETRY.eye.h / 2,
+    parent: headGroup,
+  });
+
+  const antenna = createCylinderMesh({
+    name: 'antenna',
+    x: GEOMETRY.antennaGap / 2 + GEOMETRY.antenna.r,
+    y: GEOMETRY.head.h + GEOMETRY.antenna.h / 2,
+    parent: headGroup,
+  });
 }
 
 //////////////////////
@@ -282,12 +349,12 @@ function createBoxMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }
   return box;
 }
 
-function createCylinderMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }) {
+function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   const { r, h, rx = 0, ry = 0, rz = 0 } = GEOMETRY[name];
   const material = MATERIAL[name];
   const geometry = new THREE.CylinderGeometry(r, r, h, 35);
   const cylinder = new THREE.Mesh(geometry, material);
-  cylinder.position.set(x + anchor[0] * r, y + (anchor[1] * h) / 2, z + anchor[2] * r);
+  cylinder.position.set(x, y, z);
   cylinder.rotation.set(rx, ry, rz);
 
   parent.add(cylinder);
