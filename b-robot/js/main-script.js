@@ -17,7 +17,7 @@ const GEOMETRY = Object.freeze({
   back: { w: 3, h: 2, d: 1 },
   abdomen: { w: 3, h: 1, d: 1 },
   waist: { w: 4, h: 1, d: 1 },
-  wheel: { r: 0.75, h: 0.5 },
+  wheel: { r: 0.75, h: 0.5, rz: Math.PI / 2 },
   wheelGap: 0.5,
   thigh: { w: 1, h: 1.5, d: 0.5 },
   legGap: 1,
@@ -46,14 +46,12 @@ function createScene() {
 function createRobot() {
   const robot = createGroup({ y: 8, parent: scene });
   const chest = createBoxMesh({
-    ...GEOMETRY.chest,
-    material: MATERIAL.chest,
+    name: 'chest',
     anchor: [0, 1, 0],
     parent: robot,
   });
   const back = createBoxMesh({
-    ...GEOMETRY.back,
-    material: MATERIAL.back,
+    name: 'back',
     z: GEOMETRY.chest.h / 2,
     anchor: [0, 1, 1],
     parent: robot,
@@ -61,16 +59,14 @@ function createRobot() {
 
   const abdomenGroup = createGroup({ y: -GEOMETRY.abdomen.h, parent: robot });
   const abdomen = createBoxMesh({
-    ...GEOMETRY.abdomen,
-    material: MATERIAL.abdomen,
+    name: 'abdomen',
     anchor: [0, 1, -1],
     parent: abdomenGroup,
   });
 
   const waistGroup = createGroup({ y: -GEOMETRY.waist.h, parent: abdomenGroup });
   const waist = createBoxMesh({
-    ...GEOMETRY.waist,
-    material: MATERIAL.waist,
+    name: 'waist',
     anchor: [0, 1, -1],
     parent: waistGroup,
   });
@@ -80,22 +76,19 @@ function createRobot() {
 
 function createLowerLimbs(waistGroup) {
   const waistWheel = createCylinderMesh({
-    ...GEOMETRY.wheel,
-    material: MATERIAL.wheel,
-    rz: Math.PI / 2,
+    name: 'wheel',
     x: GEOMETRY.wheel.h / 2 + GEOMETRY.waist.w / 2,
-    parent: group,
+    parent: waistGroup,
   });
 
   // TODO add legs' degree of movement
   const lowerLimbsGroup = createGroup({
     x: GEOMETRY.legGap / 2,
     y: -GEOMETRY.thigh.h,
-    parent: group,
+    parent: waistGroup,
   });
   const thigh = createBoxMesh({
-    ...GEOMETRY.thigh,
-    material: MATERIAL.thigh,
+    name: 'thigh',
     anchor: [1, 1, -1],
     parent: lowerLimbsGroup,
   });
@@ -105,25 +98,21 @@ function createLowerLimbs(waistGroup) {
     parent: lowerLimbsGroup,
   });
   const shank = createBoxMesh({
-    ...GEOMETRY.shank,
-    material: MATERIAL.shank,
+    name: 'shank',
     anchor: [1, 1, 0],
     parent: shankGroup,
   });
 
   // TODO add feet's degree of movement
   const foot = createBoxMesh({
-    ...GEOMETRY.feet,
-    material: MATERIAL.feet,
+    name: 'feet',
     z: -GEOMETRY.shank.d / 2,
     anchor: [1, 1, -1],
     parent: shankGroup,
   });
 
   const middleWheel = createCylinderMesh({
-    ...GEOMETRY.wheel,
-    material: MATERIAL.wheel,
-    rz: Math.PI / 2,
+    name: 'wheel',
     x: GEOMETRY.shank.w + GEOMETRY.wheel.h / 2,
     y: 3 * GEOMETRY.wheel.r + GEOMETRY.wheelGap,
     z: -GEOMETRY.shank.d / 2,
@@ -131,9 +120,7 @@ function createLowerLimbs(waistGroup) {
   });
 
   const rearWheel = createCylinderMesh({
-    ...GEOMETRY.wheel,
-    material: MATERIAL.wheel,
-    rz: Math.PI / 2,
+    name: 'wheel',
     x: GEOMETRY.shank.w + GEOMETRY.wheel.h / 2,
     y: GEOMETRY.wheel.r,
     z: -GEOMETRY.shank.d / 2,
@@ -284,7 +271,9 @@ function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   return group;
 }
 
-function createBoxMesh({ w, h, d, material, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }) {
+function createBoxMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }) {
+  const { w, h, d } = GEOMETRY[name];
+  const material = MATERIAL[name];
   const geometry = new THREE.BoxGeometry(w, h, d);
   const box = new THREE.Mesh(geometry, material);
   box.position.set(x + (anchor[0] * w) / 2, y + (anchor[1] * h) / 2, z + (anchor[2] * d) / 2);
@@ -293,19 +282,9 @@ function createBoxMesh({ w, h, d, material, x = 0, y = 0, z = 0, anchor = [0, 0,
   return box;
 }
 
-function createCylinderMesh({
-  r,
-  h,
-  material,
-  x = 0,
-  y = 0,
-  z = 0,
-  rx = 0,
-  ry = 0,
-  rz = 0,
-  anchor = [0, 0, 0],
-  parent,
-}) {
+function createCylinderMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }) {
+  const { r, h, rx = 0, ry = 0, rz = 0 } = GEOMETRY[name];
+  const material = MATERIAL[name];
   const geometry = new THREE.CylinderGeometry(r, r, h, 35);
   const cylinder = new THREE.Mesh(geometry, material);
   cylinder.position.set(x + anchor[0] * r, y + (anchor[1] * h) / 2, z + anchor[2] * r);
