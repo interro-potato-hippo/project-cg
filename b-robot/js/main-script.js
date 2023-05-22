@@ -86,10 +86,10 @@ function createRobot() {
     parent: waistGroup,
   });
   createLowerLimbs(waistGroup, false);
-  buildSymetric(createLowerLimbs, waistGroup);
+  buildSymmetric(createLowerLimbs, waistGroup);
 
   createUpperLimbs(robot, false);
-  buildSymetric(createUpperLimbs, robot);
+  buildSymmetric(createUpperLimbs, robot);
 
   // TODO add head's degree of movement
   const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
@@ -100,7 +100,7 @@ function createRobot() {
     parent: headGroup,
   });
   createHeadElements(headGroup);
-  buildSymetric(createHeadElements, headGroup);
+  buildSymmetric(createHeadElements, headGroup);
 }
 
 function createLowerLimbs(waistGroup) {
@@ -364,6 +364,6 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   return cylinder;
 }
 
-function buildSymetric(func, group) {
-  return func(createGroup({ scale: [-1, 1, 1], parent: group }));
+function buildSymmetric(builder, parent) {
+  return builder(createGroup({ scale: [-1, 1, 1], parent: parent }));
 }
