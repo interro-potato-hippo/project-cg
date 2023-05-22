@@ -367,5 +367,5 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
 }
 
 function buildSymmetric(builder, parent) {
-  return builder(createGroup({ scale: [-1, 1, 1], parent: parent }));
+  return builder(createGroup({ scale: [-1, 1, 1], parent }));
 }
