@@ -58,6 +58,34 @@ function createScene() {
   createRobot();
 }
 
+//////////////////////
+/* CREATE CAMERA(S) */
+//////////////////////
+function createCameras() {
+  'use strict';
+
+  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+  camera.position.x = 0;
+  camera.position.y = 10;
+  camera.position.z = -20;
+
+  //camera.lookAt(scene.position);
+  camera.lookAt(0, 8, 0);
+
+  //controls.target.set(0, 0, 0);
+  controls.update();
+}
+
+/////////////////////
+/* CREATE LIGHT(S) */
+/////////////////////
+
+////////////////////////
+/* CREATE OBJECT3D(S) */
+////////////////////////
 function createRobot() {
   const chestHeight = GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.waist.h + GEOMETRY.abdomen.h;
   const robot = createGroup({ y: chestHeight, parent: scene });
@@ -206,35 +234,6 @@ function createRightHeadElements(headGroup) {
     parent: headGroup,
   });
 }
-
-//////////////////////
-/* CREATE CAMERA(S) */
-//////////////////////
-function createCameras() {
-  'use strict';
-
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
-
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
-
-  camera.position.x = 0;
-  camera.position.y = 10;
-  camera.position.z = -20;
-
-  //camera.lookAt(scene.position);
-  camera.lookAt(0, 8, 0);
-
-  //controls.target.set(0, 0, 0);
-  controls.update();
-}
-
-/////////////////////
-/* CREATE LIGHT(S) */
-/////////////////////
-
-////////////////////////
-/* CREATE OBJECT3D(S) */
-////////////////////////
 
 //////////////////////
 /* CHECK COLLISIONS */
