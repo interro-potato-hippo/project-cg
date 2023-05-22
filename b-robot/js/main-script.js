@@ -85,10 +85,10 @@ function createRobot() {
     anchor: [0, 1, -1],
     parent: waistGroup,
   });
-  createLowerLimbs(waistGroup, false);
+  createLowerLimbs(waistGroup);
   buildSymmetric(createLowerLimbs, waistGroup);
 
-  createUpperLimbs(robot, false);
+  createUpperLimbs(robot);
   buildSymmetric(createUpperLimbs, robot);
 
   // TODO add head's degree of movement
