@@ -59,7 +59,8 @@ function createScene() {
 }
 
 function createRobot() {
-  const robot = createGroup({ y: 8, parent: scene });
+  const chestHeight = GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.waist.h + GEOMETRY.abdomen.h;
+  const robot = createGroup({ y: chestHeight, parent: scene });
   createBoxMesh({
     name: 'chest',
     anchor: [0, 1, 0],
