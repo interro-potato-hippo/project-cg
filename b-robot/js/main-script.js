@@ -86,11 +86,11 @@ function createRobot() {
     anchor: [0, 1, -1],
     parent: waistGroup,
   });
-  createLowerLimbs(waistGroup);
-  buildSymmetric(createLowerLimbs, waistGroup);
+  createRightLowerLimb(waistGroup);
+  buildSymmetric(createRightLowerLimb, waistGroup);
 
-  createUpperLimbs(robot);
-  buildSymmetric(createUpperLimbs, robot);
+  createRightUpperLimb(robot);
+  buildSymmetric(createRightUpperLimb, robot);
 
   // TODO add head's degree of movement
   const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
@@ -100,11 +100,11 @@ function createRobot() {
     anchor: [0, 1, 0],
     parent: headGroup,
   });
-  createHeadElements(headGroup);
-  buildSymmetric(createHeadElements, headGroup);
+  createRightHeadElements(headGroup);
+  buildSymmetric(createRightHeadElements, headGroup);
 }
 
-function createLowerLimbs(waistGroup) {
+function createRightLowerLimb(waistGroup) {
   // front wheel (on the waist)
   createCylinderMesh({
     name: 'wheel',
@@ -161,7 +161,7 @@ function createLowerLimbs(waistGroup) {
   });
 }
 
-function createUpperLimbs(chestGroup) {
+function createRightUpperLimb(chestGroup) {
   // TODO add arms' degree of movement
   const armGroup = createGroup({
     x: GEOMETRY.chest.w / 2,
@@ -190,7 +190,7 @@ function createUpperLimbs(chestGroup) {
   });
 }
 
-function createHeadElements(headGroup) {
+function createRightHeadElements(headGroup) {
   createCylinderMesh({
     name: 'eye',
     x: GEOMETRY.eyeGap / 2 + GEOMETRY.eye.r,
