@@ -40,6 +40,8 @@ const GEOMETRY = Object.freeze({
   foreheadHeight: 0.2,
 });
 
+const BACKGROUND = new THREE.Color(0xc0e8ee);
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
@@ -69,6 +71,7 @@ function createScene() {
 
   scene = new THREE.Scene();
   scene.add(new THREE.AxisHelper(20));
+  scene.background = BACKGROUND;
 
   createRobot();
 }
@@ -344,33 +347,36 @@ function onResize() {
 ///////////////////////
 /* KEY DOWN CALLBACK */
 ///////////////////////
-function onKeyDown(e) {
+const keyDownHandlers = {
+  Digit1: changeActiveCameraHandle(cameras.front),
+  Digit2: changeActiveCameraHandle(cameras.side),
+  Digit3: changeActiveCameraHandle(cameras.top),
+  Digit4: changeActiveCameraHandle(cameras.orthogonal),
+  Digit5: changeActiveCameraHandle(cameras.perspective),
+  Digit6: wireframeToggleHandle,
+};
+
+function onKeyDown(event) {
   'use strict';
 
-  switch (e.keyCode) {
-    /* START --- CAMERA CONTROLS */
-    case 49: // 1 (numbers row)
-    case 97: // 1 (numpad)
-      activeCamera = cameras.front;
-      break;
-    case 50: // 2 (numbers row)
-    case 98: // 2 (numpad)
-      activeCamera = cameras.side;
-      break;
-    case 51: // 3 (numbers row)
-    case 99: // 3 (numpad)
-      activeCamera = cameras.top;
-      break;
-    case 52: // 4 (numbers row)
-    case 100: // 4 (numpad)
-      activeCamera = cameras.orthogonal;
-      break;
-    case 53: // 5 (numbers row)
-    case 101: // 5 (numpad)
-      activeCamera = cameras.perspective;
-      break;
-    /* END --- CAMERA CONTROLS */
+  let { code } = event;
+
+  // Treat numpad digits like the number row
+  if (/^Numpad\d$/.test(code)) {
+    code = code.replace('Numpad', 'Digit');
   }
+
+  keyDownHandlers[code]?.(event);
+}
+
+function wireframeToggleHandle(_event) {
+  Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
+}
+
+function changeActiveCameraHandle(camera) {
+  return (_event) => {
+    activeCamera = camera;
+  };
 }
 
 ///////////////////////
