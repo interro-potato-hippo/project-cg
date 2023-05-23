@@ -50,15 +50,15 @@ let activeCamera, controls;
 const aspectRatio = window.innerWidth / window.innerHeight;
 const cameras = {
   // front view
-  front: createOrthogonalCamera({ x: 0, y: 0, z: 10}),
+  front: createOrthogonalCamera({ x: 0, y: 0, z: 10 }),
   // side view
-  side: createOrthogonalCamera({ x: -10, y: 0, z: 0}),
+  side: createOrthogonalCamera({ x: -10, y: 0, z: 0 }),
   // top view
-  top: createOrthogonalCamera({ x: 0, y: 10, z: 0}),
+  top: createOrthogonalCamera({ x: 0, y: 10, z: 0 }),
   // orthogonal projection: isometric view
-  orthogonal: createOrthogonalCamera({ x: -10, y: 10, z: -20}),
+  orthogonal: createOrthogonalCamera({ x: -10, y: 10, z: -20 }),
   // perspective projection: isometric view
-  perspective: createPerspectiveCamera({ x: -10, y: 10, z: -20}),
+  perspective: createPerspectiveCamera({ x: -10, y: 10, z: -20 }),
 };
 
 /////////////////////
