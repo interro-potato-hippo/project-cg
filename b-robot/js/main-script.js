@@ -113,10 +113,6 @@ function createScene() {
 function createCameras() {
   'use strict';
 
-  for (let camera in cameras) {
-    cameras[camera].lookAt(scene.position);
-  }
-
   // set the initial camera
   activeCamera = cameras.front;
 
@@ -140,6 +136,7 @@ function createOrthogonalCamera({ x = 0, y = 0, z = 0, height, offsetX = 0, offs
 
   let camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
   camera.position.set(x, y, z);
+  camera.lookAt(0, 0, 0);
 
   return camera;
 }
@@ -148,9 +145,7 @@ function createPerspectiveCamera({ x, y, z }) {
   const aspectRatio = window.innerWidth / window.innerHeight;
   let camera = new THREE.PerspectiveCamera(CAMERA_GEOMETRY.perspectiveFov, aspectRatio, 1, 1000);
   camera.position.set(x, y, z);
-  // FIXME: this doesn't seem to be working
   camera.lookAt(0, CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2, 0);
-  camera.updateProjectionMatrix();
 
   return camera;
 }
