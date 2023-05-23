@@ -44,7 +44,22 @@ const GEOMETRY = Object.freeze({
 /* GLOBAL VARIABLES */
 //////////////////////
 let renderer, scene;
-let camera, controls; // TODO support multiple cameras
+let activeCamera, controls;
+
+// FIXME: might there be a problem if we want the aspect ratio to change?
+const aspectRatio = window.innerWidth / window.innerHeight;
+const cameras = {
+  // front view
+  front: createOrthogonalCamera({ x: 0, y: 0, z: 10}),
+  // side view
+  side: createOrthogonalCamera({ x: -10, y: 0, z: 0}),
+  // top view
+  top: createOrthogonalCamera({ x: 0, y: 10, z: 0}),
+  // orthogonal projection: isometric view
+  orthogonal: createOrthogonalCamera({ x: -10, y: 10, z: -20}),
+  // perspective projection: isometric view
+  perspective: createPerspectiveCamera({ x: -10, y: 10, z: -20}),
+};
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -64,19 +79,35 @@ function createScene() {
 function createCameras() {
   'use strict';
 
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+  for (let camera in cameras) {
+    cameras[camera].lookAt(scene.position);
+  }
 
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  // set the initial camera
+  activeCamera = cameras.front;
 
-  camera.position.x = 0;
-  camera.position.y = 10;
-  camera.position.z = -20;
+  controls = new THREE.OrbitControls(activeCamera, renderer.domElement);
 
-  //camera.lookAt(scene.position);
-  camera.lookAt(0, 8, 0);
-
-  //controls.target.set(0, 0, 0);
+  controls.target.set(0, 0, 0);
   controls.update();
+}
+
+function createOrthogonalCamera(position) {
+  'use strict';
+
+  let camera = new THREE.OrthographicCamera(-15 * aspectRatio, 15 * aspectRatio, 15, -15, 1, 1000);
+  camera.position.set(position.x, position.y, position.z);
+
+  return camera;
+}
+
+function createPerspectiveCamera(position) {
+  'use strict';
+
+  let camera = new THREE.PerspectiveCamera(90, aspectRatio, 1, 1000);
+  camera.position.set(position.x, position.y, position.z);
+
+  return camera;
 }
 
 /////////////////////
@@ -261,7 +292,7 @@ function update() {
 /////////////
 function render() {
   'use strict';
-  renderer.render(scene, camera);
+  renderer.render(scene, activeCamera);
 }
 
 ////////////////////////////////
@@ -305,8 +336,8 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   if (window.innerHeight > 0 && window.innerWidth > 0) {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+    activeCamera.aspect = aspectRatio;
+    activeCamera.updateProjectionMatrix();
   }
 }
 
@@ -315,6 +346,31 @@ function onResize() {
 ///////////////////////
 function onKeyDown(e) {
   'use strict';
+
+  switch (e.keyCode) {
+    /* START --- CAMERA CONTROLS */
+    case 49: // 1 (numbers row)
+    case 97: // 1 (numpad)
+      activeCamera = cameras.front;
+      break;
+    case 50: // 2 (numbers row)
+    case 98: // 2 (numpad)
+      activeCamera = cameras.side;
+      break;
+    case 51: // 3 (numbers row)
+    case 99: // 3 (numpad)
+      activeCamera = cameras.top;
+      break;
+    case 52: // 4 (numbers row)
+    case 100: // 4 (numpad)
+      activeCamera = cameras.orthogonal;
+      break;
+    case 53: // 5 (numbers row)
+    case 101: // 5 (numpad)
+      activeCamera = cameras.perspective;
+      break;
+    /* END --- CAMERA CONTROLS */
+  }
 }
 
 ///////////////////////
