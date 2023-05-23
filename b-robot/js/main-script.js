@@ -60,6 +60,7 @@ const DELTA = Object.freeze({
 //////////////////////
 let renderer, scene;
 let camera, controls; // TODO support multiple cameras
+let bodyElements = {};
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -103,7 +104,7 @@ function createCameras() {
 ////////////////////////
 function createRobot() {
   const chestHeight = GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.waist.h + GEOMETRY.abdomen.h;
-  const robot = createGroup({ y: chestHeight, parent: scene });
+  const robot = createGroup({ name: 'robot', y: chestHeight, parent: scene });
   createBoxMesh({
     name: 'chest',
     anchor: [0, 1, 0],
@@ -116,14 +117,14 @@ function createRobot() {
     parent: robot,
   });
 
-  const abdomenGroup = createGroup({ y: -GEOMETRY.abdomen.h, parent: robot });
+  const abdomenGroup = createGroup({ name: 'abdomen', y: -GEOMETRY.abdomen.h, parent: robot });
   createBoxMesh({
     name: 'abdomen',
     anchor: [0, 1, -1],
     parent: abdomenGroup,
   });
 
-  const waistGroup = createGroup({ y: -GEOMETRY.waist.h, parent: abdomenGroup });
+  const waistGroup = createGroup({ name: 'waist', y: -GEOMETRY.waist.h, parent: abdomenGroup });
   createBoxMesh({
     name: 'waist',
     anchor: [0, 1, -1],
@@ -136,7 +137,7 @@ function createRobot() {
   buildSymmetric(createRightUpperLimb, robot);
 
   // TODO add head's degree of movement
-  const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
+  const headGroup = createGroup({ name: 'head', y: GEOMETRY.chest.h, parent: robot });
 
   createBoxMesh({
     name: 'head',
@@ -157,6 +158,7 @@ function createRightLowerLimb(waistGroup) {
 
   // TODO add legs' degree of movement
   const lowerLimbsGroup = createGroup({
+    name: 'lowerLimbs',
     x: GEOMETRY.legGap / 2,
     y: -GEOMETRY.thigh.h,
     parent: waistGroup,
@@ -168,6 +170,7 @@ function createRightLowerLimb(waistGroup) {
   });
 
   const shankGroup = createGroup({
+    name: 'shank',
     y: -GEOMETRY.shank.h,
     parent: lowerLimbsGroup,
   });
@@ -207,6 +210,7 @@ function createRightLowerLimb(waistGroup) {
 function createRightUpperLimb(chestGroup) {
   // TODO add arms' degree of movement
   const armGroup = createGroup({
+    name: 'arm',
     x: GEOMETRY.chest.w / 2,
     y: GEOMETRY.chest.h,
     z: GEOMETRY.chest.d / 2,
@@ -330,6 +334,26 @@ function onResize() {
 ///////////////////////
 const keyDownHandlers = {
   Digit6: wireframeToggleHandle,
+  // feet
+  KeyQ: rotateBodyPart,
+  KeyA: rotateBodyPart,
+  // waist
+  KeyW: rotateBodyPart,
+  KeyS: rotateBodyPart,
+  // head
+  KeyR: rotateBodyPart,
+  KeyF: rotateBodyPart,
+  // TODO: upper members
+};
+
+// FIXME: this is ugly!
+const keyMap = {
+  KeyQ: { bodyPart: 'feet', axis: 'x', direction: 'positive' },
+  KeyA: { bodyPart: 'feet', axis: 'x', direction: 'negative' },
+  KeyW: { bodyPart: 'waist', axis: 'x', direction: 'positive' },
+  KeyS: { bodyPart: 'waist', axis: 'x', direction: 'negative' },
+  KeyR: { bodyPart: 'head', axis: 'x', direction: 'positive' },
+  KeyF: { bodyPart: 'head', axis: 'x', direction: 'negative' },
 };
 
 function onKeyDown(event) {
@@ -340,13 +364,24 @@ function onKeyDown(event) {
   // Treat numpad digits like the number row
   if (/^Numpad\d$/.test(code)) {
     code = code.replace('Numpad', 'Digit');
+    keyDownHandlers[code]?.(event);
+    return;
   }
 
-  keyDownHandlers[code]?.(event);
+  keyDownHandlers[code]?.(keyMap[code]);
 }
 
 function wireframeToggleHandle(_event) {
   Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
+}
+
+function rotateBodyPart({ bodyPart, axis, direction }) {
+  let delta = DELTA[bodyPart][axis];
+  delta = direction === 'positive' ? delta : -delta;
+  const { min, max } = DEGREES_OF_FREEDOM[bodyPart];
+  const currentRotation = bodyElements[bodyPart].rotation[axis];
+
+  bodyElements[bodyPart].rotation[axis] = THREE.MathUtils.clamp(currentRotation + delta, min, max);
 }
 
 ///////////////////////
@@ -359,11 +394,13 @@ function onKeyUp(e) {
 ///////////////
 /* UTILITIES */
 ///////////////
-function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
+function createGroup({ name, x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   const group = new THREE.Group();
+  group.name = name;
   group.position.set(x, y, z);
   group.scale.set(...scale);
 
+  bodyElements[group.name] = group;
   if (parent) {
     parent.add(group);
   } else {
@@ -398,5 +435,5 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
 }
 
 function buildSymmetric(builder, parent) {
-  return builder(createGroup({ scale: [-1, 1, 1], parent }));
+  return builder(createGroup({ name: parent.name, scale: [-1, 1, 1], parent }));
 }
