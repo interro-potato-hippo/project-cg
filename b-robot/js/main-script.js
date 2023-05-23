@@ -53,6 +53,8 @@ const GEOMETRY = Object.freeze({
   initialTrailerOffset: 5,
 });
 
+const BACKGROUND = new THREE.Color(0xc0e8ee);
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
@@ -67,6 +69,7 @@ function createScene() {
 
   scene = new THREE.Scene();
   scene.add(new THREE.AxisHelper(20));
+  scene.background = BACKGROUND;
 
   createRobot();
   createTrailer();
