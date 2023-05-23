@@ -117,7 +117,7 @@ function createCameras() {
   activeCamera = cameras.front;
 
   const controls = new THREE.OrbitControls(
-    cameras.perspectiveWithOrbitalControls,
+    cameras.perspectiveWithOrbitalControls.camera,
     renderer.domElement
   );
 
@@ -126,28 +126,46 @@ function createCameras() {
 }
 
 function createOrthogonalCamera({ x = 0, y = 0, z = 0, height, offsetX = 0, offsetY = 0 }) {
-  const aspectRatio = window.innerWidth / window.innerHeight;
-  const width = height * aspectRatio;
+  const getCameraParameters = () => {
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    const width = height * aspectRatio;
 
-  const top = height / 2 + offsetY;
-  const bottom = -height / 2 + offsetY;
-  const left = -width / 2 + offsetX;
-  const right = width / 2 + offsetX;
+    const top = height / 2 + offsetY;
+    const bottom = -height / 2 + offsetY;
+    const left = -width / 2 + offsetX;
+    const right = width / 2 + offsetX;
 
-  let camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
+    return { top, bottom, left, right };
+  };
+
+  const { top, bottom, left, right } = getCameraParameters();
+
+  const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
   camera.position.set(x, y, z);
   camera.lookAt(0, 0, 0);
 
-  return camera;
+  return { getCameraParameters, camera };
 }
 
-function createPerspectiveCamera({ x, y, z }) {
-  const aspectRatio = window.innerWidth / window.innerHeight;
-  let camera = new THREE.PerspectiveCamera(CAMERA_GEOMETRY.perspectiveFov, aspectRatio, 1, 1000);
+function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
+  const getCameraParameters = () => {
+    return { aspect: window.innerWidth / window.innerHeight };
+  };
+
+  const { aspect } = getCameraParameters();
+
+  const camera = new THREE.PerspectiveCamera(CAMERA_GEOMETRY.perspectiveFov, aspect, 1, 1000);
   camera.position.set(x, y, z);
   camera.lookAt(0, CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2, 0);
 
-  return camera;
+  return { getCameraParameters, camera };
+}
+
+function refreshCameraParameters({ getCameraParameters, camera }) {
+  const parameters = getCameraParameters();
+
+  Object.entries(parameters).forEach(([key, value]) => (camera[key] = value));
+  camera.updateProjectionMatrix();
 }
 
 /////////////////////
@@ -332,7 +350,7 @@ function update() {
 /////////////
 function render() {
   'use strict';
-  renderer.render(scene, activeCamera);
+  renderer.render(scene, activeCamera.camera);
 }
 
 ////////////////////////////////
@@ -376,8 +394,7 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   if (window.innerHeight > 0 && window.innerWidth > 0) {
-    activeCamera.aspect = aspectRatio;
-    activeCamera.updateProjectionMatrix();
+    refreshCameraParameters(activeCamera);
   }
 }
 
@@ -414,6 +431,7 @@ function wireframeToggleHandle(_event) {
 
 function changeActiveCameraHandle(camera) {
   return (_event) => {
+    refreshCameraParameters(camera);
     activeCamera = camera;
   };
 }
