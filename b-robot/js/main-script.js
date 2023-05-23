@@ -40,6 +40,21 @@ const GEOMETRY = Object.freeze({
   foreheadHeight: 0.2,
 });
 
+const DEGREES_OF_FREEDOM = Object.freeze({
+  feet: { min: -Math.PI / 2, max: Math.PI / 2 },
+  waist: { min: -Math.PI / 2, max: Math.PI / 2 },
+  head: { min: -Math.PI, max: Math.PI },
+});
+
+const rotationSteps = 8;
+const DELTA = Object.freeze({
+  feet: { x: (Math.PI / 2) / rotationSteps, y: 0, z: 0 },
+  waist: { x: (Math.PI / 2) / rotationSteps, y: 0, z: 0 },
+  head: { x: Math.PI / rotationSteps, y: 0, z: 0 },
+  // TODO: upper members
+});
+
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
