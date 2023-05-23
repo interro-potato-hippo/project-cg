@@ -46,7 +46,7 @@ const BACKGROUND = new THREE.Color(0xc0e8ee);
 /* GLOBAL VARIABLES */
 //////////////////////
 let renderer, scene;
-let activeCamera, controls;
+let activeCamera;
 
 // FIXME: might there be a problem if we want the aspect ratio to change?
 const aspectRatio = window.innerWidth / window.innerHeight;
@@ -61,6 +61,8 @@ const cameras = {
   orthogonal: createOrthogonalCamera({ x: -10, y: 10, z: -20 }),
   // perspective projection: isometric view
   perspective: createPerspectiveCamera({ x: -10, y: 10, z: -20 }),
+  // TODO: remove, for debug only
+  perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 10, z: -20 }),
 };
 
 /////////////////////
@@ -89,7 +91,10 @@ function createCameras() {
   // set the initial camera
   activeCamera = cameras.front;
 
-  controls = new THREE.OrbitControls(activeCamera, renderer.domElement);
+  const controls = new THREE.OrbitControls(
+    cameras.perspectiveWithOrbitalControls,
+    renderer.domElement
+  );
 
   controls.target.set(0, 0, 0);
   controls.update();
@@ -348,6 +353,8 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 const keyDownHandlers = {
+  // TODO: remove; for debug only
+  Digit0: changeActiveCameraHandle(cameras.perspectiveWithOrbitalControls),
   Digit1: changeActiveCameraHandle(cameras.front),
   Digit2: changeActiveCameraHandle(cameras.side),
   Digit3: changeActiveCameraHandle(cameras.top),
