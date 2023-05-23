@@ -17,8 +17,8 @@ const MATERIAL = Object.freeze({
   eye: new THREE.MeshBasicMaterial({ color: 0x904e55 }),
   antenna: new THREE.MeshBasicMaterial({ color: 0x6320ee }),
 
-  trailerContainer: new THREE.MeshBasicMaterial({ color: 0xbeeeef }),
-  trailerConnector: new THREE.MeshBasicMaterial({ color: 0xefcdcd }),
+  trailerContainer: new THREE.MeshBasicMaterial({ color: 0x255c99 }),
+  trailerConnector: new THREE.MeshBasicMaterial({ color: 0xccad8f }),
   trailerWheelSupport: new THREE.MeshBasicMaterial({ color: 0x654321 }),
 });
 
