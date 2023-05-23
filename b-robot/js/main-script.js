@@ -316,8 +316,25 @@ function onResize() {
 ///////////////////////
 /* KEY DOWN CALLBACK */
 ///////////////////////
-function onKeyDown(e) {
+const keyDownHandlers = {
+  Digit6: wireframeToggleHandle,
+};
+
+function onKeyDown(event) {
   'use strict';
+
+  let { code } = event;
+
+  // Treat numpad digits like the number row
+  if (/^Numpad\d$/.test(code)) {
+    code = code.replace('Numpad', 'Digit');
+  }
+
+  keyDownHandlers[code]?.(event);
+}
+
+function wireframeToggleHandle(_event) {
+  Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
 }
 
 ///////////////////////
