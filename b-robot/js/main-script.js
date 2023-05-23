@@ -42,23 +42,52 @@ const GEOMETRY = Object.freeze({
 
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
+const CAMERA_GEOMETRY = Object.freeze({
+  orthogonalUsableAreaHeight:
+    GEOMETRY.shank.h +
+    GEOMETRY.thigh.h +
+    GEOMETRY.waist.h +
+    GEOMETRY.abdomen.h +
+    GEOMETRY.chest.h +
+    GEOMETRY.head.h +
+    GEOMETRY.antenna.h,
+  orthogonalSafetyGap: 2,
+  orthogonalDistance: 10,
+  perspectiveFov: 80,
+});
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
 let renderer, scene;
 let activeCamera;
 
-// FIXME: might there be a problem if we want the aspect ratio to change?
-const aspectRatio = window.innerWidth / window.innerHeight;
 const cameras = {
   // front view
-  front: createOrthogonalCamera({ x: 0, y: 0, z: 10 }),
+  front: createOrthogonalCamera({
+    z: -CAMERA_GEOMETRY.orthogonalDistance,
+    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
+    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
+  }),
   // side view
-  side: createOrthogonalCamera({ x: -10, y: 0, z: 0 }),
+  side: createOrthogonalCamera({
+    x: -CAMERA_GEOMETRY.orthogonalDistance,
+    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
+    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
+  }),
   // top view
-  top: createOrthogonalCamera({ x: 0, y: 10, z: 0 }),
+  top: createOrthogonalCamera({
+    y: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap,
+    height: CAMERA_GEOMETRY.orthogonalDistance,
+  }),
   // orthogonal projection: isometric view
-  orthogonal: createOrthogonalCamera({ x: -10, y: 10, z: -20 }),
+  orthogonal: createOrthogonalCamera({
+    x: -10,
+    y: 10,
+    z: -20,
+    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
+    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
+  }),
   // perspective projection: isometric view
   perspective: createPerspectiveCamera({ x: -10, y: 10, z: -20 }),
   // TODO: remove, for debug only
@@ -100,20 +129,28 @@ function createCameras() {
   controls.update();
 }
 
-function createOrthogonalCamera(position) {
-  'use strict';
+function createOrthogonalCamera({ x = 0, y = 0, z = 0, height, offsetX = 0, offsetY = 0 }) {
+  const aspectRatio = window.innerWidth / window.innerHeight;
+  const width = height * aspectRatio;
 
-  let camera = new THREE.OrthographicCamera(-15 * aspectRatio, 15 * aspectRatio, 15, -15, 1, 1000);
-  camera.position.set(position.x, position.y, position.z);
+  const top = height / 2 + offsetY;
+  const bottom = -height / 2 + offsetY;
+  const left = -width / 2 + offsetX;
+  const right = width / 2 + offsetX;
+
+  let camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
+  camera.position.set(x, y, z);
 
   return camera;
 }
 
-function createPerspectiveCamera(position) {
-  'use strict';
-
-  let camera = new THREE.PerspectiveCamera(90, aspectRatio, 1, 1000);
-  camera.position.set(position.x, position.y, position.z);
+function createPerspectiveCamera({ x, y, z }) {
+  const aspectRatio = window.innerWidth / window.innerHeight;
+  let camera = new THREE.PerspectiveCamera(CAMERA_GEOMETRY.perspectiveFov, aspectRatio, 1, 1000);
+  camera.position.set(x, y, z);
+  // FIXME: this doesn't seem to be working
+  camera.lookAt(0, CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2, 0);
+  camera.updateProjectionMatrix();
 
   return camera;
 }
