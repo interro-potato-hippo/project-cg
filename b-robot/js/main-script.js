@@ -83,15 +83,15 @@ const cameras = {
   // orthogonal projection: isometric view
   orthogonal: createOrthogonalCamera({
     x: -10,
-    y: 10,
-    z: -20,
+    y: 20,
+    z: -10,
     height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
-    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
+    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 3,
   }),
   // perspective projection: isometric view
-  perspective: createPerspectiveCamera({ x: -10, y: 10, z: -20 }),
+  perspective: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
   // TODO: remove, for debug only
-  perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 10, z: -20 }),
+  perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
 };
 
 /////////////////////
