@@ -40,6 +40,8 @@ const GEOMETRY = Object.freeze({
   foreheadHeight: 0.2,
 });
 
+const background = new THREE.Color(0xC0E8EE);
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
@@ -54,6 +56,7 @@ function createScene() {
 
   scene = new THREE.Scene();
   scene.add(new THREE.AxisHelper(20));
+  scene.background = background;
 
   createRobot();
 }
