@@ -431,8 +431,8 @@ function wireframeToggleHandle(_event) {
 
 function changeActiveCameraHandleFactory(cameraDescriptor) {
   return (_event) => {
-    refreshCameraParameters(camera);
-    activeCamera = camera;
+    refreshCameraParameters(cameraDescriptor);
+    activeCamera = cameraDescriptor;
   };
 }
 
