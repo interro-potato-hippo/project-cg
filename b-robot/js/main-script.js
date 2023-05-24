@@ -498,25 +498,15 @@ const keyDownHandlers = {
   Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
   // feet
-  KeyQ: rotateBodyPart,
-  KeyA: rotateBodyPart,
+  KeyQ: rotateBodyPartHandleFactory({ bodyPart: 'feet', axis: 'x', direction: 'positive' }),
+  KeyA: rotateBodyPartHandleFactory({ bodyPart: 'feet', axis: 'x', direction: 'negative' }),
   // waist
-  KeyW: rotateBodyPart,
-  KeyS: rotateBodyPart,
+  KeyW: rotateBodyPartHandleFactory({ bodyPart: 'waist', axis: 'x', direction: 'positive' }),
+  KeyS: rotateBodyPartHandleFactory({ bodyPart: 'waist', axis: 'x', direction: 'negative' }),
   // head
-  KeyR: rotateBodyPart,
-  KeyF: rotateBodyPart,
+  KeyR: rotateBodyPartHandleFactory({ bodyPart: 'head', axis: 'x', direction: 'positive' }),
+  KeyF: rotateBodyPartHandleFactory({ bodyPart: 'head', axis: 'x', direction: 'negative' }),
   // TODO: upper members
-};
-
-// FIXME: this is ugly!
-const keyMap = {
-  KeyQ: { bodyPart: 'feet', axis: 'x', direction: 'positive' },
-  KeyA: { bodyPart: 'feet', axis: 'x', direction: 'negative' },
-  KeyW: { bodyPart: 'waist', axis: 'x', direction: 'positive' },
-  KeyS: { bodyPart: 'waist', axis: 'x', direction: 'negative' },
-  KeyR: { bodyPart: 'head', axis: 'x', direction: 'positive' },
-  KeyF: { bodyPart: 'head', axis: 'x', direction: 'negative' },
 };
 
 function onKeyDown(event) {
@@ -527,11 +517,9 @@ function onKeyDown(event) {
   // Treat numpad digits like the number row
   if (/^Numpad\d$/.test(code)) {
     code = code.replace('Numpad', 'Digit');
-    keyDownHandlers[code]?.(event);
-    return;
   }
 
-  keyDownHandlers[code]?.(keyMap[code]);
+  keyDownHandlers[code]?.(event);
 }
 
 function wireframeToggleHandle(_event) {
