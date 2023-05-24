@@ -16,8 +16,14 @@ const MATERIAL = Object.freeze({
   head: new THREE.MeshBasicMaterial({ color: 0x9ec1a3 }),
   eye: new THREE.MeshBasicMaterial({ color: 0x904e55 }),
   antenna: new THREE.MeshBasicMaterial({ color: 0x6320ee }),
+
+  trailerContainer: new THREE.MeshBasicMaterial({ color: 0x255c99 }),
+  trailerConnector: new THREE.MeshBasicMaterial({ color: 0xccad8f }),
+  trailerWheelSupport: new THREE.MeshBasicMaterial({ color: 0x654321 }),
 });
 
+// box: w = width (X axis), h = height (Y axis), d = depth (Z axis)
+// cylinder: r = radius, rx = rotation on X axis, etc.
 const GEOMETRY = Object.freeze({
   chest: { w: 5, h: 2, d: 2 },
   back: { w: 3, h: 2, d: 1 },
@@ -38,6 +44,13 @@ const GEOMETRY = Object.freeze({
   antenna: { r: 0.1, h: 0.5 },
   antennaGap: 0.2,
   foreheadHeight: 0.2,
+
+  trailerContainer: { w: 5, h: 5, d: 12 },
+  trailerConnector: { r: 0.25, h: 0.5 },
+  trailerConnectorDepth: 1.5,
+  trailerWheelSupport: { w: 4, h: 1, d: 4.5 },
+  trailerWheelGap: 0.5,
+  initialTrailerOffset: 5,
 });
 
 const BACKGROUND = new THREE.Color(0xc0e8ee);
@@ -59,6 +72,7 @@ function createScene() {
   scene.background = BACKGROUND;
 
   createRobot();
+  createTrailer();
 }
 
 //////////////////////
@@ -235,6 +249,60 @@ function createRightHeadElements(headGroup) {
     x: GEOMETRY.antennaGap / 2 + GEOMETRY.antenna.r,
     y: GEOMETRY.head.h + GEOMETRY.antenna.h / 2,
     parent: headGroup,
+  });
+}
+
+//////////////////////
+
+function createTrailer() {
+  const containerHeight = GEOMETRY.wheel.r + GEOMETRY.trailerWheelSupport.h;
+  const trailer = createGroup({
+    y: containerHeight,
+    z: GEOMETRY.initialTrailerOffset,
+    parent: scene,
+  });
+  createBoxMesh({
+    name: 'trailerContainer',
+    anchor: [0, 1, 1],
+    parent: trailer,
+  });
+
+  createCylinderMesh({
+    name: 'trailerConnector',
+    y: -GEOMETRY.trailerConnector.h / 2,
+    z: GEOMETRY.trailerConnectorDepth + GEOMETRY.trailerConnector.r / 2,
+    parent: trailer,
+  });
+
+  const wheelSupportGroup = createGroup({
+    y: -GEOMETRY.trailerWheelSupport.h,
+    z: GEOMETRY.trailerContainer.d - GEOMETRY.trailerWheelSupport.d / 2,
+    parent: trailer,
+  });
+  createBoxMesh({
+    name: 'trailerWheelSupport',
+    anchor: [0, 1, 0],
+    parent: wheelSupportGroup,
+  });
+
+  createRightTrailerWheels(wheelSupportGroup);
+  buildSymmetric(createRightTrailerWheels, wheelSupportGroup);
+}
+
+function createRightTrailerWheels(wheelSupportGroup) {
+  const wheelsGroup = createGroup({
+    x: GEOMETRY.trailerWheelSupport.w / 2 + GEOMETRY.wheel.h / 2,
+    parent: wheelSupportGroup,
+  });
+  createCylinderMesh({
+    name: 'wheel',
+    z: -(GEOMETRY.wheel.r + GEOMETRY.trailerWheelGap / 2),
+    parent: wheelsGroup,
+  });
+  createCylinderMesh({
+    name: 'wheel',
+    z: GEOMETRY.wheel.r + GEOMETRY.trailerWheelGap / 2,
+    parent: wheelsGroup,
   });
 }
 
