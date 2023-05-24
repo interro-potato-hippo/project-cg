@@ -533,13 +533,15 @@ function changeActiveCameraHandleFactory(cameraDescriptor) {
   };
 }
 
-function rotateBodyPart({ bodyPart, axis, direction }) {
-  let delta = DELTA[bodyPart][axis];
-  delta = direction === 'positive' ? delta : -delta;
-  const { min, max } = DEGREES_OF_FREEDOM[bodyPart];
-  const currentRotation = bodyElements[bodyPart].rotation[axis];
+function rotateBodyPartHandleFactory({ bodyPart, axis, direction }) {
+  return (event) => {
+    let delta = DELTA[bodyPart][axis];
+    delta = direction === 'positive' ? delta : -delta;
+    const { min, max } = DEGREES_OF_FREEDOM[bodyPart];
+    const currentRotation = bodyElements[bodyPart].rotation[axis];
 
-  bodyElements[bodyPart].rotation[axis] = THREE.MathUtils.clamp(currentRotation + delta, min, max);
+    bodyElements[bodyPart].rotation[axis] = THREE.MathUtils.clamp(currentRotation + delta, min, max);
+  };
 }
 
 ///////////////////////
