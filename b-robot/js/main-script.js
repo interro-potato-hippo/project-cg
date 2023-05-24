@@ -540,7 +540,11 @@ function rotateBodyPartHandleFactory({ bodyPart, axis, direction }) {
     const { min, max } = DEGREES_OF_FREEDOM[bodyPart];
     const currentRotation = bodyElements[bodyPart].rotation[axis];
 
-    bodyElements[bodyPart].rotation[axis] = THREE.MathUtils.clamp(currentRotation + delta, min, max);
+    bodyElements[bodyPart].rotation[axis] = THREE.MathUtils.clamp(
+      currentRotation + delta,
+      min,
+      max
+    );
   };
 }
 
