@@ -75,11 +75,11 @@ const DEGREES_OF_FREEDOM = Object.freeze({
   head: { min: -Math.PI, max: Math.PI },
 });
 
-const rotationSteps = 8;
+const ROTATION_STEPS = 8;
 const DELTA = Object.freeze({
-  feet: { x: Math.PI / 2 / rotationSteps, y: 0, z: 0 },
-  waist: { x: Math.PI / 2 / rotationSteps, y: 0, z: 0 },
-  head: { x: Math.PI / rotationSteps, y: 0, z: 0 },
+  feet: { x: Math.PI / 2 / ROTATION_STEPS, y: 0, z: 0 },
+  waist: { x: Math.PI / 2 / ROTATION_STEPS, y: 0, z: 0 },
+  head: { x: Math.PI / ROTATION_STEPS, y: 0, z: 0 },
   // TODO: upper members
 });
 
