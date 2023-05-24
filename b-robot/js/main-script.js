@@ -164,7 +164,7 @@ function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
 function refreshCameraParameters({ getCameraParameters, camera }) {
   const parameters = getCameraParameters();
 
-  Object.entries(parameters).forEach(([key, value]) => (camera[key] = value));
+  Object.assign(camera, parameters);
   camera.updateProjectionMatrix();
 }
 
