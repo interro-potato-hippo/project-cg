@@ -403,12 +403,12 @@ function onResize() {
 ///////////////////////
 const keyDownHandlers = {
   // TODO: remove; for debug only
-  Digit0: changeActiveCameraHandle(cameras.perspectiveWithOrbitalControls),
-  Digit1: changeActiveCameraHandle(cameras.front),
-  Digit2: changeActiveCameraHandle(cameras.side),
-  Digit3: changeActiveCameraHandle(cameras.top),
-  Digit4: changeActiveCameraHandle(cameras.orthogonal),
-  Digit5: changeActiveCameraHandle(cameras.perspective),
+  Digit0: changeActiveCameraHandleFactory(cameras.perspectiveWithOrbitalControls),
+  Digit1: changeActiveCameraHandleFactory(cameras.front),
+  Digit2: changeActiveCameraHandleFactory(cameras.side),
+  Digit3: changeActiveCameraHandleFactory(cameras.top),
+  Digit4: changeActiveCameraHandleFactory(cameras.orthogonal),
+  Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
 };
 
@@ -429,7 +429,7 @@ function wireframeToggleHandle(_event) {
   Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
 }
 
-function changeActiveCameraHandle(camera) {
+function changeActiveCameraHandleFactory(cameraDescriptor) {
   return (_event) => {
     refreshCameraParameters(camera);
     activeCamera = camera;
