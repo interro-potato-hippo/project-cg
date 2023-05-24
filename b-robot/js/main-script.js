@@ -78,10 +78,26 @@ const DEGREES_OF_FREEDOM = Object.freeze({
 
 const MOVEMENT_TIME = 700; // miliseconds
 const DELTA = Object.freeze({
-  feet: new THREE.Vector3((DEGREES_OF_FREEDOM.feet.max - DEGREES_OF_FREEDOM.feet.min) / MOVEMENT_TIME, 0, 0),
-  lowerLimbs: new THREE.Vector3((DEGREES_OF_FREEDOM.lowerLimbs.max - DEGREES_OF_FREEDOM.lowerLimbs.min) / MOVEMENT_TIME, 0, 0),
-  head: new THREE.Vector3((DEGREES_OF_FREEDOM.head.max - DEGREES_OF_FREEDOM.head.min) / MOVEMENT_TIME, 0, 0),
-  arms: new THREE.Vector3((DEGREES_OF_FREEDOM.arms.max - DEGREES_OF_FREEDOM.arms.min) / MOVEMENT_TIME, 0, 0),
+  feet: new THREE.Vector3(
+    (DEGREES_OF_FREEDOM.feet.max - DEGREES_OF_FREEDOM.feet.min) / MOVEMENT_TIME,
+    0,
+    0
+  ),
+  lowerLimbs: new THREE.Vector3(
+    (DEGREES_OF_FREEDOM.lowerLimbs.max - DEGREES_OF_FREEDOM.lowerLimbs.min) / MOVEMENT_TIME,
+    0,
+    0
+  ),
+  head: new THREE.Vector3(
+    (DEGREES_OF_FREEDOM.head.max - DEGREES_OF_FREEDOM.head.min) / MOVEMENT_TIME,
+    0,
+    0
+  ),
+  arms: new THREE.Vector3(
+    (DEGREES_OF_FREEDOM.arms.max - DEGREES_OF_FREEDOM.arms.min) / MOVEMENT_TIME,
+    0,
+    0
+  ),
 });
 
 //////////////////////
@@ -236,7 +252,10 @@ function createRobot() {
     parent: waistGroup,
   });
   const { lowerLimb: rightLowerLimb, feet: rightFeet } = createRightLowerLimb(waistGroup);
-  const { lowerLimb: leftLowerLimb, feet: leftFeet } = buildSymmetric(createRightLowerLimb, waistGroup);
+  const { lowerLimb: leftLowerLimb, feet: leftFeet } = buildSymmetric(
+    createRightLowerLimb,
+    waistGroup
+  );
   bodyElements.rightLowerLimb = rightLowerLimb;
   bodyElements.rightFeet = rightFeet;
   bodyElements.leftLowerLimb = leftLowerLimb;
@@ -446,14 +465,13 @@ function handleCollisions() {
 /* UPDATE */
 ////////////
 function update(timeDelta) {
-
-  rotateBodyPart(timeDelta, { bodyPart: 'rightFeet', profile: "feet" });
-  rotateBodyPart(timeDelta, { bodyPart: 'leftFeet', profile: "feet" });
-  rotateBodyPart(timeDelta, { bodyPart: 'rightLowerLimb', profile: "lowerLimbs" });
-  rotateBodyPart(timeDelta, { bodyPart: 'leftLowerLimb', profile: "lowerLimbs" });
-  rotateBodyPart(timeDelta, { bodyPart: 'head', profile: "head" });
-  moveBodyPart(timeDelta, { bodyPart: 'rightArm', profile: "arms" });
-  moveBodyPart(timeDelta, { bodyPart: 'leftArm', profile: "arms" });
+  rotateBodyPart(timeDelta, { bodyPart: 'rightFeet', profile: 'feet' });
+  rotateBodyPart(timeDelta, { bodyPart: 'leftFeet', profile: 'feet' });
+  rotateBodyPart(timeDelta, { bodyPart: 'rightLowerLimb', profile: 'lowerLimbs' });
+  rotateBodyPart(timeDelta, { bodyPart: 'leftLowerLimb', profile: 'lowerLimbs' });
+  rotateBodyPart(timeDelta, { bodyPart: 'head', profile: 'head' });
+  moveBodyPart(timeDelta, { bodyPart: 'rightArm', profile: 'arms' });
+  moveBodyPart(timeDelta, { bodyPart: 'leftArm', profile: 'arms' });
 }
 
 function rotateBodyPart(timeDelta, { bodyPart, profile }) {
@@ -466,13 +484,15 @@ function rotateBodyPart(timeDelta, { bodyPart, profile }) {
 
   const delta = group.userData.delta.clone().multiply(DELTA[profile]).multiplyScalar(timeDelta);
 
-  group.rotation.fromArray(['x', 'y', 'z'].map(axis => {
-    const newValue = group.rotation[axis] + delta[axis];
-    if (props?.axis === axis) {
-      return THREE.Math.clamp(newValue, props.min, props.max);
-    }
-    return newValue;
-  }));
+  group.rotation.fromArray(
+    ['x', 'y', 'z'].map((axis) => {
+      const newValue = group.rotation[axis] + delta[axis];
+      if (props?.axis === axis) {
+        return THREE.Math.clamp(newValue, props.min, props.max);
+      }
+      return newValue;
+    })
+  );
 }
 
 function moveBodyPart(timeDelta, { bodyPart, profile }) {
@@ -485,13 +505,15 @@ function moveBodyPart(timeDelta, { bodyPart, profile }) {
 
   const delta = group.userData.delta.clone().multiply(DELTA[profile]).multiplyScalar(timeDelta);
 
-  group.position.fromArray(['x', 'y', 'z'].map(axis => {
-    const newValue = group.position[axis] + delta[axis];
-    if (props?.axis === axis) {
-      return THREE.Math.clamp(newValue, props.min, props.max);
-    }
-    return newValue;
-  }));
+  group.position.fromArray(
+    ['x', 'y', 'z'].map((axis) => {
+      const newValue = group.position[axis] + delta[axis];
+      if (props?.axis === axis) {
+        return THREE.Math.clamp(newValue, props.min, props.max);
+      }
+      return newValue;
+    })
+  );
 }
 
 /////////////
@@ -565,14 +587,38 @@ const keyDownHandlers = {
   Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
   // feet
-  KeyQ: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: 1 }),
-  KeyA: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: -1 }),
+  KeyQ: rotateBodyPartHandleFactory({
+    bodyParts: ['rightFeet', 'leftFeet'],
+    axis: 'x',
+    direction: 1,
+  }),
+  KeyA: rotateBodyPartHandleFactory({
+    bodyParts: ['rightFeet', 'leftFeet'],
+    axis: 'x',
+    direction: -1,
+  }),
   // waist
-  KeyW: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: 1 }),
-  KeyS: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: -1 }),
+  KeyW: rotateBodyPartHandleFactory({
+    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+    axis: 'x',
+    direction: 1,
+  }),
+  KeyS: rotateBodyPartHandleFactory({
+    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+    axis: 'x',
+    direction: -1,
+  }),
   // arms
-  KeyE: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: 1 }),
-  KeyD: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: -1 }),
+  KeyE: rotateBodyPartHandleFactory({
+    bodyParts: ['rightArm', 'leftArm'],
+    axis: 'x',
+    direction: 1,
+  }),
+  KeyD: rotateBodyPartHandleFactory({
+    bodyParts: ['rightArm', 'leftArm'],
+    axis: 'x',
+    direction: -1,
+  }),
   // head
   KeyR: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 1 }),
   KeyF: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: -1 }),
@@ -610,11 +656,11 @@ function rotateBodyPartHandleFactory({ bodyParts, axis, direction }) {
       return;
     }
 
-    bodyParts.forEach(bodyPart => {
+    bodyParts.forEach((bodyPart) => {
       const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
       const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
       delta[axis] += direction;
-    })
+    });
   };
 }
 
@@ -623,14 +669,38 @@ function rotateBodyPartHandleFactory({ bodyParts, axis, direction }) {
 ///////////////////////
 const keyUpHandlers = {
   // feet
-  KeyQ: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: -1 }),
-  KeyA: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: 1 }),
+  KeyQ: rotateBodyPartHandleFactory({
+    bodyParts: ['rightFeet', 'leftFeet'],
+    axis: 'x',
+    direction: -1,
+  }),
+  KeyA: rotateBodyPartHandleFactory({
+    bodyParts: ['rightFeet', 'leftFeet'],
+    axis: 'x',
+    direction: 1,
+  }),
   // waist
-  KeyW: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: -1 }),
-  KeyS: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: 1 }),
+  KeyW: rotateBodyPartHandleFactory({
+    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+    axis: 'x',
+    direction: -1,
+  }),
+  KeyS: rotateBodyPartHandleFactory({
+    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+    axis: 'x',
+    direction: 1,
+  }),
   // arms
-  KeyE: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: -1 }),
-  KeyD: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: 1 }),
+  KeyE: rotateBodyPartHandleFactory({
+    bodyParts: ['rightArm', 'leftArm'],
+    axis: 'x',
+    direction: -1,
+  }),
+  KeyD: rotateBodyPartHandleFactory({
+    bodyParts: ['rightArm', 'leftArm'],
+    axis: 'x',
+    direction: 1,
+  }),
   // head
   KeyR: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: -1 }),
   KeyF: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 1 }),
