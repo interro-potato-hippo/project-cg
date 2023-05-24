@@ -270,19 +270,25 @@ function createRightLowerLimb(waistGroup) {
   });
 
   const lowerLimbsGroup = createGroup({
-    x: GEOMETRY.legGap / 2,
-    y: -GEOMETRY.thigh.h,
+    y: GEOMETRY.thigh.d / 2,
+    z: -GEOMETRY.thigh.d / 2,
     parent: waistGroup,
+  });
+  const rotatedLowerLimbsGroup = createGroup({
+    x: GEOMETRY.legGap / 2,
+    y: -GEOMETRY.thigh.d / 2 - GEOMETRY.thigh.h,
+    z: GEOMETRY.thigh.d / 2,
+    parent: lowerLimbsGroup,
   });
   createBoxMesh({
     name: 'thigh',
     anchor: [1, 1, -1],
-    parent: lowerLimbsGroup,
+    parent: rotatedLowerLimbsGroup,
   });
 
   const shankGroup = createGroup({
     y: -GEOMETRY.shank.h,
-    parent: lowerLimbsGroup,
+    parent: rotatedLowerLimbsGroup,
   });
   createBoxMesh({
     name: 'shank',
@@ -290,11 +296,15 @@ function createRightLowerLimb(waistGroup) {
     parent: shankGroup,
   });
 
-  const feet = createBoxMesh({
+  const feetGroup = createGroup({
+    y: GEOMETRY.feet.h / 2,
+    parent: shankGroup,
+  });
+  createBoxMesh({
     name: 'feet',
     z: -GEOMETRY.shank.d / 2,
-    anchor: [1, 1, -1],
-    parent: shankGroup,
+    anchor: [1, 0, -1],
+    parent: feetGroup,
   });
 
   // middle wheel (on the shank)
@@ -315,7 +325,7 @@ function createRightLowerLimb(waistGroup) {
     parent: shankGroup,
   });
 
-  return { lowerLimb: lowerLimbsGroup, feet };
+  return { lowerLimb: lowerLimbsGroup, feet: feetGroup };
 }
 
 function createRightUpperLimb(chestGroup) {
