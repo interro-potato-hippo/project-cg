@@ -70,9 +70,13 @@ const CAMERA_GEOMETRY = Object.freeze({
 });
 
 const DEGREES_OF_FREEDOM = Object.freeze({
-  feet: { min: -Math.PI / 2, max: Math.PI / 2 },
-  waist: { min: -Math.PI / 2, max: Math.PI / 2 },
-  head: { min: -Math.PI, max: Math.PI },
+  rightFeet: { min: -Math.PI / 2, max: 0 },
+  leftFeet: { min: -Math.PI / 2, max: 0 },
+  rightLowerLimb: { min: -Math.PI / 2, max: 0 },
+  leftLowerLimb: { min: -Math.PI / 2, max: 0 },
+  head: { min: 0, max: Math.PI },
+  rightArm: { min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w, max: GEOMETRY.chest.w / 2 },
+  leftArm: { min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w, max: GEOMETRY.chest.w / 2 },
 });
 
 const ROTATION_STEPS = 8;
@@ -207,7 +211,7 @@ function refreshCameraParameters({ getCameraParameters, camera }) {
 ////////////////////////
 function createRobot() {
   const chestHeight = GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.waist.h + GEOMETRY.abdomen.h;
-  const robot = createGroup({ name: 'robot', y: chestHeight, parent: scene });
+  const robot = createGroup({ y: chestHeight, parent: scene });
   createBoxMesh({
     name: 'chest',
     anchor: [0, 1, 0],
@@ -220,27 +224,33 @@ function createRobot() {
     parent: robot,
   });
 
-  const abdomenGroup = createGroup({ name: 'abdomen', y: -GEOMETRY.abdomen.h, parent: robot });
+  const abdomenGroup = createGroup({ y: -GEOMETRY.abdomen.h, parent: robot });
   createBoxMesh({
     name: 'abdomen',
     anchor: [0, 1, -1],
     parent: abdomenGroup,
   });
 
-  const waistGroup = createGroup({ name: 'waist', y: -GEOMETRY.waist.h, parent: abdomenGroup });
+  const waistGroup = createGroup({ y: -GEOMETRY.waist.h, parent: abdomenGroup });
   createBoxMesh({
     name: 'waist',
     anchor: [0, 1, -1],
     parent: waistGroup,
   });
-  createRightLowerLimb(waistGroup);
-  buildSymmetric(createRightLowerLimb, waistGroup);
+  const { lowerLimb: rightLowerLimb, feet: rightFeet } = createRightLowerLimb(waistGroup);
+  const { lowerLimb: leftLowerLimb, feet: leftFeet } = buildSymmetric(createRightLowerLimb, waistGroup);
+  bodyElements.rightLowerLimb = rightLowerLimb;
+  bodyElements.rightFeet = rightFeet;
+  bodyElements.leftLowerLimb = leftLowerLimb;
+  bodyElements.leftFeet = leftFeet;
 
-  createRightUpperLimb(robot);
-  buildSymmetric(createRightUpperLimb, robot);
+  const { arm: rightArm } = createRightUpperLimb(robot);
+  const { arm: leftArm } = buildSymmetric(createRightUpperLimb, robot);
+  bodyElements.rightArm = rightArm;
+  bodyElements.leftArm = leftArm;
 
-  // TODO add head's degree of movement
-  const headGroup = createGroup({ name: 'head', y: GEOMETRY.chest.h, parent: robot });
+  const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
+  bodyElements.head = headGroup;
 
   createBoxMesh({
     name: 'head',
@@ -259,9 +269,7 @@ function createRightLowerLimb(waistGroup) {
     parent: waistGroup,
   });
 
-  // TODO add legs' degree of movement
   const lowerLimbsGroup = createGroup({
-    name: 'lowerLimbs',
     x: GEOMETRY.legGap / 2,
     y: -GEOMETRY.thigh.h,
     parent: waistGroup,
@@ -273,7 +281,6 @@ function createRightLowerLimb(waistGroup) {
   });
 
   const shankGroup = createGroup({
-    name: 'shank',
     y: -GEOMETRY.shank.h,
     parent: lowerLimbsGroup,
   });
@@ -283,8 +290,7 @@ function createRightLowerLimb(waistGroup) {
     parent: shankGroup,
   });
 
-  // TODO add feet's degree of movement
-  createBoxMesh({
+  const feet = createBoxMesh({
     name: 'feet',
     z: -GEOMETRY.shank.d / 2,
     anchor: [1, 1, -1],
@@ -308,12 +314,13 @@ function createRightLowerLimb(waistGroup) {
     z: -GEOMETRY.shank.d / 2,
     parent: shankGroup,
   });
+
+  return { lowerLimb: lowerLimbsGroup, feet };
 }
 
 function createRightUpperLimb(chestGroup) {
   // TODO add arms' degree of movement
   const armGroup = createGroup({
-    name: 'arm',
     x: GEOMETRY.chest.w / 2,
     y: GEOMETRY.chest.h,
     z: GEOMETRY.chest.d / 2,
@@ -338,6 +345,8 @@ function createRightUpperLimb(chestGroup) {
     z: GEOMETRY.arm.d / 2,
     parent: armGroup,
   });
+
+  return { arm: armGroup };
 }
 
 function createRightHeadElements(headGroup) {
@@ -430,6 +439,40 @@ function handleCollisions() {
 ////////////
 function update() {
   'use strict';
+
+  rotateBodyPart({ bodyPart: 'rightFeet' });
+  rotateBodyPart({ bodyPart: 'leftFeet' });
+  rotateBodyPart({ bodyPart: 'rightLowerLimb' });
+  rotateBodyPart({ bodyPart: 'leftLowerLimb' });
+  rotateBodyPart({ bodyPart: 'head' });
+  moveBodyPart({ bodyPart: 'rightArm' });
+  moveBodyPart({ bodyPart: 'leftArm' });
+}
+
+function rotateBodyPart({ bodyPart }) {
+  const group = bodyElements[bodyPart];
+  if (!group.userData?.delta) {
+    return;
+  }
+
+  group.rotation.x = THREE.Math.clamp(
+    group.rotation.x + group.userData.delta,
+    DEGREES_OF_FREEDOM[bodyPart].min,
+    DEGREES_OF_FREEDOM[bodyPart].max
+  );
+}
+
+function moveBodyPart({ bodyPart }) {
+  const group = bodyElements[bodyPart];
+  if (!group.userData?.delta) {
+    return;
+  }
+
+  group.position.x = THREE.Math.clamp(
+    group.position.x + group.userData.delta,
+    DEGREES_OF_FREEDOM[bodyPart].min,
+    DEGREES_OF_FREEDOM[bodyPart].max
+  );
 }
 
 /////////////
@@ -458,6 +501,7 @@ function init() {
   render();
 
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
   window.addEventListener('resize', onResize);
 }
 
@@ -466,6 +510,8 @@ function init() {
 /////////////////////
 function animate() {
   'use strict';
+
+  update();
 
   render();
 
@@ -498,15 +544,17 @@ const keyDownHandlers = {
   Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
   // feet
-  KeyQ: rotateBodyPartHandleFactory({ bodyPart: 'feet', axis: 'x', direction: 'positive' }),
-  KeyA: rotateBodyPartHandleFactory({ bodyPart: 'feet', axis: 'x', direction: 'negative' }),
+  KeyQ: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: 'positive' }),
+  KeyA: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: 'negative' }),
   // waist
-  KeyW: rotateBodyPartHandleFactory({ bodyPart: 'waist', axis: 'x', direction: 'positive' }),
-  KeyS: rotateBodyPartHandleFactory({ bodyPart: 'waist', axis: 'x', direction: 'negative' }),
+  KeyW: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: 'positive' }),
+  KeyS: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: 'negative' }),
+  // arms
+  KeyE: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: 'positive' }),
+  KeyD: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: 'negative' }),
   // head
-  KeyR: rotateBodyPartHandleFactory({ bodyPart: 'head', axis: 'x', direction: 'positive' }),
-  KeyF: rotateBodyPartHandleFactory({ bodyPart: 'head', axis: 'x', direction: 'negative' }),
-  // TODO: upper members
+  KeyR: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 'positive' }),
+  KeyF: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 'negative' }),
 };
 
 function onKeyDown(event) {
@@ -533,38 +581,58 @@ function changeActiveCameraHandleFactory(cameraDescriptor) {
   };
 }
 
-function rotateBodyPartHandleFactory({ bodyPart, axis, direction }) {
+function rotateBodyPartHandleFactory({ bodyParts, axis, direction }) {
   return (event) => {
-    let delta = DELTA[bodyPart][axis];
-    delta = direction === 'positive' ? delta : -delta;
-    const { min, max } = DEGREES_OF_FREEDOM[bodyPart];
-    const currentRotation = bodyElements[bodyPart].rotation[axis];
+    if (event.repeat) {
+      // ignore holding down keys
+      return;
+    }
 
-    bodyElements[bodyPart].rotation[axis] = THREE.MathUtils.clamp(
-      currentRotation + delta,
-      min,
-      max
-    );
+    bodyParts.forEach(bodyPart => {
+      // TODO change this; magic values
+      let delta = Math.PI / 100;
+      delta = direction === 'positive' ? delta : -delta;
+      const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
+      userData.delta = (userData.delta || 0) + delta;
+      console.log(bodyPart, userData);
+    })
   };
 }
 
 ///////////////////////
 /* KEY UP CALLBACK */
 ///////////////////////
+const keyUpHandlers = {
+  // feet
+  KeyQ: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: 'negative' }),
+  KeyA: rotateBodyPartHandleFactory({ bodyParts: ['rightFeet', 'leftFeet'], axis: 'x', direction: 'positive' }),
+  // waist
+  KeyW: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: 'negative' }),
+  KeyS: rotateBodyPartHandleFactory({ bodyParts: ['rightLowerLimb', 'leftLowerLimb'], axis: 'x', direction: 'positive' }),
+  // arms
+  KeyE: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: 'negative' }),
+  KeyD: rotateBodyPartHandleFactory({ bodyParts: ['rightArm', 'leftArm'], axis: 'x', direction: 'positive' }),
+  // head
+  KeyR: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 'negative' }),
+  KeyF: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 'positive' }),
+};
+
 function onKeyUp(e) {
   'use strict';
+
+  let { code } = event;
+
+  keyUpHandlers[code]?.(event);
 }
 
 ///////////////
 /* UTILITIES */
 ///////////////
-function createGroup({ name, x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
+function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   const group = new THREE.Group();
-  group.name = name;
   group.position.set(x, y, z);
   group.scale.set(...scale);
 
-  bodyElements[group.name] = group;
   if (parent) {
     parent.add(group);
   } else {
@@ -599,5 +667,5 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
 }
 
 function buildSymmetric(builder, parent) {
-  return builder(createGroup({ name: parent.name, scale: [-1, 1, 1], parent }));
+  return builder(createGroup({ scale: [-1, 1, 1], parent }));
 }
