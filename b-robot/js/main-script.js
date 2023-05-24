@@ -55,11 +55,57 @@ const GEOMETRY = Object.freeze({
 
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
+const CAMERA_GEOMETRY = Object.freeze({
+  orthogonalUsableAreaHeight:
+    GEOMETRY.shank.h +
+    GEOMETRY.thigh.h +
+    GEOMETRY.waist.h +
+    GEOMETRY.abdomen.h +
+    GEOMETRY.chest.h +
+    GEOMETRY.head.h +
+    GEOMETRY.antenna.h,
+  orthogonalSafetyGap: 2,
+  orthogonalDistance: 10,
+  perspectiveFov: 80,
+});
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
 let renderer, scene;
-let camera, controls; // TODO support multiple cameras
+let activeCamera;
+
+const cameras = {
+  // front view
+  front: createOrthogonalCamera({
+    z: -CAMERA_GEOMETRY.orthogonalDistance,
+    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
+    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
+  }),
+  // side view
+  side: createOrthogonalCamera({
+    x: -CAMERA_GEOMETRY.orthogonalDistance,
+    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
+    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
+  }),
+  // top view
+  top: createOrthogonalCamera({
+    y: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap,
+    height: CAMERA_GEOMETRY.orthogonalDistance,
+  }),
+  // orthogonal projection: isometric view
+  orthogonal: createOrthogonalCamera({
+    x: -10,
+    y: 20,
+    z: -10,
+    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
+    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 3,
+  }),
+  // perspective projection: isometric view
+  perspective: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
+  // TODO: remove, for debug only
+  perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
+};
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -81,19 +127,59 @@ function createScene() {
 function createCameras() {
   'use strict';
 
-  camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 1, 1000);
+  // set the initial camera
+  activeCamera = cameras.front;
 
-  controls = new THREE.OrbitControls(camera, renderer.domElement);
+  const controls = new THREE.OrbitControls(
+    cameras.perspectiveWithOrbitalControls.camera,
+    renderer.domElement
+  );
 
-  camera.position.x = 0;
-  camera.position.y = 10;
-  camera.position.z = -20;
-
-  //camera.lookAt(scene.position);
-  camera.lookAt(0, 8, 0);
-
-  //controls.target.set(0, 0, 0);
+  controls.target.set(0, 0, 0);
   controls.update();
+}
+
+function createOrthogonalCamera({ x = 0, y = 0, z = 0, height, offsetX = 0, offsetY = 0 }) {
+  const getCameraParameters = () => {
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    const width = height * aspectRatio;
+
+    const top = height / 2 + offsetY;
+    const bottom = -height / 2 + offsetY;
+    const left = -width / 2 + offsetX;
+    const right = width / 2 + offsetX;
+
+    return { top, bottom, left, right };
+  };
+
+  const { top, bottom, left, right } = getCameraParameters();
+
+  const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
+  camera.position.set(x, y, z);
+  camera.lookAt(0, 0, 0);
+
+  return { getCameraParameters, camera };
+}
+
+function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
+  const getCameraParameters = () => {
+    return { aspect: window.innerWidth / window.innerHeight };
+  };
+
+  const { aspect } = getCameraParameters();
+
+  const camera = new THREE.PerspectiveCamera(CAMERA_GEOMETRY.perspectiveFov, aspect, 1, 1000);
+  camera.position.set(x, y, z);
+  camera.lookAt(0, CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2, 0);
+
+  return { getCameraParameters, camera };
+}
+
+function refreshCameraParameters({ getCameraParameters, camera }) {
+  const parameters = getCameraParameters();
+
+  Object.assign(camera, parameters);
+  camera.updateProjectionMatrix();
 }
 
 /////////////////////
@@ -332,7 +418,7 @@ function update() {
 /////////////
 function render() {
   'use strict';
-  renderer.render(scene, camera);
+  renderer.render(scene, activeCamera.camera);
 }
 
 ////////////////////////////////
@@ -376,8 +462,7 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   if (window.innerHeight > 0 && window.innerWidth > 0) {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
+    refreshCameraParameters(activeCamera);
   }
 }
 
@@ -385,6 +470,13 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 const keyDownHandlers = {
+  // TODO: remove; for debug only
+  Digit0: changeActiveCameraHandleFactory(cameras.perspectiveWithOrbitalControls),
+  Digit1: changeActiveCameraHandleFactory(cameras.front),
+  Digit2: changeActiveCameraHandleFactory(cameras.side),
+  Digit3: changeActiveCameraHandleFactory(cameras.top),
+  Digit4: changeActiveCameraHandleFactory(cameras.orthogonal),
+  Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
 };
 
@@ -403,6 +495,13 @@ function onKeyDown(event) {
 
 function wireframeToggleHandle(_event) {
   Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
+}
+
+function changeActiveCameraHandleFactory(cameraDescriptor) {
+  return (_event) => {
+    refreshCameraParameters(cameraDescriptor);
+    activeCamera = cameraDescriptor;
+  };
 }
 
 ///////////////////////
