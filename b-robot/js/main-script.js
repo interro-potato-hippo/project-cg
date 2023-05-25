@@ -238,15 +238,15 @@ function createRobot() {
     anchor: [0, 1, -1],
     parent: waistGroup,
   });
-  const { lowerLimb: rightLowerLimb, feet: rightFeet } = createRightLowerLimb(waistGroup);
-  const { lowerLimb: leftLowerLimb, feet: leftFeet } = buildSymmetric(
+  const { lowerLimb: rightLowerLimb, feet: rightFoot } = createRightLowerLimb(waistGroup);
+  const { lowerLimb: leftLowerLimb, feet: leftFoot } = buildSymmetric(
     createRightLowerLimb,
     waistGroup
   );
   bodyElements.rightLowerLimb = rightLowerLimb;
-  bodyElements.rightFeet = rightFeet;
+  bodyElements.rightFoot = rightFoot;
   bodyElements.leftLowerLimb = leftLowerLimb;
-  bodyElements.leftFeet = leftFeet;
+  bodyElements.leftFoot = leftFoot;
 
   const { arm: rightArm } = createRightUpperLimb(robot);
   const { arm: leftArm } = buildSymmetric(createRightUpperLimb, robot);
@@ -452,8 +452,8 @@ function handleCollisions() {
 /* UPDATE */
 ////////////
 function update(timeDelta) {
-  rotateBodyPart(timeDelta, { bodyPart: 'rightFeet', profile: 'feet' });
-  rotateBodyPart(timeDelta, { bodyPart: 'leftFeet', profile: 'feet' });
+  rotateBodyPart(timeDelta, { bodyPart: 'rightFoot', profile: 'feet' });
+  rotateBodyPart(timeDelta, { bodyPart: 'leftFoot', profile: 'feet' });
   rotateBodyPart(timeDelta, { bodyPart: 'rightLowerLimb', profile: 'lowerLimbs' });
   rotateBodyPart(timeDelta, { bodyPart: 'leftLowerLimb', profile: 'lowerLimbs' });
   rotateBodyPart(timeDelta, { bodyPart: 'head', profile: 'head' });
@@ -563,7 +563,6 @@ function onResize() {
 ///////////////////////
 /* KEY DOWN CALLBACK */
 ///////////////////////
-// FIXME recheck transformation keys
 const keyHandlers = {
   // TODO: remove; for debug only
   Digit0: changeActiveCameraHandleFactory(cameras.perspectiveWithOrbitalControls),
@@ -575,12 +574,12 @@ const keyHandlers = {
   Digit6: wireframeToggleHandle,
   // feet
   KeyQ: transformBodyPartHandleFactory({
-    bodyParts: ['rightFeet', 'leftFeet'],
+    bodyParts: ['rightFoot', 'leftFoot'],
     axis: 'x',
     direction: 1,
   }),
   KeyA: transformBodyPartHandleFactory({
-    bodyParts: ['rightFeet', 'leftFeet'],
+    bodyParts: ['rightFoot', 'leftFoot'],
     axis: 'x',
     direction: -1,
   }),
