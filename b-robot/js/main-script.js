@@ -53,6 +53,39 @@ const GEOMETRY = Object.freeze({
   initialTrailerOffset: 10,
 });
 
+// absolute coordinates
+const ROBOT_AABB_POINTS = {
+  min: new THREE.Vector3(
+    -GEOMETRY.chest.w / 2,
+    GEOMETRY.shank.h + GEOMETRY.thigh.h - GEOMETRY.wheel.r,
+    -GEOMETRY.chest.d / 2
+  ),
+  max: new THREE.Vector3(
+    GEOMETRY.chest.w / 2,
+    GEOMETRY.shank.h +
+      GEOMETRY.thigh.h +
+      GEOMETRY.waist.h +
+      GEOMETRY.abdomen.h +
+      GEOMETRY.chest.h +
+      GEOMETRY.exhaust.h / 2,
+    GEOMETRY.thigh.h + GEOMETRY.shank.h + GEOMETRY.feet.d
+  ),
+};
+
+// relative coordinates (to trailer pivot)
+const RELATIVE_TRAILER_AABB_POINTS = {
+  min: new THREE.Vector3(
+    -GEOMETRY.trailerContainer.w / 2,
+    -GEOMETRY.trailerWheelSupport.h - GEOMETRY.wheel.r,
+    0
+  ),
+  max: new THREE.Vector3(
+    GEOMETRY.trailerContainer.w / 2,
+    GEOMETRY.trailerContainer.h,
+    GEOMETRY.trailerContainer.d
+  ),
+};
+
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
 const CAMERA_GEOMETRY = Object.freeze({
@@ -497,6 +530,19 @@ function createRightTrailerWheels(wheelSupportGroup) {
 function checkCollisions() {
   'use strict';
 
+  if (!dynamicElements.trailer || !isRobotInTruckMode()) return false;
+
+  const { max: rMax, min: rMin } = ROBOT_AABB_POINTS;
+  const { max: tMax, min: tMin } = getTrailerAABBPoints();
+
+  return (
+    rMin.x <= tMax.x &&
+    rMax.x >= tMin.x &&
+    rMin.y <= tMax.y &&
+    rMax.y >= tMin.y &&
+    rMin.z <= tMax.z &&
+    rMax.z >= tMin.z
+  );
 }
 
 function isRobotInTruckMode() {
@@ -506,6 +552,13 @@ function isRobotInTruckMode() {
     return type.comparator(dynamicElements[part], truckValue, axis);
   });
 }
+
+function getTrailerAABBPoints() {
+  const { max: relMax, min: relMin } = RELATIVE_TRAILER_AABB_POINTS;
+  return {
+    max: dynamicElements.trailer.position.clone().add(relMax),
+    min: dynamicElements.trailer.position.clone().add(relMin),
+  };
 }
 
 ///////////////////////
@@ -605,6 +658,8 @@ function init() {
 /////////////////////
 function animate(timestamp) {
   const timeDelta = timestamp - prevTimestamp;
+
+  checkCollisions();
 
   update(timeDelta);
 
