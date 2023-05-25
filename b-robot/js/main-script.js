@@ -211,7 +211,7 @@ const cameras = {
     bottomAxisPerpendicularVector: new THREE.Vector3(1, 0, 0), // X axis
     sideAxisPerpendicularVector: new THREE.Vector3(0, 0, -1), // Z axis
     mirrorView: true,
-    y: CAMERA_GEOMETRY.orthogonalDistance
+    y: CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // orthogonal projection: isometric view
   orthogonal: createOrthogonalCamera({
