@@ -659,7 +659,7 @@ function transformBodyPartHandleFactory({ bodyParts, axis, direction }) {
     bodyParts.forEach((bodyPart) => {
       const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
       const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
-      delta[axis] += (isKeyUp ? -direction : direction);
+      delta[axis] += isKeyUp ? -direction : direction;
     });
   };
 }
