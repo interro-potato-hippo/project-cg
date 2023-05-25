@@ -69,12 +69,58 @@ const CAMERA_GEOMETRY = Object.freeze({
   perspectiveFov: 80,
 });
 
-const DEGREES_OF_FREEDOM = Object.freeze({
-  feet: { min: -Math.PI / 2, max: 0, axis: 'x' },
-  lowerLimbs: { min: -Math.PI / 2, max: 0, axis: 'x' },
-  head: { min: 0, max: Math.PI, axis: 'x' },
-  arms: { min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w, max: GEOMETRY.chest.w / 2, axis: 'x' },
+const TRANSFORMATION_TYPE = Object.freeze({
+  ROTATION: {
+    applier: rotateDynamicPart,
+    comparator: (obj, expected, axis) => obj?.rotation[axis] === expected,
+  },
+  TRANSLATION: {
+    applier: moveDynamicPart,
+    comparator: (obj, expected, axis) => obj?.position[axis] === expected,
+  },
 });
+
+// degrees of freedom per profile
+const DEGREES_OF_FREEDOM = Object.freeze({
+  feet: {
+    type: TRANSFORMATION_TYPE.ROTATION,
+    min: -Math.PI / 2,
+    max: 0,
+    axis: 'x',
+    truckValue: -Math.PI / 2,
+  },
+  lowerLimbs: {
+    type: TRANSFORMATION_TYPE.ROTATION,
+    min: -Math.PI / 2,
+    max: 0,
+    axis: 'x',
+    truckValue: -Math.PI / 2,
+  },
+  head: {
+    type: TRANSFORMATION_TYPE.ROTATION,
+    min: 0,
+    max: Math.PI,
+    axis: 'x',
+    truckValue: Math.PI,
+  },
+  arms: {
+    type: TRANSFORMATION_TYPE.TRANSLATION,
+    min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w,
+    max: GEOMETRY.chest.w / 2,
+    axis: 'x',
+    truckValue: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w,
+  },
+});
+
+const ROBOT_DYNAMIC_PARTS = Object.freeze([
+  { part: 'rightFoot', profile: 'feet' },
+  { part: 'leftFoot', profile: 'feet' },
+  { part: 'rightLowerLimb', profile: 'lowerLimbs' },
+  { part: 'leftLowerLimb', profile: 'lowerLimbs' },
+  { part: 'head', profile: 'head' },
+  { part: 'rightArm', profile: 'arms' },
+  { part: 'leftArm', profile: 'arms' },
+]);
 
 const MOVEMENT_TIME = 700; // milliseconds
 const TRAILER_MOVEMENT_SPEED = 10; // units/second
@@ -450,6 +496,16 @@ function createRightTrailerWheels(wheelSupportGroup) {
 //////////////////////
 function checkCollisions() {
   'use strict';
+
+}
+
+function isRobotInTruckMode() {
+  return ROBOT_DYNAMIC_PARTS.every(({ part, profile }) => {
+    const { type, axis, truckValue } = DEGREES_OF_FREEDOM[profile];
+
+    return type.comparator(dynamicElements[part], truckValue, axis);
+  });
+}
 }
 
 ///////////////////////
@@ -463,13 +519,9 @@ function handleCollisions() {
 /* UPDATE */
 ////////////
 function update(timeDelta) {
-  rotateDynamicPart(timeDelta, { part: 'rightFoot', profile: 'feet' });
-  rotateDynamicPart(timeDelta, { part: 'leftFoot', profile: 'feet' });
-  rotateDynamicPart(timeDelta, { part: 'rightLowerLimb', profile: 'lowerLimbs' });
-  rotateDynamicPart(timeDelta, { part: 'leftLowerLimb', profile: 'lowerLimbs' });
-  rotateDynamicPart(timeDelta, { part: 'head', profile: 'head' });
-  moveDynamicPart(timeDelta, { part: 'rightArm', profile: 'arms' });
-  moveDynamicPart(timeDelta, { part: 'leftArm', profile: 'arms' });
+  ROBOT_DYNAMIC_PARTS.forEach((part) =>
+    DEGREES_OF_FREEDOM[part.profile].type.applier(timeDelta, part)
+  );
 
   // this allows movement along individual axes
   moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerX' });
