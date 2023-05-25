@@ -56,7 +56,7 @@ const GEOMETRY = Object.freeze({
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
 const CAMERA_GEOMETRY = Object.freeze({
-  robotAabb: [new THREE.Vector3(-7, -10, -7), new THREE.Vector3(7, 10, 15)],
+  robotAabb: [new THREE.Vector3(-7, -13, -7), new THREE.Vector3(7, 10, 15)],
   trailerAabb: [new THREE.Vector3(-7, -5, -5), new THREE.Vector3(7, 10, 20)],
   orthogonalUsableAreaHeight:
     GEOMETRY.shank.h +
@@ -79,7 +79,7 @@ const DEGREES_OF_FREEDOM = Object.freeze({
 });
 
 const MOVEMENT_TIME = 700; // milliseconds
-const TRAILER_MOVEMENT_SPEED = 10; // units/second
+const TRAILER_MOVEMENT_SPEED = 100; // units/second
 const DELTA = Object.freeze(
   Object.fromEntries([
     // automatically generate DELTAs for parts with defined degrees of freedom
@@ -123,17 +123,19 @@ const cameras = {
     bottomAxis: 'x',
     sideAxis: 'z',
     invertSideAxis: true,
-    y: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap,
+    y: CAMERA_GEOMETRY.orthogonalDistance
   }),
-  /*
   // orthogonal projection: isometric view
-  orthogonal: createOrthogonalCamera({
+  orthogonal: createIsometricOrthogonalCamera({
+    bottomAxis: 'x',
+    sideAxis: 'y',
     x: -10,
-    y: 20,
+    y: 30,
     z: -10,
     height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
     offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 3,
   }),
+  /*
   // perspective projection: isometric view
   perspective: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
   */
@@ -144,6 +146,7 @@ const cameras = {
 /////////////////////
 /* CREATE SCENE(S) */
 /////////////////////
+let minPoint, maxPoint; // TODO debug; remove later
 function createScene() {
   'use strict';
 
@@ -153,6 +156,13 @@ function createScene() {
 
   createRobot();
   createTrailer();
+
+  // TODO debug; remove later
+  const geometry = new THREE.BoxGeometry();
+  minPoint = new THREE.Mesh(geometry, MATERIAL.chest);
+  maxPoint = new THREE.Mesh(geometry, MATERIAL.arm);
+  scene.add(minPoint);
+  scene.add(maxPoint);
 }
 
 //////////////////////
@@ -238,6 +248,57 @@ function createOrthogonalCamera({
 
   const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
   camera.position.set(x, y, z);
+  camera.lookAt(0, 0, 0);
+
+  return { getCameraParameters, camera };
+}
+
+function createIsometricOrthogonalCamera({
+  y = 0,
+  invertBottomAxis = false,
+  invertSideAxis = false,
+}) {
+  const getCameraParameters = () => {
+    if (!dynamicElements.robot) {
+      return { top: 1, bottom: 1, left: 1, right: 1 }; // FIXME
+    }
+
+    const { min, max } = getVisibleAreaBoundingBox();
+
+    const bottomAxis = 'x';
+    const sideAxis = 'y';
+
+    const planeNormal = new THREE.Vector3(-1, 0, -1).normalize();
+
+    const maxLeft = planeNormal.dot(max);
+    const minRight = planeNormal.dot(min);
+
+    const minWidth = minRight - maxLeft;
+    const minHeight = max[sideAxis] - min[sideAxis];
+    const offsetX = ((invertBottomAxis ? -1 : 1) * (minRight + maxLeft)) / 2;
+    const offsetY = ((invertSideAxis ? -1 : 1) * (max[sideAxis] + min[sideAxis])) / 2;
+
+    const aspectRatio = window.innerWidth / window.innerHeight;
+    let height = minHeight;
+    let width = height * aspectRatio;
+
+    if (width < minWidth) {
+      width = minWidth;
+      height = width / aspectRatio;
+    }
+
+    const top = height / 2 + offsetY;
+    const bottom = -height / 2 + offsetY;
+    const left = -width / 2 + offsetX;
+    const right = width / 2 + offsetX;
+
+    return { top, bottom, left, right };
+  };
+
+  const { top, bottom, left, right, position } = getCameraParameters();
+
+  const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
+  camera.position.set(500, y, -500);
   camera.lookAt(0, 0, 0);
 
   return { getCameraParameters, camera };
@@ -534,6 +595,11 @@ function update(timeDelta) {
 
   // refresh camera to adjust to objects' position
   refreshCameraParameters(activeCamera);
+
+  const { min, max } = getVisibleAreaBoundingBox();
+
+  minPoint.position.copy(min);
+  maxPoint.position.copy(max);
 }
 
 function rotateDynamicPart(timeDelta, { part, profile }) {
