@@ -77,14 +77,20 @@ const DEGREES_OF_FREEDOM = Object.freeze({
 });
 
 const MOVEMENT_TIME = 700; // milliseconds
+const TRAILER_MOVEMENT_SPEED = 10; // units/second
 const DELTA = Object.freeze(
-  Object.fromEntries(
-    Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max, axis }]) => {
+  Object.fromEntries([
+    // automatically generate DELTAs for parts with defined degrees of freedom
+    ...Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max, axis }]) => {
       const val = (max - min) / MOVEMENT_TIME;
 
       return [key, new THREE.Vector3(0, 0, 0).setComponent(['x', 'y', 'z'].indexOf(axis), val)];
-    })
-  )
+    }),
+
+    // DELTAs for parts without defined degrees of freedom
+    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED / MOVEMENT_TIME, 0, 0)],
+    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED / MOVEMENT_TIME)],
+  ])
 );
 
 //////////////////////
@@ -388,6 +394,8 @@ function createTrailer() {
     z: GEOMETRY.initialTrailerOffset,
     parent: scene,
   });
+  dynamicElements.trailer = trailer;
+
   createBoxMesh({
     name: 'trailerContainer',
     anchor: [0, 1, 1],
@@ -458,6 +466,10 @@ function update(timeDelta) {
   rotateDynamicPart(timeDelta, { part: 'head', profile: 'head' });
   moveDynamicPart(timeDelta, { part: 'rightArm', profile: 'arms' });
   moveDynamicPart(timeDelta, { part: 'leftArm', profile: 'arms' });
+
+  // this allows movement along individual axes
+  moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerX' });
+  moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerZ' });
 }
 
 function rotateDynamicPart(timeDelta, { part, profile }) {
@@ -607,6 +619,12 @@ const keyHandlers = {
   // head
   KeyR: transformDynamicPartHandleFactory({ parts: ['head'], axis: 'x', direction: -1 }),
   KeyF: transformDynamicPartHandleFactory({ parts: ['head'], axis: 'x', direction: 1 }),
+
+  // trailer
+  ArrowUp: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'z', direction: 1 }),
+  ArrowDown: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'z', direction: -1 }),
+  ArrowLeft: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'x', direction: 1 }),
+  ArrowRight: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'x', direction: -1 }),
 };
 
 function onKeyDown(event) {
