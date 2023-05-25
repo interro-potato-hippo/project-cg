@@ -132,10 +132,8 @@ const cameras = {
     y: 30,
     z: -CAMERA_GEOMETRY.orthogonalDistance,
   }),
-  /*
   // perspective projection: isometric view
   perspective: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
-  */
   // TODO: remove, for debug only
   perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
 };
@@ -226,6 +224,7 @@ function createOrthogonalCamera({
     let height = minHeight;
     let width = height * aspectRatio;
 
+    // fit to aspect ratio
     if (width < minWidth) {
       width = minWidth;
       height = width / aspectRatio;
