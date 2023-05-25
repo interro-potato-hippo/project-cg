@@ -1,6 +1,8 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
+const FLOAT_COMPARISON_THRESHOLD = 1e-4;
+
 const MATERIAL = Object.freeze({
   chest: new THREE.MeshBasicMaterial({ color: 0xff4b3e }),
   back: new THREE.MeshBasicMaterial({ color: 0x101935 }),
@@ -50,8 +52,47 @@ const GEOMETRY = Object.freeze({
   trailerConnectorDepth: 1.5,
   trailerWheelSupport: { w: 4, h: 1, d: 4.5 },
   trailerWheelGap: 0.5,
-  initialTrailerOffset: 5,
+  initialTrailerOffset: 10,
 });
+
+// absolute coordinates
+const ROBOT_AABB_POINTS = {
+  min: new THREE.Vector3(
+    -GEOMETRY.chest.w / 2,
+    GEOMETRY.shank.h + GEOMETRY.thigh.h - GEOMETRY.wheel.r,
+    -GEOMETRY.chest.d / 2
+  ),
+  max: new THREE.Vector3(
+    GEOMETRY.chest.w / 2,
+    GEOMETRY.shank.h +
+      GEOMETRY.thigh.h +
+      GEOMETRY.waist.h +
+      GEOMETRY.abdomen.h +
+      GEOMETRY.chest.h +
+      GEOMETRY.exhaust.h / 2,
+    GEOMETRY.thigh.h + GEOMETRY.shank.h + GEOMETRY.feet.d
+  ),
+};
+
+// relative coordinates (to trailer pivot)
+const RELATIVE_TRAILER_AABB_POINTS = {
+  min: new THREE.Vector3(
+    -GEOMETRY.trailerContainer.w / 2,
+    -GEOMETRY.trailerWheelSupport.h - GEOMETRY.wheel.r,
+    0
+  ),
+  max: new THREE.Vector3(
+    GEOMETRY.trailerContainer.w / 2,
+    GEOMETRY.trailerContainer.h,
+    GEOMETRY.trailerContainer.d
+  ),
+};
+
+const TRAILER_ANIMATION_TARGET = new THREE.Vector3(
+  0,
+  GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.waist.h,
+  GEOMETRY.thigh.h + GEOMETRY.shank.h - 3 * GEOMETRY.wheel.r - GEOMETRY.wheelGap
+);
 
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
@@ -71,12 +112,58 @@ const CAMERA_GEOMETRY = Object.freeze({
   perspectiveFov: 80,
 });
 
-const DEGREES_OF_FREEDOM = Object.freeze({
-  feet: { min: -Math.PI / 2, max: 0, axis: 'x' },
-  lowerLimbs: { min: -Math.PI / 2, max: 0, axis: 'x' },
-  head: { min: 0, max: Math.PI, axis: 'x' },
-  arms: { min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w, max: GEOMETRY.chest.w / 2, axis: 'x' },
+const TRANSFORMATION_TYPE = Object.freeze({
+  ROTATION: {
+    applier: rotateDynamicPart,
+    comparator: (obj, expected, axis) => obj?.rotation[axis] === expected,
+  },
+  TRANSLATION: {
+    applier: moveDynamicPart,
+    comparator: (obj, expected, axis) => obj?.position[axis] === expected,
+  },
 });
+
+// degrees of freedom per profile
+const DEGREES_OF_FREEDOM = Object.freeze({
+  feet: {
+    type: TRANSFORMATION_TYPE.ROTATION,
+    min: -Math.PI / 2,
+    max: 0,
+    axis: 'x',
+    truckValue: -Math.PI / 2,
+  },
+  lowerLimbs: {
+    type: TRANSFORMATION_TYPE.ROTATION,
+    min: -Math.PI / 2,
+    max: 0,
+    axis: 'x',
+    truckValue: -Math.PI / 2,
+  },
+  head: {
+    type: TRANSFORMATION_TYPE.ROTATION,
+    min: 0,
+    max: Math.PI,
+    axis: 'x',
+    truckValue: Math.PI,
+  },
+  arms: {
+    type: TRANSFORMATION_TYPE.TRANSLATION,
+    min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w,
+    max: GEOMETRY.chest.w / 2,
+    axis: 'x',
+    truckValue: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w,
+  },
+});
+
+const ROBOT_DYNAMIC_PARTS = Object.freeze([
+  { part: 'rightFoot', profile: 'feet' },
+  { part: 'leftFoot', profile: 'feet' },
+  { part: 'rightLowerLimb', profile: 'lowerLimbs' },
+  { part: 'leftLowerLimb', profile: 'lowerLimbs' },
+  { part: 'head', profile: 'head' },
+  { part: 'rightArm', profile: 'arms' },
+  { part: 'leftArm', profile: 'arms' },
+]);
 
 const MOVEMENT_TIME = 700; // milliseconds
 const TRAILER_MOVEMENT_SPEED = 100; // units/second
@@ -101,6 +188,8 @@ const DELTA = Object.freeze(
 let renderer, scene;
 let activeCamera;
 let prevTimestamp;
+let trailerColliding = false,
+  trailerAnimating = false;
 
 const dynamicElements = {};
 
@@ -517,6 +606,36 @@ function createRightTrailerWheels(wheelSupportGroup) {
 //////////////////////
 function checkCollisions() {
   'use strict';
+
+  if (!dynamicElements.trailer || !isRobotInTruckMode()) return false;
+
+  const { max: rMax, min: rMin } = ROBOT_AABB_POINTS;
+  const { max: tMax, min: tMin } = getTrailerAABBPoints();
+
+  return (
+    rMin.x <= tMax.x &&
+    rMax.x >= tMin.x &&
+    rMin.y <= tMax.y &&
+    rMax.y >= tMin.y &&
+    rMin.z <= tMax.z &&
+    rMax.z >= tMin.z
+  );
+}
+
+function isRobotInTruckMode() {
+  return ROBOT_DYNAMIC_PARTS.every(({ part, profile }) => {
+    const { type, axis, truckValue } = DEGREES_OF_FREEDOM[profile];
+
+    return type.comparator(dynamicElements[part], truckValue, axis);
+  });
+}
+
+function getTrailerAABBPoints() {
+  const { max: relMax, min: relMin } = RELATIVE_TRAILER_AABB_POINTS;
+  return {
+    max: dynamicElements.trailer.position.clone().add(relMax),
+    min: dynamicElements.trailer.position.clone().add(relMin),
+  };
 }
 
 ///////////////////////
@@ -524,23 +643,38 @@ function checkCollisions() {
 ///////////////////////
 function handleCollisions() {
   'use strict';
+
+  if (trailerAnimating) return;
+  trailerAnimating = true;
+
+  dynamicElements.trailer.userData.delta = new THREE.Vector3(1, 1, 1);
 }
 
 ////////////
 /* UPDATE */
 ////////////
 function update(timeDelta) {
-  rotateDynamicPart(timeDelta, { part: 'rightFoot', profile: 'feet' });
-  rotateDynamicPart(timeDelta, { part: 'leftFoot', profile: 'feet' });
-  rotateDynamicPart(timeDelta, { part: 'rightLowerLimb', profile: 'lowerLimbs' });
-  rotateDynamicPart(timeDelta, { part: 'leftLowerLimb', profile: 'lowerLimbs' });
-  rotateDynamicPart(timeDelta, { part: 'head', profile: 'head' });
-  moveDynamicPart(timeDelta, { part: 'rightArm', profile: 'arms' });
-  moveDynamicPart(timeDelta, { part: 'leftArm', profile: 'arms' });
+  ROBOT_DYNAMIC_PARTS.forEach((part) =>
+    DEGREES_OF_FREEDOM[part.profile].type.applier(timeDelta, part)
+  );
 
-  // this allows movement along individual axes
-  moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerX' });
-  moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerZ' });
+  if (trailerAnimating) {
+    moveDynamicPart(timeDelta, { part: 'trailer' }, ({ group }) => {
+      const direction = new THREE.Vector3().subVectors(TRAILER_ANIMATION_TARGET, group.position);
+
+      if (direction.lengthSq() <= FLOAT_COMPARISON_THRESHOLD) {
+        group.userData.delta = new THREE.Vector3();
+        trailerAnimating = false;
+        return new THREE.Vector3();
+      }
+
+      return direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED / 1000);
+    });
+  } else {
+    // this allows movement along individual axes (key-controlled)
+    moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerX' });
+    moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerZ' });
+  }
 
   // refresh camera to adjust to objects' position
   refreshCameraParameters(activeCamera);
@@ -551,7 +685,11 @@ function update(timeDelta) {
   maxPoint.position.copy(max);
 }
 
-function rotateDynamicPart(timeDelta, { part, profile }) {
+function rotateDynamicPart(
+  timeDelta,
+  { part, profile },
+  deltaSupplier = ({ profile }) => DELTA[profile]
+) {
   const group = dynamicElements[part];
   if (!group.userData?.delta) {
     return;
@@ -559,7 +697,10 @@ function rotateDynamicPart(timeDelta, { part, profile }) {
 
   const props = DEGREES_OF_FREEDOM[profile];
 
-  const delta = group.userData.delta.clone().multiply(DELTA[profile]).multiplyScalar(timeDelta);
+  const delta = group.userData.delta
+    .clone()
+    .multiply(deltaSupplier({ part, profile, group }))
+    .multiplyScalar(timeDelta);
 
   group.rotation.fromArray(
     ['x', 'y', 'z'].map((axis) => {
@@ -572,7 +713,11 @@ function rotateDynamicPart(timeDelta, { part, profile }) {
   );
 }
 
-function moveDynamicPart(timeDelta, { part, profile }) {
+function moveDynamicPart(
+  timeDelta,
+  { part, profile },
+  deltaSupplier = ({ profile }) => DELTA[profile]
+) {
   const group = dynamicElements[part];
   if (!group.userData?.delta) {
     return;
@@ -580,7 +725,10 @@ function moveDynamicPart(timeDelta, { part, profile }) {
 
   const props = DEGREES_OF_FREEDOM[profile];
 
-  const delta = group.userData.delta.clone().multiply(DELTA[profile]).multiplyScalar(timeDelta);
+  const delta = group.userData.delta
+    .clone()
+    .multiply(deltaSupplier({ part, profile, group }))
+    .multiplyScalar(timeDelta);
 
   group.position.fromArray(
     ['x', 'y', 'z'].map((axis) => {
@@ -628,6 +776,15 @@ function init() {
 /////////////////////
 function animate(timestamp) {
   const timeDelta = timestamp - prevTimestamp;
+
+  if (checkCollisions()) {
+    if (!trailerColliding) {
+      handleCollisions();
+    }
+    trailerColliding = true;
+  } else {
+    trailerColliding = false;
+  }
 
   update(timeDelta);
 
@@ -745,9 +902,20 @@ function transformDynamicPartHandleFactory({ parts, axis, direction }) {
       return;
     }
 
+    if (trailerAnimating) return;
+
     parts.forEach((part) => {
       const userData = dynamicElements[part].userData || (dynamicElements[part].userData = {});
       const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
+
+      // if this key-up corresponds to a key-down that was ignored while
+      // the trailer was animating (or a key-down that was canceled at
+      // the beginning of the animation), ignore it so it doesn't cause an
+      // unnecessary negative delta
+      if (isKeyUp && delta.lengthSq() <= FLOAT_COMPARISON_THRESHOLD) {
+        return;
+      }
+
       // Use clamp since not all keydown event have a corresponding keyup event
       delta[axis] = THREE.Math.clamp(delta[axis] + (isKeyUp ? -direction : direction), -1, 1);
     });
@@ -757,7 +925,7 @@ function transformDynamicPartHandleFactory({ parts, axis, direction }) {
 ///////////////////////
 /* KEY UP CALLBACK */
 ///////////////////////
-function onKeyUp(e) {
+function onKeyUp(event) {
   'use strict';
 
   let { code } = event;
