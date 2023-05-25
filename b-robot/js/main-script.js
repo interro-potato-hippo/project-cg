@@ -577,7 +577,7 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 // FIXME recheck transformation keys
-const keyDownHandlers = {
+const keyHandlers = {
   // TODO: remove; for debug only
   Digit0: changeActiveCameraHandleFactory(cameras.perspectiveWithOrbitalControls),
   Digit1: changeActiveCameraHandleFactory(cameras.front),
@@ -587,41 +587,41 @@ const keyDownHandlers = {
   Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
   // feet
-  KeyQ: rotateBodyPartHandleFactory({
+  KeyQ: transformBodyPartHandleFactory({
     bodyParts: ['rightFeet', 'leftFeet'],
     axis: 'x',
     direction: 1,
   }),
-  KeyA: rotateBodyPartHandleFactory({
+  KeyA: transformBodyPartHandleFactory({
     bodyParts: ['rightFeet', 'leftFeet'],
     axis: 'x',
     direction: -1,
   }),
   // waist
-  KeyW: rotateBodyPartHandleFactory({
+  KeyW: transformBodyPartHandleFactory({
     bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
     axis: 'x',
     direction: 1,
   }),
-  KeyS: rotateBodyPartHandleFactory({
+  KeyS: transformBodyPartHandleFactory({
     bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
     axis: 'x',
     direction: -1,
   }),
   // arms
-  KeyE: rotateBodyPartHandleFactory({
+  KeyE: transformBodyPartHandleFactory({
     bodyParts: ['rightArm', 'leftArm'],
     axis: 'x',
     direction: 1,
   }),
-  KeyD: rotateBodyPartHandleFactory({
+  KeyD: transformBodyPartHandleFactory({
     bodyParts: ['rightArm', 'leftArm'],
     axis: 'x',
     direction: -1,
   }),
   // head
-  KeyR: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 1 }),
-  KeyF: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: -1 }),
+  KeyR: transformBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: -1 }),
+  KeyF: transformBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 1 }),
 };
 
 function onKeyDown(event) {
@@ -634,23 +634,23 @@ function onKeyDown(event) {
     code = code.replace('Numpad', 'Digit');
   }
 
-  keyDownHandlers[code]?.(event);
+  keyHandlers[code]?.(event, false);
 }
 
-function wireframeToggleHandle(_event) {
+function wireframeToggleHandle(_event, _isKeyUp) {
   Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
 }
 
 function changeActiveCameraHandleFactory(cameraDescriptor) {
-  return (_event) => {
+  return (_event, _isKeyUp) => {
     refreshCameraParameters(cameraDescriptor);
     activeCamera = cameraDescriptor;
   };
 }
 
-function rotateBodyPartHandleFactory({ bodyParts, axis, direction }) {
+function transformBodyPartHandleFactory({ bodyParts, axis, direction }) {
   // FIXME this sometimes does not work
-  return (event) => {
+  return (event, isKeyUp) => {
     if (event.repeat) {
       // ignore holding down keys
       return;
@@ -659,7 +659,7 @@ function rotateBodyPartHandleFactory({ bodyParts, axis, direction }) {
     bodyParts.forEach((bodyPart) => {
       const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
       const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
-      delta[axis] += direction;
+      delta[axis] += (isKeyUp ? -direction : direction);
     });
   };
 }
@@ -667,51 +667,12 @@ function rotateBodyPartHandleFactory({ bodyParts, axis, direction }) {
 ///////////////////////
 /* KEY UP CALLBACK */
 ///////////////////////
-const keyUpHandlers = {
-  // feet
-  KeyQ: rotateBodyPartHandleFactory({
-    bodyParts: ['rightFeet', 'leftFeet'],
-    axis: 'x',
-    direction: -1,
-  }),
-  KeyA: rotateBodyPartHandleFactory({
-    bodyParts: ['rightFeet', 'leftFeet'],
-    axis: 'x',
-    direction: 1,
-  }),
-  // waist
-  KeyW: rotateBodyPartHandleFactory({
-    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
-    axis: 'x',
-    direction: -1,
-  }),
-  KeyS: rotateBodyPartHandleFactory({
-    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
-    axis: 'x',
-    direction: 1,
-  }),
-  // arms
-  KeyE: rotateBodyPartHandleFactory({
-    bodyParts: ['rightArm', 'leftArm'],
-    axis: 'x',
-    direction: -1,
-  }),
-  KeyD: rotateBodyPartHandleFactory({
-    bodyParts: ['rightArm', 'leftArm'],
-    axis: 'x',
-    direction: 1,
-  }),
-  // head
-  KeyR: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: -1 }),
-  KeyF: rotateBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 1 }),
-};
-
 function onKeyUp(e) {
   'use strict';
 
   let { code } = event;
 
-  keyUpHandlers[code]?.(event);
+  keyHandlers[code]?.(event, true);
 }
 
 ///////////////
