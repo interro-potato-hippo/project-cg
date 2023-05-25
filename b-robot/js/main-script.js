@@ -652,6 +652,7 @@ function transformBodyPartHandleFactory({ bodyParts, axis, direction }) {
     bodyParts.forEach((bodyPart) => {
       const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
       const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
+      // Use clamp since not all keydown event have a corresponding keyup event
       delta[axis] = THREE.Math.clamp(delta[axis] + (isKeyUp ? -direction : direction), -1, 1);
     });
   };
