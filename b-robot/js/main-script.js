@@ -243,7 +243,7 @@ function createRobot() {
     parent: waistGroup,
   });
   const { lowerLimb: rightLowerLimb, feet: rightFoot } = createRightLowerLimb(waistGroup);
-  const { lowerLimb: leftLowerLimb, feet: leftFoot } = buildSymmetric(
+  const { lowerLimb: leftLowerLimb, feet: leftFoot } = buildSymmetricX(
     createRightLowerLimb,
     waistGroup
   );
@@ -253,7 +253,7 @@ function createRobot() {
   bodyElements.leftFoot = leftFoot;
 
   const { arm: rightArm } = createRightUpperLimb(robot);
-  const { arm: leftArm } = buildSymmetric(createRightUpperLimb, robot);
+  const { arm: leftArm } = buildSymmetricX(createRightUpperLimb, robot);
   bodyElements.rightArm = rightArm;
   bodyElements.leftArm = leftArm;
 
@@ -266,7 +266,7 @@ function createRobot() {
     parent: headGroup,
   });
   createRightHeadElements(headGroup);
-  buildSymmetric(createRightHeadElements, headGroup);
+  buildSymmetricX(createRightHeadElements, headGroup);
 }
 
 function createRightLowerLimb(waistGroup) {
@@ -418,7 +418,7 @@ function createTrailer() {
   });
 
   createRightTrailerWheels(wheelSupportGroup);
-  buildSymmetric(createRightTrailerWheels, wheelSupportGroup);
+  buildSymmetricX(createRightTrailerWheels, wheelSupportGroup);
 }
 
 function createRightTrailerWheels(wheelSupportGroup) {
@@ -742,6 +742,6 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
  * Wrapper to `createGroup` that creates a group with a
  * symmetry on the X axis.
  */
-function buildSymmetric(builder, parent) {
+function buildSymmetricX(builder, parent) {
   return builder(createGroup({ scale: [-1, 1, 1], parent }));
 }
