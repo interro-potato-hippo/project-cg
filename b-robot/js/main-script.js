@@ -77,28 +77,15 @@ const DEGREES_OF_FREEDOM = Object.freeze({
 });
 
 const MOVEMENT_TIME = 700; // miliseconds
-const DELTA = Object.freeze({
-  feet: new THREE.Vector3(
-    (DEGREES_OF_FREEDOM.feet.max - DEGREES_OF_FREEDOM.feet.min) / MOVEMENT_TIME,
-    0,
-    0
-  ),
-  lowerLimbs: new THREE.Vector3(
-    (DEGREES_OF_FREEDOM.lowerLimbs.max - DEGREES_OF_FREEDOM.lowerLimbs.min) / MOVEMENT_TIME,
-    0,
-    0
-  ),
-  head: new THREE.Vector3(
-    (DEGREES_OF_FREEDOM.head.max - DEGREES_OF_FREEDOM.head.min) / MOVEMENT_TIME,
-    0,
-    0
-  ),
-  arms: new THREE.Vector3(
-    (DEGREES_OF_FREEDOM.arms.max - DEGREES_OF_FREEDOM.arms.min) / MOVEMENT_TIME,
-    0,
-    0
-  ),
-});
+const DELTA = Object.freeze(
+  Object.fromEntries(
+    Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max, axis }]) => {
+      const val = (max - min) / MOVEMENT_TIME;
+
+      return [key, new THREE.Vector3(0, 0, 0).setComponent(['x', 'y', 'z'].indexOf(axis), val)];
+    })
+  )
+);
 
 //////////////////////
 /* GLOBAL VARIABLES */
