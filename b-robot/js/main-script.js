@@ -76,7 +76,7 @@ const DEGREES_OF_FREEDOM = Object.freeze({
   arms: { min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w, max: GEOMETRY.chest.w / 2, axis: 'x' },
 });
 
-const MOVEMENT_TIME = 700; // miliseconds
+const MOVEMENT_TIME = 700; // milliseconds
 const DELTA = Object.freeze(
   Object.fromEntries(
     Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max, axis }]) => {
