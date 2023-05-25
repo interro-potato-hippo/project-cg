@@ -69,11 +69,30 @@ const CAMERA_GEOMETRY = Object.freeze({
   perspectiveFov: 80,
 });
 
+const DEGREES_OF_FREEDOM = Object.freeze({
+  feet: { min: -Math.PI / 2, max: 0, axis: 'x' },
+  lowerLimbs: { min: -Math.PI / 2, max: 0, axis: 'x' },
+  head: { min: 0, max: Math.PI, axis: 'x' },
+  arms: { min: GEOMETRY.chest.w / 2 - GEOMETRY.arm.w, max: GEOMETRY.chest.w / 2, axis: 'x' },
+});
+
+const MOVEMENT_TIME = 700; // miliseconds
+const DELTA = Object.freeze(
+  Object.fromEntries(
+    Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max, axis }]) => {
+      const val = (max - min) / MOVEMENT_TIME;
+
+      return [key, new THREE.Vector3(0, 0, 0).setComponent(['x', 'y', 'z'].indexOf(axis), val)];
+    })
+  )
+);
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
 let renderer, scene;
 let activeCamera;
+let prevTimestamp;
 
 const cameras = {
   // front view
@@ -106,6 +125,8 @@ const cameras = {
   // TODO: remove, for debug only
   perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
 };
+
+const bodyElements = {};
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -217,14 +238,23 @@ function createRobot() {
     anchor: [0, 1, -1],
     parent: waistGroup,
   });
-  createRightLowerLimb(waistGroup);
-  buildSymmetric(createRightLowerLimb, waistGroup);
+  const { lowerLimb: rightLowerLimb, feet: rightFoot } = createRightLowerLimb(waistGroup);
+  const { lowerLimb: leftLowerLimb, feet: leftFoot } = buildSymmetric(
+    createRightLowerLimb,
+    waistGroup
+  );
+  bodyElements.rightLowerLimb = rightLowerLimb;
+  bodyElements.rightFoot = rightFoot;
+  bodyElements.leftLowerLimb = leftLowerLimb;
+  bodyElements.leftFoot = leftFoot;
 
-  createRightUpperLimb(robot);
-  buildSymmetric(createRightUpperLimb, robot);
+  const { arm: rightArm } = createRightUpperLimb(robot);
+  const { arm: leftArm } = buildSymmetric(createRightUpperLimb, robot);
+  bodyElements.rightArm = rightArm;
+  bodyElements.leftArm = leftArm;
 
-  // TODO add head's degree of movement
   const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
+  bodyElements.head = headGroup;
 
   createBoxMesh({
     name: 'head',
@@ -243,21 +273,26 @@ function createRightLowerLimb(waistGroup) {
     parent: waistGroup,
   });
 
-  // TODO add legs' degree of movement
   const lowerLimbsGroup = createGroup({
-    x: GEOMETRY.legGap / 2,
-    y: -GEOMETRY.thigh.h,
+    y: GEOMETRY.thigh.d / 2,
+    z: -GEOMETRY.thigh.d / 2,
     parent: waistGroup,
+  });
+  const rotatedLowerLimbsGroup = createGroup({
+    x: GEOMETRY.legGap / 2,
+    y: -GEOMETRY.thigh.d / 2 - GEOMETRY.thigh.h,
+    z: GEOMETRY.thigh.d / 2,
+    parent: lowerLimbsGroup,
   });
   createBoxMesh({
     name: 'thigh',
     anchor: [1, 1, -1],
-    parent: lowerLimbsGroup,
+    parent: rotatedLowerLimbsGroup,
   });
 
   const shankGroup = createGroup({
     y: -GEOMETRY.shank.h,
-    parent: lowerLimbsGroup,
+    parent: rotatedLowerLimbsGroup,
   });
   createBoxMesh({
     name: 'shank',
@@ -265,12 +300,15 @@ function createRightLowerLimb(waistGroup) {
     parent: shankGroup,
   });
 
-  // TODO add feet's degree of movement
+  const feetGroup = createGroup({
+    y: GEOMETRY.feet.h / 2,
+    parent: shankGroup,
+  });
   createBoxMesh({
     name: 'feet',
     z: -GEOMETRY.shank.d / 2,
-    anchor: [1, 1, -1],
-    parent: shankGroup,
+    anchor: [1, 0, -1],
+    parent: feetGroup,
   });
 
   // middle wheel (on the shank)
@@ -290,6 +328,8 @@ function createRightLowerLimb(waistGroup) {
     z: -GEOMETRY.shank.d / 2,
     parent: shankGroup,
   });
+
+  return { lowerLimb: lowerLimbsGroup, feet: feetGroup };
 }
 
 function createRightUpperLimb(chestGroup) {
@@ -319,6 +359,8 @@ function createRightUpperLimb(chestGroup) {
     z: GEOMETRY.arm.d / 2,
     parent: armGroup,
   });
+
+  return { arm: armGroup };
 }
 
 function createRightHeadElements(headGroup) {
@@ -409,8 +451,56 @@ function handleCollisions() {
 ////////////
 /* UPDATE */
 ////////////
-function update() {
-  'use strict';
+function update(timeDelta) {
+  rotateBodyPart(timeDelta, { bodyPart: 'rightFoot', profile: 'feet' });
+  rotateBodyPart(timeDelta, { bodyPart: 'leftFoot', profile: 'feet' });
+  rotateBodyPart(timeDelta, { bodyPart: 'rightLowerLimb', profile: 'lowerLimbs' });
+  rotateBodyPart(timeDelta, { bodyPart: 'leftLowerLimb', profile: 'lowerLimbs' });
+  rotateBodyPart(timeDelta, { bodyPart: 'head', profile: 'head' });
+  moveBodyPart(timeDelta, { bodyPart: 'rightArm', profile: 'arms' });
+  moveBodyPart(timeDelta, { bodyPart: 'leftArm', profile: 'arms' });
+}
+
+function rotateBodyPart(timeDelta, { bodyPart, profile }) {
+  const group = bodyElements[bodyPart];
+  if (!group.userData?.delta) {
+    return;
+  }
+
+  const props = DEGREES_OF_FREEDOM[profile];
+
+  const delta = group.userData.delta.clone().multiply(DELTA[profile]).multiplyScalar(timeDelta);
+
+  group.rotation.fromArray(
+    ['x', 'y', 'z'].map((axis) => {
+      const newValue = group.rotation[axis] + delta[axis];
+      if (props?.axis === axis) {
+        return THREE.Math.clamp(newValue, props.min, props.max);
+      }
+      return newValue;
+    })
+  );
+}
+
+function moveBodyPart(timeDelta, { bodyPart, profile }) {
+  const group = bodyElements[bodyPart];
+  if (!group.userData?.delta) {
+    return;
+  }
+
+  const props = DEGREES_OF_FREEDOM[profile];
+
+  const delta = group.userData.delta.clone().multiply(DELTA[profile]).multiplyScalar(timeDelta);
+
+  group.position.fromArray(
+    ['x', 'y', 'z'].map((axis) => {
+      const newValue = group.position[axis] + delta[axis];
+      if (props?.axis === axis) {
+        return THREE.Math.clamp(newValue, props.min, props.max);
+      }
+      return newValue;
+    })
+  );
 }
 
 /////////////
@@ -439,17 +529,21 @@ function init() {
   render();
 
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
   window.addEventListener('resize', onResize);
 }
 
 /////////////////////
 /* ANIMATION CYCLE */
 /////////////////////
-function animate() {
-  'use strict';
+function animate(timestamp) {
+  const timeDelta = timestamp - prevTimestamp;
+
+  update(timeDelta);
 
   render();
 
+  prevTimestamp = timestamp;
   requestAnimationFrame(animate);
 }
 
@@ -469,7 +563,7 @@ function onResize() {
 ///////////////////////
 /* KEY DOWN CALLBACK */
 ///////////////////////
-const keyDownHandlers = {
+const keyHandlers = {
   // TODO: remove; for debug only
   Digit0: changeActiveCameraHandleFactory(cameras.perspectiveWithOrbitalControls),
   Digit1: changeActiveCameraHandleFactory(cameras.front),
@@ -478,6 +572,42 @@ const keyDownHandlers = {
   Digit4: changeActiveCameraHandleFactory(cameras.orthogonal),
   Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
+  // feet
+  KeyQ: transformBodyPartHandleFactory({
+    bodyParts: ['rightFoot', 'leftFoot'],
+    axis: 'x',
+    direction: 1,
+  }),
+  KeyA: transformBodyPartHandleFactory({
+    bodyParts: ['rightFoot', 'leftFoot'],
+    axis: 'x',
+    direction: -1,
+  }),
+  // waist
+  KeyW: transformBodyPartHandleFactory({
+    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+    axis: 'x',
+    direction: 1,
+  }),
+  KeyS: transformBodyPartHandleFactory({
+    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+    axis: 'x',
+    direction: -1,
+  }),
+  // arms
+  KeyE: transformBodyPartHandleFactory({
+    bodyParts: ['rightArm', 'leftArm'],
+    axis: 'x',
+    direction: 1,
+  }),
+  KeyD: transformBodyPartHandleFactory({
+    bodyParts: ['rightArm', 'leftArm'],
+    axis: 'x',
+    direction: -1,
+  }),
+  // head
+  KeyR: transformBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: -1 }),
+  KeyF: transformBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 1 }),
 };
 
 function onKeyDown(event) {
@@ -490,17 +620,41 @@ function onKeyDown(event) {
     code = code.replace('Numpad', 'Digit');
   }
 
-  keyDownHandlers[code]?.(event);
+  keyHandlers[code]?.(event, false);
 }
 
-function wireframeToggleHandle(_event) {
+function wireframeToggleHandle(_event, isKeyUp) {
+  if (isKeyUp) {
+    return;
+  }
+
   Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
 }
 
 function changeActiveCameraHandleFactory(cameraDescriptor) {
-  return (_event) => {
+  return (_event, isKeyUp) => {
+    if (isKeyUp) {
+      return;
+    }
+
     refreshCameraParameters(cameraDescriptor);
     activeCamera = cameraDescriptor;
+  };
+}
+
+function transformBodyPartHandleFactory({ bodyParts, axis, direction }) {
+  // FIXME this sometimes does not work
+  return (event, isKeyUp) => {
+    if (event.repeat) {
+      // ignore holding down keys
+      return;
+    }
+
+    bodyParts.forEach((bodyPart) => {
+      const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
+      const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
+      delta[axis] += isKeyUp ? -direction : direction;
+    });
   };
 }
 
@@ -509,6 +663,10 @@ function changeActiveCameraHandleFactory(cameraDescriptor) {
 ///////////////////////
 function onKeyUp(e) {
   'use strict';
+
+  let { code } = event;
+
+  keyHandlers[code]?.(event, true);
 }
 
 ///////////////
