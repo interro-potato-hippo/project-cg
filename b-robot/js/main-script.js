@@ -50,7 +50,7 @@ const GEOMETRY = Object.freeze({
   trailerConnectorDepth: 1.5,
   trailerWheelSupport: { w: 4, h: 1, d: 4.5 },
   trailerWheelGap: 0.5,
-  initialTrailerOffset: 5,
+  initialTrailerOffset: 10,
 });
 
 const BACKGROUND = new THREE.Color(0xc0e8ee);
