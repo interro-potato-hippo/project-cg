@@ -643,7 +643,6 @@ function changeActiveCameraHandleFactory(cameraDescriptor) {
 }
 
 function transformBodyPartHandleFactory({ bodyParts, axis, direction }) {
-  // FIXME this sometimes does not work
   return (event, isKeyUp) => {
     if (event.repeat) {
       // ignore holding down keys
@@ -653,7 +652,7 @@ function transformBodyPartHandleFactory({ bodyParts, axis, direction }) {
     bodyParts.forEach((bodyPart) => {
       const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
       const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
-      delta[axis] += isKeyUp ? -direction : direction;
+      delta[axis] = THREE.Math.clamp(delta[axis] + (isKeyUp ? -direction : direction), -1, 1);
     });
   };
 }
