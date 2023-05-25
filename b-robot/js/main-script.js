@@ -56,6 +56,8 @@ const GEOMETRY = Object.freeze({
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
 const CAMERA_GEOMETRY = Object.freeze({
+  robotAabb: [new THREE.Vector3(-7, -10, -7), new THREE.Vector3(7, 10, 15)],
+  trailerAabb: [new THREE.Vector3(-7, -5, -5), new THREE.Vector3(7, 10, 20)],
   orthogonalUsableAreaHeight:
     GEOMETRY.shank.h +
     GEOMETRY.thigh.h +
@@ -65,7 +67,7 @@ const CAMERA_GEOMETRY = Object.freeze({
     GEOMETRY.head.h +
     GEOMETRY.antenna.h,
   orthogonalSafetyGap: 2,
-  orthogonalDistance: 10,
+  orthogonalDistance: 500,
   perspectiveFov: 80,
 });
 
@@ -100,24 +102,30 @@ let renderer, scene;
 let activeCamera;
 let prevTimestamp;
 
+const dynamicElements = {};
+
 const cameras = {
   // front view
   front: createOrthogonalCamera({
+    bottomAxis: 'x',
+    sideAxis: 'y',
+    invertBottomAxis: true,
     z: -CAMERA_GEOMETRY.orthogonalDistance,
-    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
-    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
   }),
   // side view
   side: createOrthogonalCamera({
+    bottomAxis: 'z',
+    sideAxis: 'y',
     x: -CAMERA_GEOMETRY.orthogonalDistance,
-    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
-    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
   }),
   // top view
   top: createOrthogonalCamera({
+    bottomAxis: 'x',
+    sideAxis: 'z',
+    invertSideAxis: true,
     y: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap,
-    height: CAMERA_GEOMETRY.orthogonalDistance,
   }),
+  /*
   // orthogonal projection: isometric view
   orthogonal: createOrthogonalCamera({
     x: -10,
@@ -128,11 +136,10 @@ const cameras = {
   }),
   // perspective projection: isometric view
   perspective: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
+  */
   // TODO: remove, for debug only
   perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
 };
-
-const dynamicElements = {};
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -157,6 +164,8 @@ function createCameras() {
   // set the initial camera
   activeCamera = cameras.front;
 
+  Object.values(cameras).forEach(refreshCameraParameters);
+
   const controls = new THREE.OrbitControls(
     cameras.perspectiveWithOrbitalControls.camera,
     renderer.domElement
@@ -166,10 +175,56 @@ function createCameras() {
   controls.update();
 }
 
-function createOrthogonalCamera({ x = 0, y = 0, z = 0, height, offsetX = 0, offsetY = 0 }) {
+function getVisibleAreaBoundingBox() {
+  const { robot, trailer } = dynamicElements;
+
+  return {
+    min: robot.position
+      .clone()
+      .add(CAMERA_GEOMETRY.robotAabb[0])
+      .min(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAabb[0])),
+    max: robot.position
+      .clone()
+      .add(CAMERA_GEOMETRY.robotAabb[1])
+      .max(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAabb[1])),
+  };
+}
+
+function createOrthogonalCamera({
+  bottomAxis,
+  sideAxis,
+  invertBottomAxis = false,
+  invertSideAxis = false,
+  x = 0,
+  y = 0,
+  z = 0,
+}) {
   const getCameraParameters = () => {
+    if (!dynamicElements.robot) {
+      return { top: 1, bottom: 1, left: 1, right: 1 }; // FIXME
+    }
+
+    const { min, max } = getVisibleAreaBoundingBox();
+
+    const minWidth = max[bottomAxis] - min[bottomAxis];
+    const minHeight = max[sideAxis] - min[sideAxis];
+    const offsetX = ((invertBottomAxis ? -1 : 1) * (max[bottomAxis] + min[bottomAxis])) / 2;
+    const offsetY = ((invertSideAxis ? -1 : 1) * (max[sideAxis] + min[sideAxis])) / 2;
+
     const aspectRatio = window.innerWidth / window.innerHeight;
-    const width = height * aspectRatio;
+    let height = minHeight;
+    let width = height * aspectRatio;
+
+    if (width < minWidth) {
+      width = minWidth;
+      height = width / aspectRatio;
+    }
+
+    // correctly orient top-down camera
+    if (invertSideAxis) {
+      height = -height;
+      width = -width;
+    }
 
     const top = height / 2 + offsetY;
     const bottom = -height / 2 + offsetY;
@@ -223,6 +278,8 @@ function refreshCameraParameters({ getCameraParameters, camera }) {
 function createRobot() {
   const chestHeight = GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.waist.h + GEOMETRY.abdomen.h;
   const robot = createGroup({ y: chestHeight, parent: scene });
+  dynamicElements.robot = robot;
+
   createBoxMesh({
     name: 'chest',
     anchor: [0, 1, 0],
@@ -474,6 +531,9 @@ function update(timeDelta) {
   // this allows movement along individual axes
   moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerX' });
   moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerZ' });
+
+  // refresh camera to adjust to objects' position
+  refreshCameraParameters(activeCamera);
 }
 
 function rotateDynamicPart(timeDelta, { part, profile }) {
