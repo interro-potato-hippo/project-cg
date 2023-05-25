@@ -107,33 +107,30 @@ const dynamicElements = {};
 const cameras = {
   // front view
   front: createOrthogonalCamera({
-    bottomAxis: 'x',
-    sideAxis: 'y',
-    invertBottomAxis: true,
+    bottomAxisPerpendicularVector: new THREE.Vector3(-1, 0, 0), // X axis
+    sideAxisPerpendicularVector: new THREE.Vector3(0, 1, 0), // Y axis
     z: -CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // side view
   side: createOrthogonalCamera({
-    bottomAxis: 'z',
-    sideAxis: 'y',
+    bottomAxisPerpendicularVector: new THREE.Vector3(0, 0, 1), // Z axis
+    sideAxisPerpendicularVector: new THREE.Vector3(0, 1, 0), // Y axis
     x: -CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // top view
   top: createOrthogonalCamera({
-    bottomAxis: 'x',
-    sideAxis: 'z',
-    invertSideAxis: true,
+    bottomAxisPerpendicularVector: new THREE.Vector3(1, 0, 0), // X axis
+    sideAxisPerpendicularVector: new THREE.Vector3(0, 0, -1), // Z axis
+    mirrorView: true,
     y: CAMERA_GEOMETRY.orthogonalDistance
   }),
   // orthogonal projection: isometric view
-  orthogonal: createIsometricOrthogonalCamera({
-    bottomAxis: 'x',
-    sideAxis: 'y',
-    x: -10,
+  orthogonal: createOrthogonalCamera({
+    bottomAxisPerpendicularVector: new THREE.Vector3(-1, 0, -1).normalize(),
+    sideAxisPerpendicularVector: new THREE.Vector3(0, 1, 0), // Y axis
+    x: CAMERA_GEOMETRY.orthogonalDistance,
     y: 30,
-    z: -10,
-    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
-    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 3,
+    z: -CAMERA_GEOMETRY.orthogonalDistance,
   }),
   /*
   // perspective projection: isometric view
@@ -201,13 +198,12 @@ function getVisibleAreaBoundingBox() {
 }
 
 function createOrthogonalCamera({
-  bottomAxis,
-  sideAxis,
-  invertBottomAxis = false,
-  invertSideAxis = false,
+  bottomAxisPerpendicularVector,
+  sideAxisPerpendicularVector,
   x = 0,
   y = 0,
   z = 0,
+  mirrorView = false,
 }) {
   const getCameraParameters = () => {
     if (!dynamicElements.robot) {
@@ -216,10 +212,15 @@ function createOrthogonalCamera({
 
     const { min, max } = getVisibleAreaBoundingBox();
 
-    const minWidth = max[bottomAxis] - min[bottomAxis];
-    const minHeight = max[sideAxis] - min[sideAxis];
-    const offsetX = ((invertBottomAxis ? -1 : 1) * (max[bottomAxis] + min[bottomAxis])) / 2;
-    const offsetY = ((invertSideAxis ? -1 : 1) * (max[sideAxis] + min[sideAxis])) / 2;
+    const maxLeft = bottomAxisPerpendicularVector.dot(max);
+    const minRight = bottomAxisPerpendicularVector.dot(min);
+    const minTop = sideAxisPerpendicularVector.dot(max);
+    const maxBottom = sideAxisPerpendicularVector.dot(min);
+
+    const minWidth = Math.abs(minRight - maxLeft);
+    const minHeight = Math.abs(minTop - maxBottom);
+    const offsetX = (minRight + maxLeft) / 2;
+    const offsetY = (minTop + maxBottom) / 2;
 
     const aspectRatio = window.innerWidth / window.innerHeight;
     let height = minHeight;
@@ -231,60 +232,9 @@ function createOrthogonalCamera({
     }
 
     // correctly orient top-down camera
-    if (invertSideAxis) {
+    if (mirrorView) {
       height = -height;
       width = -width;
-    }
-
-    const top = height / 2 + offsetY;
-    const bottom = -height / 2 + offsetY;
-    const left = -width / 2 + offsetX;
-    const right = width / 2 + offsetX;
-
-    return { top, bottom, left, right };
-  };
-
-  const { top, bottom, left, right } = getCameraParameters();
-
-  const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
-  camera.position.set(x, y, z);
-  camera.lookAt(0, 0, 0);
-
-  return { getCameraParameters, camera };
-}
-
-function createIsometricOrthogonalCamera({
-  y = 0,
-  invertBottomAxis = false,
-  invertSideAxis = false,
-}) {
-  const getCameraParameters = () => {
-    if (!dynamicElements.robot) {
-      return { top: 1, bottom: 1, left: 1, right: 1 }; // FIXME
-    }
-
-    const { min, max } = getVisibleAreaBoundingBox();
-
-    const bottomAxis = 'x';
-    const sideAxis = 'y';
-
-    const planeNormal = new THREE.Vector3(-1, 0, -1).normalize();
-
-    const maxLeft = planeNormal.dot(max);
-    const minRight = planeNormal.dot(min);
-
-    const minWidth = minRight - maxLeft;
-    const minHeight = max[sideAxis] - min[sideAxis];
-    const offsetX = ((invertBottomAxis ? -1 : 1) * (minRight + maxLeft)) / 2;
-    const offsetY = ((invertSideAxis ? -1 : 1) * (max[sideAxis] + min[sideAxis])) / 2;
-
-    const aspectRatio = window.innerWidth / window.innerHeight;
-    let height = minHeight;
-    let width = height * aspectRatio;
-
-    if (width < minWidth) {
-      width = minWidth;
-      height = width / aspectRatio;
     }
 
     const top = height / 2 + offsetY;
@@ -298,7 +248,7 @@ function createIsometricOrthogonalCamera({
   const { top, bottom, left, right, position } = getCameraParameters();
 
   const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
-  camera.position.set(500, y, -500);
+  camera.position.set(x, y, z);
   camera.lookAt(0, 0, 0);
 
   return { getCameraParameters, camera };
