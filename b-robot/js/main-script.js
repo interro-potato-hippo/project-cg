@@ -197,13 +197,13 @@ function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
 }
 
 /**
-  * Given a camera descriptor, calls the `getCameraParameters` function
-  * to get the attributes to override on the THREE.Camera object.
-  * This function is given by the camera descriptor, from the `createOrthogonalCamera`
-  * or the `createPerspectiveCamera` functions.
-  *
-  * Finally, updates the projection matrix of the camera.
-  */
+ * Given a camera descriptor, calls the `getCameraParameters` function
+ * to get the attributes to override on the THREE.Camera object.
+ * This function is given by the camera descriptor, from the `createOrthogonalCamera`
+ * or the `createPerspectiveCamera` functions.
+ *
+ * Finally, updates the projection matrix of the camera.
+ */
 function refreshCameraParameters({ getCameraParameters, camera }) {
   const parameters = getCameraParameters();
 
@@ -682,10 +682,10 @@ function onKeyUp(e) {
 /* UTILITIES */
 ///////////////
 /**
-  * Create a THREE.Group on the given position and with the given scale.
-  *
-  * Automatically adds the created Group to the given parent.
-  */
+ * Create a THREE.Group on the given position and with the given scale.
+ *
+ * Automatically adds the created Group to the given parent.
+ */
 function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
@@ -701,13 +701,13 @@ function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
 }
 
 /**
-  * Create a THREE.Mesh with BoxGeometry, on the given position and with the scaling
-  * from the given profile (`name`).
-  * Additionally, an anchor point can be set using an array of length 3, with values
-  * of -1, 0 or 1, that will be used as the origin point when scaling.
-  *
-  * Automatically adds the created Mesh to the given parent.
-  */
+ * Create a THREE.Mesh with BoxGeometry, on the given position and with the scaling
+ * from the given profile (`name`).
+ * Additionally, an anchor point can be set using an array of length 3, with values
+ * of -1, 0 or 1, that will be used as the origin point when scaling.
+ *
+ * Automatically adds the created Mesh to the given parent.
+ */
 function createBoxMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }) {
   const { w, h, d } = GEOMETRY[name];
   const material = MATERIAL[name];
@@ -720,11 +720,11 @@ function createBoxMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }
 }
 
 /**
-  * Create a THREE.Mesh with CylinderGeometry, on the given position and with the scaling
-  * and rotation from the given profile (`name`).
-  *
-  * Automatically adds the created Mesh to the given parent.
-  */
+ * Create a THREE.Mesh with CylinderGeometry, on the given position and with the scaling
+ * and rotation from the given profile (`name`).
+ *
+ * Automatically adds the created Mesh to the given parent.
+ */
 function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   const { r, h, rx = 0, ry = 0, rz = 0 } = GEOMETRY[name];
   const material = MATERIAL[name];
@@ -739,9 +739,9 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
 }
 
 /**
-  * Wrapper to `createGroup` that creates a group with a
-  * symmetry on the X axis.
-  */
+ * Wrapper to `createGroup` that creates a group with a
+ * symmetry on the X axis.
+ */
 function buildSymmetric(builder, parent) {
   return builder(createGroup({ scale: [-1, 1, 1], parent }));
 }
