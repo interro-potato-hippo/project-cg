@@ -388,7 +388,7 @@ function createRightHeadElements(headGroup) {
 //////////////////////
 
 function createTrailer() {
-  const containerHeight = GEOMETRY.wheel.r + GEOMETRY.trailerWheelSupport.h;
+  const containerHeight = GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.trailerWheelSupport.h;
   const trailer = createGroup({
     y: containerHeight,
     z: GEOMETRY.initialTrailerOffset,
