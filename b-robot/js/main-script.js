@@ -126,7 +126,7 @@ const cameras = {
   perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
 };
 
-let bodyElements = {};
+const bodyElements = {};
 
 /////////////////////
 /* CREATE SCENE(S) */
