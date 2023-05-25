@@ -624,12 +624,20 @@ function onKeyDown(event) {
   keyHandlers[code]?.(event, false);
 }
 
-function wireframeToggleHandle(_event, _isKeyUp) {
+function wireframeToggleHandle(_event, isKeyUp) {
+  if (isKeyUp) {
+    return;
+  }
+
   Object.values(MATERIAL).forEach((material) => (material.wireframe = !material.wireframe));
 }
 
 function changeActiveCameraHandleFactory(cameraDescriptor) {
-  return (_event, _isKeyUp) => {
+  return (_event, isKeyUp) => {
+    if (isKeyUp) {
+      return;
+    }
+
     refreshCameraParameters(cameraDescriptor);
     activeCamera = cameraDescriptor;
   };
