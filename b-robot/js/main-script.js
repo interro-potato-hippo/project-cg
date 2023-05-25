@@ -88,8 +88,8 @@ const DELTA = Object.freeze(
     }),
 
     // DELTAs for parts without defined degrees of freedom
-    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED / MOVEMENT_TIME, 0, 0)],
-    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED / MOVEMENT_TIME)],
+    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED / 1000, 0, 0)],
+    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED / 1000)],
   ])
 );
 
