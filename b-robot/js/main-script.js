@@ -126,7 +126,7 @@ const cameras = {
   perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
 };
 
-const bodyElements = {};
+const dynamicElements = {};
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -243,18 +243,18 @@ function createRobot() {
     createRightLowerLimb,
     waistGroup
   );
-  bodyElements.rightLowerLimb = rightLowerLimb;
-  bodyElements.rightFoot = rightFoot;
-  bodyElements.leftLowerLimb = leftLowerLimb;
-  bodyElements.leftFoot = leftFoot;
+  dynamicElements.rightLowerLimb = rightLowerLimb;
+  dynamicElements.rightFoot = rightFoot;
+  dynamicElements.leftLowerLimb = leftLowerLimb;
+  dynamicElements.leftFoot = leftFoot;
 
   const { arm: rightArm } = createRightUpperLimb(robot);
   const { arm: leftArm } = buildSymmetric(createRightUpperLimb, robot);
-  bodyElements.rightArm = rightArm;
-  bodyElements.leftArm = leftArm;
+  dynamicElements.rightArm = rightArm;
+  dynamicElements.leftArm = leftArm;
 
   const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
-  bodyElements.head = headGroup;
+  dynamicElements.head = headGroup;
 
   createBoxMesh({
     name: 'head',
@@ -451,17 +451,17 @@ function handleCollisions() {
 /* UPDATE */
 ////////////
 function update(timeDelta) {
-  rotateBodyPart(timeDelta, { bodyPart: 'rightFoot', profile: 'feet' });
-  rotateBodyPart(timeDelta, { bodyPart: 'leftFoot', profile: 'feet' });
-  rotateBodyPart(timeDelta, { bodyPart: 'rightLowerLimb', profile: 'lowerLimbs' });
-  rotateBodyPart(timeDelta, { bodyPart: 'leftLowerLimb', profile: 'lowerLimbs' });
-  rotateBodyPart(timeDelta, { bodyPart: 'head', profile: 'head' });
-  moveBodyPart(timeDelta, { bodyPart: 'rightArm', profile: 'arms' });
-  moveBodyPart(timeDelta, { bodyPart: 'leftArm', profile: 'arms' });
+  rotateDynamicPart(timeDelta, { part: 'rightFoot', profile: 'feet' });
+  rotateDynamicPart(timeDelta, { part: 'leftFoot', profile: 'feet' });
+  rotateDynamicPart(timeDelta, { part: 'rightLowerLimb', profile: 'lowerLimbs' });
+  rotateDynamicPart(timeDelta, { part: 'leftLowerLimb', profile: 'lowerLimbs' });
+  rotateDynamicPart(timeDelta, { part: 'head', profile: 'head' });
+  moveDynamicPart(timeDelta, { part: 'rightArm', profile: 'arms' });
+  moveDynamicPart(timeDelta, { part: 'leftArm', profile: 'arms' });
 }
 
-function rotateBodyPart(timeDelta, { bodyPart, profile }) {
-  const group = bodyElements[bodyPart];
+function rotateDynamicPart(timeDelta, { part, profile }) {
+  const group = dynamicElements[part];
   if (!group.userData?.delta) {
     return;
   }
@@ -481,8 +481,8 @@ function rotateBodyPart(timeDelta, { bodyPart, profile }) {
   );
 }
 
-function moveBodyPart(timeDelta, { bodyPart, profile }) {
-  const group = bodyElements[bodyPart];
+function moveDynamicPart(timeDelta, { part, profile }) {
+  const group = dynamicElements[part];
   if (!group.userData?.delta) {
     return;
   }
@@ -572,41 +572,41 @@ const keyHandlers = {
   Digit5: changeActiveCameraHandleFactory(cameras.perspective),
   Digit6: wireframeToggleHandle,
   // feet
-  KeyQ: transformBodyPartHandleFactory({
-    bodyParts: ['rightFoot', 'leftFoot'],
+  KeyQ: transformDynamicPartHandleFactory({
+    parts: ['rightFoot', 'leftFoot'],
     axis: 'x',
     direction: 1,
   }),
-  KeyA: transformBodyPartHandleFactory({
-    bodyParts: ['rightFoot', 'leftFoot'],
+  KeyA: transformDynamicPartHandleFactory({
+    parts: ['rightFoot', 'leftFoot'],
     axis: 'x',
     direction: -1,
   }),
   // waist
-  KeyW: transformBodyPartHandleFactory({
-    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+  KeyW: transformDynamicPartHandleFactory({
+    parts: ['rightLowerLimb', 'leftLowerLimb'],
     axis: 'x',
     direction: 1,
   }),
-  KeyS: transformBodyPartHandleFactory({
-    bodyParts: ['rightLowerLimb', 'leftLowerLimb'],
+  KeyS: transformDynamicPartHandleFactory({
+    parts: ['rightLowerLimb', 'leftLowerLimb'],
     axis: 'x',
     direction: -1,
   }),
   // arms
-  KeyE: transformBodyPartHandleFactory({
-    bodyParts: ['rightArm', 'leftArm'],
+  KeyE: transformDynamicPartHandleFactory({
+    parts: ['rightArm', 'leftArm'],
     axis: 'x',
     direction: 1,
   }),
-  KeyD: transformBodyPartHandleFactory({
-    bodyParts: ['rightArm', 'leftArm'],
+  KeyD: transformDynamicPartHandleFactory({
+    parts: ['rightArm', 'leftArm'],
     axis: 'x',
     direction: -1,
   }),
   // head
-  KeyR: transformBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: -1 }),
-  KeyF: transformBodyPartHandleFactory({ bodyParts: ['head'], axis: 'x', direction: 1 }),
+  KeyR: transformDynamicPartHandleFactory({ parts: ['head'], axis: 'x', direction: -1 }),
+  KeyF: transformDynamicPartHandleFactory({ parts: ['head'], axis: 'x', direction: 1 }),
 };
 
 function onKeyDown(event) {
@@ -641,15 +641,15 @@ function changeActiveCameraHandleFactory(cameraDescriptor) {
   };
 }
 
-function transformBodyPartHandleFactory({ bodyParts, axis, direction }) {
+function transformDynamicPartHandleFactory({ parts, axis, direction }) {
   return (event, isKeyUp) => {
     if (event.repeat) {
       // ignore holding down keys
       return;
     }
 
-    bodyParts.forEach((bodyPart) => {
-      const userData = bodyElements[bodyPart].userData || (bodyElements[bodyPart].userData = {});
+    parts.forEach((part) => {
+      const userData = dynamicElements[part].userData || (dynamicElements[part].userData = {});
       const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
       // Use clamp since not all keydown event have a corresponding keyup event
       delta[axis] = THREE.Math.clamp(delta[axis] + (isKeyUp ? -direction : direction), -1, 1);
