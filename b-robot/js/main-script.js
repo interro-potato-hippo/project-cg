@@ -196,16 +196,20 @@ function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
   return { getCameraParameters, camera };
 }
 
+/**
+ * Given a camera descriptor, calls the `getCameraParameters` function
+ * to get the attributes to override on the THREE.Camera object.
+ * This function is given by the camera descriptor, from the `createOrthogonalCamera`
+ * or the `createPerspectiveCamera` functions.
+ *
+ * Finally, updates the projection matrix of the camera.
+ */
 function refreshCameraParameters({ getCameraParameters, camera }) {
   const parameters = getCameraParameters();
 
   Object.assign(camera, parameters);
   camera.updateProjectionMatrix();
 }
-
-/////////////////////
-/* CREATE LIGHT(S) */
-/////////////////////
 
 ////////////////////////
 /* CREATE OBJECT3D(S) */
@@ -239,7 +243,7 @@ function createRobot() {
     parent: waistGroup,
   });
   const { lowerLimb: rightLowerLimb, feet: rightFoot } = createRightLowerLimb(waistGroup);
-  const { lowerLimb: leftLowerLimb, feet: leftFoot } = buildSymmetric(
+  const { lowerLimb: leftLowerLimb, feet: leftFoot } = buildSymmetricX(
     createRightLowerLimb,
     waistGroup
   );
@@ -249,7 +253,7 @@ function createRobot() {
   bodyElements.leftFoot = leftFoot;
 
   const { arm: rightArm } = createRightUpperLimb(robot);
-  const { arm: leftArm } = buildSymmetric(createRightUpperLimb, robot);
+  const { arm: leftArm } = buildSymmetricX(createRightUpperLimb, robot);
   bodyElements.rightArm = rightArm;
   bodyElements.leftArm = leftArm;
 
@@ -262,7 +266,7 @@ function createRobot() {
     parent: headGroup,
   });
   createRightHeadElements(headGroup);
-  buildSymmetric(createRightHeadElements, headGroup);
+  buildSymmetricX(createRightHeadElements, headGroup);
 }
 
 function createRightLowerLimb(waistGroup) {
@@ -414,7 +418,7 @@ function createTrailer() {
   });
 
   createRightTrailerWheels(wheelSupportGroup);
-  buildSymmetric(createRightTrailerWheels, wheelSupportGroup);
+  buildSymmetricX(createRightTrailerWheels, wheelSupportGroup);
 }
 
 function createRightTrailerWheels(wheelSupportGroup) {
@@ -666,12 +670,22 @@ function onKeyUp(e) {
 
   let { code } = event;
 
+  // Treat numpad digits like the number row
+  if (/^Numpad\d$/.test(code)) {
+    code = code.replace('Numpad', 'Digit');
+  }
+
   keyHandlers[code]?.(event, true);
 }
 
 ///////////////
 /* UTILITIES */
 ///////////////
+/**
+ * Create a THREE.Group on the given position and with the given scale.
+ *
+ * Automatically adds the created Group to the given parent.
+ */
 function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
@@ -686,6 +700,14 @@ function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   return group;
 }
 
+/**
+ * Create a THREE.Mesh with BoxGeometry, on the given position and with the scaling
+ * from the given profile (`name`).
+ * Additionally, an anchor point can be set using an array of length 3, with values
+ * of -1, 0 or 1, that will be used as the origin point when scaling.
+ *
+ * Automatically adds the created Mesh to the given parent.
+ */
 function createBoxMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }) {
   const { w, h, d } = GEOMETRY[name];
   const material = MATERIAL[name];
@@ -697,6 +719,12 @@ function createBoxMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }
   return box;
 }
 
+/**
+ * Create a THREE.Mesh with CylinderGeometry, on the given position and with the scaling
+ * and rotation from the given profile (`name`).
+ *
+ * Automatically adds the created Mesh to the given parent.
+ */
 function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   const { r, h, rx = 0, ry = 0, rz = 0 } = GEOMETRY[name];
   const material = MATERIAL[name];
@@ -710,6 +738,10 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   return cylinder;
 }
 
-function buildSymmetric(builder, parent) {
+/**
+ * Wrapper to `createGroup` that creates a group with a
+ * symmetry on the X axis.
+ */
+function buildSymmetricX(builder, parent) {
   return builder(createGroup({ scale: [-1, 1, 1], parent }));
 }
