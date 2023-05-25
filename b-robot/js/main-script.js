@@ -333,7 +333,6 @@ function createRightLowerLimb(waistGroup) {
 }
 
 function createRightUpperLimb(chestGroup) {
-  // TODO add arms' degree of movement
   const armGroup = createGroup({
     x: GEOMETRY.chest.w / 2,
     y: GEOMETRY.chest.h,
