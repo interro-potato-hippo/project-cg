@@ -46,6 +46,7 @@ const GEOMETRY = Object.freeze({
   antenna: { r: 0.1, h: 0.5 },
   antennaGap: 0.2,
   foreheadHeight: 0.2,
+  headOffset: -0.05, // avoids glitching after head rotation (y-axis)
 
   trailerContainer: { w: 5, h: 5, d: 12 },
   trailerConnector: { r: 0.25, h: 0.5 },
@@ -352,7 +353,7 @@ function createRobot() {
   dynamicElements.rightArm = rightArm;
   dynamicElements.leftArm = leftArm;
 
-  const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
+  const headGroup = createGroup({ y: GEOMETRY.chest.h + GEOMETRY.headOffset, parent: robot });
   dynamicElements.head = headGroup;
 
   createBoxMesh({
