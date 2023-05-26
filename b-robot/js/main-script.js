@@ -98,12 +98,16 @@ const TRAILER_ANIMATION_TARGET = new THREE.Vector3(
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
 const CAMERA_GEOMETRY = Object.freeze({
-  robotAabb: [new THREE.Vector3(-7, -13, -7), new THREE.Vector3(7, 10, 15)], // EXTRA
-  trailerAabb: [new THREE.Vector3(-7, -5, -5), new THREE.Vector3(7, 10, 20)], // EXTRA
-  sceneViewAabb: [new THREE.Vector3(-25, -10, -20), new THREE.Vector3(20, 30, 30)],
+  robotAABB: [new THREE.Vector3(-7, -13, -7), new THREE.Vector3(7, 10, 15)], // EXTRA
+  trailerAABB: [new THREE.Vector3(-7, -5, -5), new THREE.Vector3(7, 10, 20)], // EXTRA
+  sceneViewAABB: [new THREE.Vector3(-25, -10, -20), new THREE.Vector3(20, 30, 30)],
   orthogonalDistance: 500,
+  orthogonalNear: 1,
+  orthogonalFar: 1000,
   perspectiveDistance: 25,
   perspectiveFov: 80,
+  perspectiveNear: 1,
+  perspectiveFar: 1000,
 });
 
 const TRANSFORMATION_TYPE = Object.freeze({
@@ -187,8 +191,6 @@ let trailerColliding = false,
 
 let autoPanCamera = false; // automatically pan camera to fit scene objects (EXTRA)
 
-const dynamicElements = {};
-
 const cameras = {
   // front view
   front: createOrthogonalCamera({
@@ -224,6 +226,8 @@ const cameras = {
     z: -CAMERA_GEOMETRY.perspectiveDistance,
   }),
 };
+
+const dynamicElements = {};
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -321,9 +325,16 @@ function createOrthogonalCamera({
     return { top, bottom, left, right };
   };
 
-  const { top, bottom, left, right, position } = getCameraParameters();
+  const { top, bottom, left, right } = getCameraParameters();
 
-  const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
+  const camera = new THREE.OrthographicCamera(
+    left,
+    right,
+    top,
+    bottom,
+    CAMERA_GEOMETRY.orthogonalNear,
+    CAMERA_GEOMETRY.orthogonalFar
+  );
   camera.position.set(x, y, z);
 
   return { getCameraParameters, camera };
@@ -336,7 +347,12 @@ function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
 
   const { aspect } = getCameraParameters();
 
-  const camera = new THREE.PerspectiveCamera(CAMERA_GEOMETRY.perspectiveFov, aspect, 1, 1000);
+  const camera = new THREE.PerspectiveCamera(
+    CAMERA_GEOMETRY.perspectiveFov,
+    aspect,
+    CAMERA_GEOMETRY.perspectiveNear,
+    CAMERA_GEOMETRY.perspectiveFar
+  );
   camera.position.set(x, y, z);
 
   return { getCameraParameters, camera };
