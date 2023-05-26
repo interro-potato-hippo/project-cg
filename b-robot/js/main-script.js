@@ -1,3 +1,5 @@
+'use strict';
+
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
@@ -228,8 +230,6 @@ const dynamicElements = {};
 /* CREATE SCENE(S) */
 /////////////////////
 function createScene() {
-  'use strict';
-
   scene = new THREE.Scene();
   scene.add(new THREE.AxesHelper(20));
   scene.background = BACKGROUND;
@@ -242,8 +242,6 @@ function createScene() {
 /* CREATE CAMERA(S) */
 //////////////////////
 function createCameras() {
-  'use strict';
-
   // set the initial camera
   activeCamera = cameras.front;
 
@@ -539,8 +537,6 @@ function createRightTrailerWheels(wheelSupportGroup) {
 /* CHECK COLLISIONS */
 //////////////////////
 function checkCollisions() {
-  'use strict';
-
   if (!dynamicElements.trailer || !isRobotInTruckMode()) return false;
 
   const { max: rMax, min: rMin } = ROBOT_AABB_POINTS;
@@ -576,8 +572,6 @@ function getTrailerAABBPoints() {
 /* HANDLE COLLISIONS */
 ///////////////////////
 function handleCollisions() {
-  'use strict';
-
   if (trailerAnimating) return;
   trailerAnimating = true;
 
@@ -675,7 +669,6 @@ function moveDynamicPart(
 /* DISPLAY */
 /////////////
 function render() {
-  'use strict';
   renderer.render(scene, activeCamera.camera);
 }
 
@@ -683,8 +676,6 @@ function render() {
 /* INITIALIZE ANIMATION CYCLE */
 ////////////////////////////////
 function init() {
-  'use strict';
-
   renderer = new THREE.WebGLRenderer({
     antialias: true,
   });
@@ -728,8 +719,6 @@ function animate(timestamp) {
 /* RESIZE WINDOW CALLBACK */
 ////////////////////////////
 function onResize() {
-  'use strict';
-
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   if (window.innerHeight > 0 && window.innerWidth > 0) {
@@ -794,8 +783,6 @@ const keyHandlers = {
 };
 
 function onKeyDown(event) {
-  'use strict';
-
   let { code } = event;
 
   // Treat numpad digits like the number row
@@ -856,8 +843,6 @@ function transformDynamicPartHandleFactory({ parts, axis, direction }) {
 /* KEY UP CALLBACK */
 ///////////////////////
 function onKeyUp(event) {
-  'use strict';
-
   let { code } = event;
 
   // Treat numpad digits like the number row
