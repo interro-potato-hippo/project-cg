@@ -1,7 +1,7 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
-const FLOAT_COMPARISON_THRESHOLD = 1e-2;
+const FLOAT_COMPARISON_THRESHOLD = 1e-4;
 
 const MATERIAL = Object.freeze({
   chest: new THREE.MeshBasicMaterial({ color: 0xff4b3e }),
@@ -599,10 +599,12 @@ function update(timeDelta) {
       if (direction.lengthSq() <= FLOAT_COMPARISON_THRESHOLD) {
         group.userData.delta = new THREE.Vector3();
         trailerAnimating = false;
-        return new THREE.Vector3();
+        return [new THREE.Vector3(), 0];
       }
 
-      return direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED);
+      const maxMovement = direction.length();
+
+      return [direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED), maxMovement];
     });
   } else {
     // this allows movement along individual axes (key-controlled)
@@ -642,7 +644,7 @@ function rotateDynamicPart(
 function moveDynamicPart(
   timeDelta,
   { part, profile },
-  deltaSupplier = ({ profile }) => DELTA[profile]
+  deltaSupplier = ({ profile }) => [DELTA[profile], Infinity]
 ) {
   const group = dynamicElements[part];
   if (!group.userData?.delta) {
@@ -651,10 +653,12 @@ function moveDynamicPart(
 
   const props = DEGREES_OF_FREEDOM[profile];
 
+  const [deltaMultiplier, maxMovement] = deltaSupplier({ part, profile, group });
   const delta = group.userData.delta
     .clone()
-    .multiply(deltaSupplier({ part, profile, group }))
-    .multiplyScalar(timeDelta);
+    .multiply(deltaMultiplier)
+    .multiplyScalar(timeDelta)
+    .clampLength(0, maxMovement);
 
   group.position.fromArray(
     ['x', 'y', 'z'].map((axis) => {
