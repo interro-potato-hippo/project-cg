@@ -177,7 +177,7 @@ const TRAILER_MOVEMENT_SPEED = 10 / 1000; // units/millisecond
 const DELTA = Object.freeze(
   Object.fromEntries([
     // automatically generate DELTAs for parts with defined degrees of freedom
-    ...Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max, axis }]) => {
+    ...Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max }]) => {
       const val = (max - min) / MOVEMENT_TIME;
 
       return [key, val];
