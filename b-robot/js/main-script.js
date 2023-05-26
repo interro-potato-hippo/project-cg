@@ -685,8 +685,6 @@ function init() {
   createScene();
   createCameras();
 
-  render();
-
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
   window.addEventListener('resize', onResize);
