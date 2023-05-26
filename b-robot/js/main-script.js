@@ -903,7 +903,10 @@ function createBoxMesh({ name, x = 0, y = 0, z = 0, anchor = [0, 0, 0], parent }
 function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   const { r, h, rx = 0, ry = 0, rz = 0 } = GEOMETRY[name];
   const material = MATERIAL[name];
-  const radialSegments = 35; // allows for smooth edges
+
+  // allows for smooth edges on small cylinders, while also preventing too many segments on smaller ones
+  const radialSegments = THREE.MathUtils.clamp(Math.round(100 * r), 5, 35);
+
   const geometry = new THREE.CylinderGeometry(r, r, h, radialSegments);
   const cylinder = new THREE.Mesh(geometry, material);
   cylinder.position.set(x, y, z);
