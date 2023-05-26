@@ -59,7 +59,7 @@ const GEOMETRY = Object.freeze({
 // absolute coordinates
 const ROBOT_AABB_POINTS = {
   min: new THREE.Vector3(
-    -GEOMETRY.chest.w / 2,
+    -GEOMETRY.chest.w / 2 - 2 * GEOMETRY.exhaust.r,
     GEOMETRY.shank.h + GEOMETRY.thigh.h - GEOMETRY.wheel.r,
     -GEOMETRY.chest.d / 2
   ),
