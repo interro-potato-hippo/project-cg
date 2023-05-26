@@ -231,7 +231,7 @@ function createScene() {
   'use strict';
 
   scene = new THREE.Scene();
-  scene.add(new THREE.AxisHelper(20));
+  scene.add(new THREE.AxesHelper(20));
   scene.background = BACKGROUND;
 
   createRobot();
