@@ -803,7 +803,7 @@ function wireframeToggleHandle(_event, isKeyUp) {
 
 function changeActiveCameraHandleFactory(cameraDescriptor) {
   return (_event, isKeyUp) => {
-    if (isKeyUp) {
+    if (isKeyUp || trailerAnimating) {
       return;
     }
 
