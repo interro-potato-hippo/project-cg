@@ -100,17 +100,16 @@ const TRAILER_ANIMATION_TARGET = new THREE.Vector3(
 const BACKGROUND = new THREE.Color(0xc0e8ee);
 
 const CAMERA_GEOMETRY = Object.freeze({
-  orthogonalUsableAreaHeight:
-    GEOMETRY.shank.h +
-    GEOMETRY.thigh.h +
-    GEOMETRY.waist.h +
-    GEOMETRY.abdomen.h +
-    GEOMETRY.chest.h +
-    GEOMETRY.head.h +
-    GEOMETRY.antenna.h,
-  orthogonalSafetyGap: 2,
-  orthogonalDistance: 10,
+  robotAABB: [new THREE.Vector3(-7, -13, -7), new THREE.Vector3(7, 10, 15)], // EXTRA
+  trailerAABB: [new THREE.Vector3(-7, -5, -5), new THREE.Vector3(7, 10, 20)], // EXTRA
+  sceneViewAABB: [new THREE.Vector3(-25, -10, -20), new THREE.Vector3(20, 30, 30)],
+  orthogonalDistance: 500,
+  orthogonalNear: 1,
+  orthogonalFar: 1000,
+  perspectiveDistance: 25,
   perspectiveFov: 80,
+  perspectiveNear: 1,
+  perspectiveFar: 1000,
 });
 
 const TRANSFORMATION_TYPE = Object.freeze({
@@ -192,36 +191,42 @@ let prevTimestamp;
 let trailerColliding = false,
   trailerAnimating = false;
 
+let autoPanCamera = false; // automatically pan camera to fit scene objects (EXTRA)
+
 const cameras = {
   // front view
   front: createOrthogonalCamera({
+    bottomAxisVector: new THREE.Vector3(-1, 0, 0), // X axis
+    sideAxisVector: new THREE.Vector3(0, 1, 0), // Y axis
     z: -CAMERA_GEOMETRY.orthogonalDistance,
-    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
-    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
   }),
   // side view
   side: createOrthogonalCamera({
+    bottomAxisVector: new THREE.Vector3(0, 0, 1), // Z axis
+    sideAxisVector: new THREE.Vector3(0, 1, 0), // Y axis
     x: -CAMERA_GEOMETRY.orthogonalDistance,
-    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
-    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2,
   }),
   // top view
   top: createOrthogonalCamera({
-    y: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap,
-    height: CAMERA_GEOMETRY.orthogonalDistance,
+    bottomAxisVector: new THREE.Vector3(1, 0, 0), // X axis
+    sideAxisVector: new THREE.Vector3(0, 0, -1), // Z axis
+    mirrorView: true,
+    y: CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // orthogonal projection: isometric view
   orthogonal: createOrthogonalCamera({
-    x: -10,
-    y: 20,
-    z: -10,
-    height: CAMERA_GEOMETRY.orthogonalUsableAreaHeight + CAMERA_GEOMETRY.orthogonalSafetyGap * 2,
-    offsetY: CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 3,
+    bottomAxisVector: new THREE.Vector3(-1, 0, -1).normalize(),
+    sideAxisVector: new THREE.Vector3(0, 1, 0), // Y axis
+    x: CAMERA_GEOMETRY.orthogonalDistance,
+    y: CAMERA_GEOMETRY.orthogonalDistance,
+    z: -CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // perspective projection: isometric view
-  perspective: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
-  // TODO: remove, for debug only
-  perspectiveWithOrbitalControls: createPerspectiveCamera({ x: -10, y: 20, z: -10 }),
+  perspective: createPerspectiveCamera({
+    x: -CAMERA_GEOMETRY.perspectiveDistance,
+    y: CAMERA_GEOMETRY.perspectiveDistance,
+    z: -CAMERA_GEOMETRY.perspectiveDistance,
+  }),
 };
 
 const dynamicElements = {};
@@ -245,19 +250,84 @@ function createCameras() {
   // set the initial camera
   activeCamera = cameras.front;
 
-  const controls = new THREE.OrbitControls(
-    cameras.perspectiveWithOrbitalControls.camera,
-    renderer.domElement
-  );
-
-  controls.target.set(0, 0, 0);
-  controls.update();
+  Object.values(cameras).forEach((cameraDescriptor) => {
+    refreshCameraParameters(cameraDescriptor);
+    cameraDescriptor.camera.lookAt(scene.position);
+  });
 }
 
-function createOrthogonalCamera({ x = 0, y = 0, z = 0, height, offsetX = 0, offsetY = 0 }) {
+function getVisibleAreaBoundingBox() {
+  if (!autoPanCamera) {
+    return {
+      min: CAMERA_GEOMETRY.sceneViewAABB[0],
+      max: CAMERA_GEOMETRY.sceneViewAABB[1],
+    };
+  }
+
+  const { robot, trailer } = dynamicElements;
+
+  return {
+    min: robot.position
+      .clone()
+      .add(CAMERA_GEOMETRY.robotAABB[0])
+      .min(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAABB[0])),
+    max: robot.position
+      .clone()
+      .add(CAMERA_GEOMETRY.robotAABB[1])
+      .max(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAABB[1])),
+  };
+}
+
+/**
+ * Create an orthogonal camera with the given parameters.
+ *
+ * @param {Object} parameters - The camera parameters.
+ * @param {THREE.Vector3} parameters.bottomAxisVector - A normalized vector along the bottom axis.
+ * Its direction depends from where the camera is facing.
+ * @param {THREE.Vector3} parameters.sideAxisVector - A normalized vector along the side axis.
+ * Its direction depends from where the camera is facing.
+ * @param {int} parameters.x - The X position of the camera.
+ * @param {int} parameters.y - The Y position of the camera.
+ * @param {int} parameters.z - The Z position of the camera.
+ * @param {boolean} parameters.mirrorView - Whether to mirror the camera vertically and horizontally.
+ * @returns {THREE.OrthographicCamera} The created camera.
+ */
+function createOrthogonalCamera({
+  bottomAxisVector,
+  sideAxisVector,
+  x = 0,
+  y = 0,
+  z = 0,
+  mirrorView = false,
+}) {
   const getCameraParameters = () => {
+    const { min, max } = getVisibleAreaBoundingBox();
+
+    const maxLeft = bottomAxisVector.dot(max);
+    const minRight = bottomAxisVector.dot(min);
+    const minTop = sideAxisVector.dot(max);
+    const maxBottom = sideAxisVector.dot(min);
+
+    const minWidth = Math.abs(minRight - maxLeft);
+    const minHeight = Math.abs(minTop - maxBottom);
+    const offsetX = (minRight + maxLeft) / 2;
+    const offsetY = (minTop + maxBottom) / 2;
+
     const aspectRatio = window.innerWidth / window.innerHeight;
-    const width = height * aspectRatio;
+    let height = minHeight;
+    let width = height * aspectRatio;
+
+    // fit to aspect ratio
+    if (width < minWidth) {
+      width = minWidth;
+      height = width / aspectRatio;
+    }
+
+    // correctly orient top-down camera
+    if (mirrorView) {
+      height = -height;
+      width = -width;
+    }
 
     const top = height / 2 + offsetY;
     const bottom = -height / 2 + offsetY;
@@ -269,9 +339,15 @@ function createOrthogonalCamera({ x = 0, y = 0, z = 0, height, offsetX = 0, offs
 
   const { top, bottom, left, right } = getCameraParameters();
 
-  const camera = new THREE.OrthographicCamera(left, right, top, bottom, 1, 1000);
+  const camera = new THREE.OrthographicCamera(
+    left,
+    right,
+    top,
+    bottom,
+    CAMERA_GEOMETRY.orthogonalNear,
+    CAMERA_GEOMETRY.orthogonalFar
+  );
   camera.position.set(x, y, z);
-  camera.lookAt(0, 0, 0);
 
   return { getCameraParameters, camera };
 }
@@ -283,9 +359,13 @@ function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
 
   const { aspect } = getCameraParameters();
 
-  const camera = new THREE.PerspectiveCamera(CAMERA_GEOMETRY.perspectiveFov, aspect, 1, 1000);
+  const camera = new THREE.PerspectiveCamera(
+    CAMERA_GEOMETRY.perspectiveFov,
+    aspect,
+    CAMERA_GEOMETRY.perspectiveNear,
+    CAMERA_GEOMETRY.perspectiveFar
+  );
   camera.position.set(x, y, z);
-  camera.lookAt(0, CAMERA_GEOMETRY.orthogonalUsableAreaHeight / 2, 0);
 
   return { getCameraParameters, camera };
 }
@@ -311,6 +391,8 @@ function refreshCameraParameters({ getCameraParameters, camera }) {
 function createRobot() {
   const chestHeight = GEOMETRY.shank.h + GEOMETRY.thigh.h + GEOMETRY.waist.h + GEOMETRY.abdomen.h;
   const robot = createGroup({ y: chestHeight, parent: scene });
+  dynamicElements.robot = robot;
+
   createBoxMesh({
     name: 'chest',
     anchor: [0, 1, 0],
@@ -604,6 +686,11 @@ function update(timeDelta) {
     moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerX' });
     moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerZ' });
   }
+
+  if (autoPanCamera) {
+    // refresh camera to adjust to objects' position (EXTRA)
+    refreshCameraParameters(activeCamera);
+  }
 }
 
 function rotateDynamicPart(
@@ -727,8 +814,6 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 const keyHandlers = {
-  // TODO: remove; for debug only
-  Digit0: changeActiveCameraHandleFactory(cameras.perspectiveWithOrbitalControls),
   Digit1: changeActiveCameraHandleFactory(cameras.front),
   Digit2: changeActiveCameraHandleFactory(cameras.side),
   Digit3: changeActiveCameraHandleFactory(cameras.top),
@@ -777,6 +862,9 @@ const keyHandlers = {
   ArrowDown: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'z', direction: -1 }),
   ArrowLeft: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'x', direction: 1 }),
   ArrowRight: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'x', direction: -1 }),
+
+  // auto pan camera (EXTRA)
+  KeyP: cameraAutoPanToggleHandle,
 };
 
 function onKeyDown(event) {
@@ -790,8 +878,8 @@ function onKeyDown(event) {
   keyHandlers[code]?.(event, false);
 }
 
-function wireframeToggleHandle(_event, isKeyUp) {
-  if (isKeyUp) {
+function wireframeToggleHandle(event, isKeyUp) {
+  if (event.repeat || isKeyUp) {
     return;
   }
 
@@ -834,6 +922,15 @@ function transformDynamicPartHandleFactory({ parts, axis, direction }) {
       delta[axis] = THREE.Math.clamp(delta[axis] + (isKeyUp ? -direction : direction), -1, 1);
     });
   };
+}
+
+function cameraAutoPanToggleHandle(event, isKeyUp) {
+  if (event.repeat || isKeyUp) {
+    return;
+  }
+
+  autoPanCamera = !autoPanCamera;
+  refreshCameraParameters(activeCamera);
 }
 
 ///////////////////////
