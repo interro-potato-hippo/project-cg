@@ -904,7 +904,7 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   const { r, h, rx = 0, ry = 0, rz = 0 } = GEOMETRY[name];
   const material = MATERIAL[name];
   const radialSegments = 35; // allows for smooth edges
-  const geometry = new THREE.CylinderGeometry(r, r, h, radialSegments);
+  const geometry = new THREE.CylinderGeometry(r, r, h, r * radialSegments);
   const cylinder = new THREE.Mesh(geometry, material);
   cylinder.position.set(x, y, z);
   cylinder.rotation.set(rx, ry, rz);
