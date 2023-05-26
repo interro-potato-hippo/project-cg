@@ -669,6 +669,15 @@ function handleCollisions() {
 /* UPDATE */
 ////////////
 function update(timeDelta) {
+  if (checkCollisions()) {
+    if (!trailerColliding) {
+      handleCollisions();
+    }
+    trailerColliding = true;
+  } else {
+    trailerColliding = false;
+  }
+
   ROBOT_DYNAMIC_PARTS.forEach((part) =>
     DEGREES_OF_FREEDOM[part.profile].type.applier(timeDelta, part)
   );
@@ -790,15 +799,6 @@ function init() {
 /////////////////////
 function animate(timestamp) {
   const timeDelta = timestamp - prevTimestamp;
-
-  if (checkCollisions()) {
-    if (!trailerColliding) {
-      handleCollisions();
-    }
-    trailerColliding = true;
-  } else {
-    trailerColliding = false;
-  }
 
   update(timeDelta);
 
