@@ -46,6 +46,7 @@ const GEOMETRY = Object.freeze({
   antenna: { r: 0.1, h: 0.5 },
   antennaGap: 0.2,
   foreheadHeight: 0.2,
+  headOffset: -0.05, // avoids glitching after head rotation (y-axis)
 
   trailerContainer: { w: 5, h: 5, d: 12 },
   trailerConnector: { r: 0.25, h: 0.5 },
@@ -58,7 +59,7 @@ const GEOMETRY = Object.freeze({
 // absolute coordinates
 const ROBOT_AABB_POINTS = {
   min: new THREE.Vector3(
-    -GEOMETRY.chest.w / 2,
+    -GEOMETRY.chest.w / 2 - 2 * GEOMETRY.exhaust.r,
     GEOMETRY.shank.h + GEOMETRY.thigh.h - GEOMETRY.wheel.r,
     -GEOMETRY.chest.d / 2
   ),
@@ -166,7 +167,7 @@ const ROBOT_DYNAMIC_PARTS = Object.freeze([
 ]);
 
 const MOVEMENT_TIME = 700; // milliseconds
-const TRAILER_MOVEMENT_SPEED = 100; // units/second
+const TRAILER_MOVEMENT_SPEED = 100 / 1000; // units/millisecond
 const DELTA = Object.freeze(
   Object.fromEntries([
     // automatically generate DELTAs for parts with defined degrees of freedom
@@ -177,8 +178,8 @@ const DELTA = Object.freeze(
     }),
 
     // DELTAs for parts without defined degrees of freedom
-    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED / 1000, 0, 0)],
-    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED / 1000)],
+    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED, 0, 0)],
+    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED)],
   ])
 );
 
@@ -419,7 +420,7 @@ function createRobot() {
   dynamicElements.rightArm = rightArm;
   dynamicElements.leftArm = leftArm;
 
-  const headGroup = createGroup({ y: GEOMETRY.chest.h, parent: robot });
+  const headGroup = createGroup({ y: GEOMETRY.chest.h + GEOMETRY.headOffset, parent: robot });
   dynamicElements.head = headGroup;
 
   createBoxMesh({
@@ -665,10 +666,12 @@ function update(timeDelta) {
       if (direction.lengthSq() <= FLOAT_COMPARISON_THRESHOLD) {
         group.userData.delta = new THREE.Vector3();
         trailerAnimating = false;
-        return new THREE.Vector3();
+        return [new THREE.Vector3(), 0];
       }
 
-      return direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED / 1000);
+      const maxMovement = direction.length();
+
+      return [direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED), maxMovement];
     });
   } else {
     // this allows movement along individual axes (key-controlled)
@@ -716,7 +719,7 @@ function rotateDynamicPart(
 function moveDynamicPart(
   timeDelta,
   { part, profile },
-  deltaSupplier = ({ profile }) => DELTA[profile]
+  deltaSupplier = ({ profile }) => [DELTA[profile], Infinity]
 ) {
   const group = dynamicElements[part];
   if (!group.userData?.delta) {
@@ -725,10 +728,12 @@ function moveDynamicPart(
 
   const props = DEGREES_OF_FREEDOM[profile];
 
+  const [deltaMultiplier, maxMovement] = deltaSupplier({ part, profile, group });
   const delta = group.userData.delta
     .clone()
-    .multiply(deltaSupplier({ part, profile, group }))
-    .multiplyScalar(timeDelta);
+    .multiply(deltaMultiplier)
+    .multiplyScalar(timeDelta)
+    .clampLength(0, maxMovement);
 
   group.position.fromArray(
     ['x', 'y', 'z'].map((axis) => {
