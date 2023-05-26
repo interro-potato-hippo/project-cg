@@ -1,7 +1,7 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
-const FLOAT_COMPARISON_THRESHOLD = 1e-4;
+const FLOAT_COMPARISON_THRESHOLD = 1e-2;
 
 const MATERIAL = Object.freeze({
   chest: new THREE.MeshBasicMaterial({ color: 0xff4b3e }),
