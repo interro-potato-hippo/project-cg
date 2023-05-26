@@ -905,8 +905,7 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
   const material = MATERIAL[name];
 
   // allows for smooth edges on small cylinders, while also preventing too many segments on smaller ones
-  const radiusFloorBound = 0.2;
-  const radialSegments = THREE.MathUtils.clamp(Math.round(35 * r), 35 * radiusFloorBound, 35);
+  const radialSegments = THREE.MathUtils.clamp(Math.round(100 * r), 5, 35);
 
   const geometry = new THREE.CylinderGeometry(r, r, h, radialSegments);
   const cylinder = new THREE.Mesh(geometry, material);
