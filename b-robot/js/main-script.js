@@ -376,21 +376,20 @@ function createRightLowerLimb(waistGroup) {
     z: -GEOMETRY.thigh.d / 2,
     parent: waistGroup,
   });
-  const rotatedLowerLimbsGroup = createGroup({
+  createBoxMesh({
+    name: 'thigh',
+    anchor: [1, 1, -1],
     x: GEOMETRY.legGap / 2,
     y: -GEOMETRY.thigh.d / 2 - GEOMETRY.thigh.h,
     z: GEOMETRY.thigh.d / 2,
     parent: lowerLimbsGroup,
   });
-  createBoxMesh({
-    name: 'thigh',
-    anchor: [1, 1, -1],
-    parent: rotatedLowerLimbsGroup,
-  });
 
   const shankGroup = createGroup({
-    y: -GEOMETRY.shank.h,
-    parent: rotatedLowerLimbsGroup,
+    x: GEOMETRY.legGap / 2,
+    y: -GEOMETRY.thigh.d / 2 - GEOMETRY.thigh.h - GEOMETRY.shank.h,
+    z: GEOMETRY.thigh.d / 2,
+    parent: lowerLimbsGroup,
   });
   createBoxMesh({
     name: 'shank',
