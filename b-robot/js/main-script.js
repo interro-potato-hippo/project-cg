@@ -692,7 +692,6 @@ function update(timeDelta) {
   } else {
     // this allows movement along individual axes (key-controlled)
     moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailer' });
-    moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailer' });
   }
 
   if (autoPanCamera) {
