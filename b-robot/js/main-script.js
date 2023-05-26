@@ -165,20 +165,26 @@ const ROBOT_DYNAMIC_PARTS = Object.freeze([
   { part: 'leftArm', profile: 'arms' },
 ]);
 
+const MOVEMENT_FLAGS_VECTORS = Object.freeze({
+  xPositive: new THREE.Vector3(1, 0, 0),
+  xNegative: new THREE.Vector3(-1, 0, 0),
+  zPositive: new THREE.Vector3(0, 0, 1),
+  zNegative: new THREE.Vector3(0, 0, -1),
+});
+
 const MOVEMENT_TIME = 700; // milliseconds
 const TRAILER_MOVEMENT_SPEED = 10 / 1000; // units/millisecond
 const DELTA = Object.freeze(
   Object.fromEntries([
     // automatically generate DELTAs for parts with defined degrees of freedom
-    ...Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max, axis }]) => {
+    ...Object.entries(DEGREES_OF_FREEDOM).map(([key, { min, max }]) => {
       const val = (max - min) / MOVEMENT_TIME;
 
-      return [key, new THREE.Vector3(0, 0, 0).setComponent(['x', 'y', 'z'].indexOf(axis), val)];
+      return [key, val];
     }),
 
     // DELTAs for parts without defined degrees of freedom
-    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED, 0, 0)],
-    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED)],
+    ['trailer', TRAILER_MOVEMENT_SPEED],
   ])
 );
 
@@ -656,7 +662,7 @@ function handleCollisions() {
   if (trailerAnimating) return;
   trailerAnimating = true;
 
-  dynamicElements.trailer.userData.delta = new THREE.Vector3(1, 1, 1);
+  dynamicElements.trailer.userData.movementFlags = {};
 }
 
 ////////////
@@ -668,23 +674,24 @@ function update(timeDelta) {
   );
 
   if (trailerAnimating) {
-    moveDynamicPart(timeDelta, { part: 'trailer' }, ({ group }) => {
+    moveDynamicPart(timeDelta, { part: 'trailer' }, ({ group, timeDelta }) => {
       const direction = new THREE.Vector3().subVectors(TRAILER_ANIMATION_TARGET, group.position);
 
       if (direction.lengthSq() <= FLOAT_COMPARISON_THRESHOLD) {
-        group.userData.delta = new THREE.Vector3();
         trailerAnimating = false;
-        return [new THREE.Vector3(), 0];
+        return new THREE.Vector3();
       }
 
       const maxMovement = direction.length();
 
-      return [direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED), maxMovement];
+      return direction
+        .normalize()
+        .multiplyScalar(TRAILER_MOVEMENT_SPEED * timeDelta)
+        .clampLength(0, maxMovement);
     });
   } else {
     // this allows movement along individual axes (key-controlled)
-    moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerX' });
-    moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailerZ' });
+    moveDynamicPart(timeDelta, { part: 'trailer', profile: 'trailer' });
   }
 
   if (autoPanCamera) {
@@ -696,19 +703,16 @@ function update(timeDelta) {
 function rotateDynamicPart(
   timeDelta,
   { part, profile },
-  deltaSupplier = ({ profile }) => DELTA[profile]
+  deltaSupplier = getObjectDeltaVectorFromFlags
 ) {
   const group = dynamicElements[part];
-  if (!group.userData?.delta) {
+  if (!group.userData?.movementFlags) {
     return;
   }
 
   const props = DEGREES_OF_FREEDOM[profile];
 
-  const delta = group.userData.delta
-    .clone()
-    .multiply(deltaSupplier({ part, profile, group }))
-    .multiplyScalar(timeDelta);
+  const delta = deltaSupplier({ profile, group, timeDelta });
 
   group.rotation.fromArray(
     ['x', 'y', 'z'].map((axis) => {
@@ -724,21 +728,16 @@ function rotateDynamicPart(
 function moveDynamicPart(
   timeDelta,
   { part, profile },
-  deltaSupplier = ({ profile }) => [DELTA[profile], Infinity]
+  deltaSupplier = getObjectDeltaVectorFromFlags
 ) {
   const group = dynamicElements[part];
-  if (!group.userData?.delta) {
+  if (!group.userData?.movementFlags) {
     return;
   }
 
   const props = DEGREES_OF_FREEDOM[profile];
 
-  const [deltaMultiplier, maxMovement] = deltaSupplier({ part, profile, group });
-  const delta = group.userData.delta
-    .clone()
-    .multiply(deltaMultiplier)
-    .multiplyScalar(timeDelta)
-    .clampLength(0, maxMovement);
+  const delta = deltaSupplier({ profile, group, timeDelta });
 
   group.position.fromArray(
     ['x', 'y', 'z'].map((axis) => {
@@ -749,6 +748,16 @@ function moveDynamicPart(
       return newValue;
     })
   );
+}
+
+function getObjectDeltaVectorFromFlags({ group, profile, timeDelta }) {
+  return Object.entries(group?.userData?.movementFlags || {})
+    .filter(([_flagKey, flagValue]) => flagValue)
+    .reduce((vec, [flagKey, _flagValue]) => {
+      return vec.add(MOVEMENT_FLAGS_VECTORS[flagKey]);
+    }, new THREE.Vector3())
+    .normalize()
+    .multiplyScalar(DELTA[profile] * timeDelta);
 }
 
 /////////////
@@ -823,45 +832,39 @@ const keyHandlers = {
   // feet
   KeyQ: transformDynamicPartHandleFactory({
     parts: ['rightFoot', 'leftFoot'],
-    axis: 'x',
-    direction: 1,
+    flag: 'xPositive',
   }),
   KeyA: transformDynamicPartHandleFactory({
     parts: ['rightFoot', 'leftFoot'],
-    axis: 'x',
-    direction: -1,
+    flag: 'xNegative',
   }),
   // waist
   KeyW: transformDynamicPartHandleFactory({
     parts: ['rightLowerLimb', 'leftLowerLimb'],
-    axis: 'x',
-    direction: 1,
+    flag: 'xPositive',
   }),
   KeyS: transformDynamicPartHandleFactory({
     parts: ['rightLowerLimb', 'leftLowerLimb'],
-    axis: 'x',
-    direction: -1,
+    flag: 'xNegative',
   }),
   // arms
   KeyE: transformDynamicPartHandleFactory({
     parts: ['rightArm', 'leftArm'],
-    axis: 'x',
-    direction: 1,
+    flag: 'xPositive',
   }),
   KeyD: transformDynamicPartHandleFactory({
     parts: ['rightArm', 'leftArm'],
-    axis: 'x',
-    direction: -1,
+    flag: 'xNegative',
   }),
   // head
-  KeyR: transformDynamicPartHandleFactory({ parts: ['head'], axis: 'x', direction: -1 }),
-  KeyF: transformDynamicPartHandleFactory({ parts: ['head'], axis: 'x', direction: 1 }),
+  KeyR: transformDynamicPartHandleFactory({ parts: ['head'], flag: 'xNegative' }),
+  KeyF: transformDynamicPartHandleFactory({ parts: ['head'], flag: 'xPositive' }),
 
   // trailer
-  ArrowUp: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'z', direction: 1 }),
-  ArrowDown: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'z', direction: -1 }),
-  ArrowLeft: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'x', direction: 1 }),
-  ArrowRight: transformDynamicPartHandleFactory({ parts: ['trailer'], axis: 'x', direction: -1 }),
+  ArrowUp: transformDynamicPartHandleFactory({ parts: ['trailer'], flag: 'zPositive' }),
+  ArrowDown: transformDynamicPartHandleFactory({ parts: ['trailer'], flag: 'zNegative' }),
+  ArrowLeft: transformDynamicPartHandleFactory({ parts: ['trailer'], flag: 'xPositive' }),
+  ArrowRight: transformDynamicPartHandleFactory({ parts: ['trailer'], flag: 'xNegative' }),
 
   // auto pan camera (EXTRA)
   KeyP: cameraAutoPanToggleHandle,
@@ -897,7 +900,7 @@ function changeActiveCameraHandleFactory(cameraDescriptor) {
   };
 }
 
-function transformDynamicPartHandleFactory({ parts, axis, direction }) {
+function transformDynamicPartHandleFactory({ parts, flag }) {
   return (event, isKeyUp) => {
     if (event.repeat) {
       // ignore holding down keys
@@ -908,18 +911,9 @@ function transformDynamicPartHandleFactory({ parts, axis, direction }) {
 
     parts.forEach((part) => {
       const userData = dynamicElements[part].userData || (dynamicElements[part].userData = {});
-      const delta = userData.delta || (userData.delta = new THREE.Vector3(0, 0, 0));
+      const movementFlags = userData.movementFlags || (userData.movementFlags = {});
 
-      // if this key-up corresponds to a key-down that was ignored while
-      // the trailer was animating (or a key-down that was canceled at
-      // the beginning of the animation), ignore it so it doesn't cause an
-      // unnecessary negative delta
-      if (isKeyUp && delta.lengthSq() <= FLOAT_COMPARISON_THRESHOLD) {
-        return;
-      }
-
-      // Use clamp since not all keydown event have a corresponding keyup event
-      delta[axis] = THREE.Math.clamp(delta[axis] + (isKeyUp ? -direction : direction), -1, 1);
+      movementFlags[flag] = !isKeyUp;
     });
   };
 }
