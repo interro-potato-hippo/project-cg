@@ -165,7 +165,7 @@ const ROBOT_DYNAMIC_PARTS = Object.freeze([
 ]);
 
 const MOVEMENT_TIME = 700; // milliseconds
-const TRAILER_MOVEMENT_SPEED = 10; // units/second
+const TRAILER_MOVEMENT_SPEED = 10 / 1000; // units/millisecond
 const DELTA = Object.freeze(
   Object.fromEntries([
     // automatically generate DELTAs for parts with defined degrees of freedom
@@ -176,8 +176,8 @@ const DELTA = Object.freeze(
     }),
 
     // DELTAs for parts without defined degrees of freedom
-    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED / 1000, 0, 0)],
-    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED / 1000)],
+    ['trailerX', new THREE.Vector3(TRAILER_MOVEMENT_SPEED, 0, 0)],
+    ['trailerZ', new THREE.Vector3(0, 0, TRAILER_MOVEMENT_SPEED)],
   ])
 );
 
@@ -602,7 +602,7 @@ function update(timeDelta) {
         return new THREE.Vector3();
       }
 
-      return direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED / 1000);
+      return direction.normalize().multiplyScalar(TRAILER_MOVEMENT_SPEED);
     });
   } else {
     // this allows movement along individual axes (key-controlled)
