@@ -194,27 +194,27 @@ let autoPanCamera = false; // automatically pan camera to fit scene objects (EXT
 const cameras = {
   // front view
   front: createOrthogonalCamera({
-    bottomAxisPerpendicularVector: new THREE.Vector3(-1, 0, 0), // X axis
-    sideAxisPerpendicularVector: new THREE.Vector3(0, 1, 0), // Y axis
+    bottomAxisVector: new THREE.Vector3(-1, 0, 0), // X axis
+    sideAxisVector: new THREE.Vector3(0, 1, 0), // Y axis
     z: -CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // side view
   side: createOrthogonalCamera({
-    bottomAxisPerpendicularVector: new THREE.Vector3(0, 0, 1), // Z axis
-    sideAxisPerpendicularVector: new THREE.Vector3(0, 1, 0), // Y axis
+    bottomAxisVector: new THREE.Vector3(0, 0, 1), // Z axis
+    sideAxisVector: new THREE.Vector3(0, 1, 0), // Y axis
     x: -CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // top view
   top: createOrthogonalCamera({
-    bottomAxisPerpendicularVector: new THREE.Vector3(1, 0, 0), // X axis
-    sideAxisPerpendicularVector: new THREE.Vector3(0, 0, -1), // Z axis
+    bottomAxisVector: new THREE.Vector3(1, 0, 0), // X axis
+    sideAxisVector: new THREE.Vector3(0, 0, -1), // Z axis
     mirrorView: true,
     y: CAMERA_GEOMETRY.orthogonalDistance,
   }),
   // orthogonal projection: isometric view
   orthogonal: createOrthogonalCamera({
-    bottomAxisPerpendicularVector: new THREE.Vector3(-1, 0, -1).normalize(),
-    sideAxisPerpendicularVector: new THREE.Vector3(0, 1, 0), // Y axis
+    bottomAxisVector: new THREE.Vector3(-1, 0, -1).normalize(),
+    sideAxisVector: new THREE.Vector3(0, 1, 0), // Y axis
     x: CAMERA_GEOMETRY.orthogonalDistance,
     y: CAMERA_GEOMETRY.orthogonalDistance,
     z: -CAMERA_GEOMETRY.orthogonalDistance,
@@ -261,8 +261,8 @@ function createCameras() {
 function getVisibleAreaBoundingBox() {
   if (!autoPanCamera) {
     return {
-      min: CAMERA_GEOMETRY.sceneViewAabb[0],
-      max: CAMERA_GEOMETRY.sceneViewAabb[1],
+      min: CAMERA_GEOMETRY.sceneViewAABB[0],
+      max: CAMERA_GEOMETRY.sceneViewAABB[1],
     };
   }
 
@@ -271,18 +271,32 @@ function getVisibleAreaBoundingBox() {
   return {
     min: robot.position
       .clone()
-      .add(CAMERA_GEOMETRY.robotAabb[0])
-      .min(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAabb[0])),
+      .add(CAMERA_GEOMETRY.robotAABB[0])
+      .min(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAABB[0])),
     max: robot.position
       .clone()
-      .add(CAMERA_GEOMETRY.robotAabb[1])
-      .max(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAabb[1])),
+      .add(CAMERA_GEOMETRY.robotAABB[1])
+      .max(trailer.position.clone().add(CAMERA_GEOMETRY.trailerAABB[1])),
   };
 }
 
+/**
+ * Create an orthogonal camera with the given parameters.
+ *
+ * @param {Object} parameters - The camera parameters.
+ * @param {THREE.Vector3} parameters.bottomAxisVector - A normalized vector along the bottom axis.
+ * Its direction depends from where the camera is facing.
+ * @param {THREE.Vector3} parameters.sideAxisVector - A normalized vector along the side axis.
+ * Its direction depends from where the camera is facing.
+ * @param {int} parameters.x - The X position of the camera.
+ * @param {int} parameters.y - The Y position of the camera.
+ * @param {int} parameters.z - The Z position of the camera.
+ * @param {boolean} parameters.mirrorView - Whether to mirror the camera vertically and horizontally.
+ * @returns {THREE.OrthographicCamera} The created camera.
+ */
 function createOrthogonalCamera({
-  bottomAxisPerpendicularVector,
-  sideAxisPerpendicularVector,
+  bottomAxisVector,
+  sideAxisVector,
   x = 0,
   y = 0,
   z = 0,
@@ -291,10 +305,10 @@ function createOrthogonalCamera({
   const getCameraParameters = () => {
     const { min, max } = getVisibleAreaBoundingBox();
 
-    const maxLeft = bottomAxisPerpendicularVector.dot(max);
-    const minRight = bottomAxisPerpendicularVector.dot(min);
-    const minTop = sideAxisPerpendicularVector.dot(max);
-    const maxBottom = sideAxisPerpendicularVector.dot(min);
+    const maxLeft = bottomAxisVector.dot(max);
+    const minRight = bottomAxisVector.dot(min);
+    const minTop = sideAxisVector.dot(max);
+    const maxBottom = sideAxisVector.dot(min);
 
     const minWidth = Math.abs(minRight - maxLeft);
     const minHeight = Math.abs(minTop - maxBottom);
