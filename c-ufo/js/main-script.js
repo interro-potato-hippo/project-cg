@@ -87,7 +87,7 @@ function createTerrain() {
 }
 
 function createSkydome() {
-  const skydome_props = {
+  const skydomeProps = {
     scene: new THREE.Scene(),
     texture: new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
       minFilter: THREE.LinearFilter,
@@ -109,24 +109,24 @@ function createSkydome() {
     ),
   };
 
-  skydome_props.geometry.setIndex(skydome_props.indices);
-  skydome_props.geometry.setAttribute(
+  skydomeProps.geometry.setIndex(skydomeProps.indices);
+  skydomeProps.geometry.setAttribute(
     'position',
-    new THREE.Float32BufferAttribute(skydome_props.positions, 3)
+    new THREE.Float32BufferAttribute(skydomeProps.positions, 3)
   );
-  skydome_props.geometry.setAttribute(
+  skydomeProps.geometry.setAttribute(
     'color',
-    new THREE.Float32BufferAttribute(skydome_props.colors, 3)
+    new THREE.Float32BufferAttribute(skydomeProps.colors, 3)
   );
   const skydome_mesh = new THREE.Mesh(
-    skydome_props.geometry,
+    skydomeProps.geometry,
     new THREE.MeshBasicMaterial({ vertexColors: true })
   );
-  skydome_props.scene.add(skydome_mesh);
+  skydomeProps.scene.add(skydome_mesh);
 
-  skydome_props.camera.position.set(TEXTURE_SIZES.skydome / 2, 10, TEXTURE_SIZES.skydome / 2);
-  skydome_props.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
-  skydome_props.scene.add(skydome_props.camera);
+  skydomeProps.camera.position.set(TEXTURE_SIZES.skydome / 2, 10, TEXTURE_SIZES.skydome / 2);
+  skydomeProps.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
+  skydomeProps.scene.add(skydomeProps.camera);
 
   generateProps(skydome_mesh, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 1, z: 1 });
   // creates the actual skydome sphere
@@ -134,15 +134,15 @@ function createSkydome() {
   const sphere = new THREE.Mesh(
     GEOMETRY.skydome,
     new THREE.MeshBasicMaterial({
-      map: skydome_props.texture.texture,
+      map: skydomeProps.texture.texture,
       side: THREE.BackSide,
     })
   );
   sphere.rotateX(Math.PI / 2); // rotating it allows for a more "natural" dawn/dusk
   scene.add(sphere);
 
-  renderer.setRenderTarget(skydome_props.texture);
-  renderer.render(skydome_props.scene, skydome_props.camera, skydome_props.texture);
+  renderer.setRenderTarget(skydomeProps.texture);
+  renderer.render(skydomeProps.scene, skydomeProps.camera, skydomeProps.texture);
   renderer.setRenderTarget(null);
 }
 
