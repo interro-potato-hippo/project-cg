@@ -128,7 +128,7 @@ function createSkydome() {
   skydome_props.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
   skydome_props.scene.add(skydome_props.camera);
 
-  generateProps(skydome_mesh, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 0, z: 1 });
+  generateProps(skydome_mesh, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 1, z: 1 });
   // creates the actual skydome sphere
   // TODO: should this be a half sphere?
   const sphere = new THREE.Mesh(
