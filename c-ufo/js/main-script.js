@@ -82,8 +82,6 @@ function createTerrain() {
 }
 
 function createSkydome() {
-  // TODOs:
-  // - magic numbers (100 to SKYDOME_TEXTURE_SIZE or smth)
   const skydome_props = {
     scene: new THREE.Scene(),
     texture: new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
