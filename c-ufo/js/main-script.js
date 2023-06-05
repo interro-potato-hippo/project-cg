@@ -18,7 +18,7 @@ const GEOMETRY = {
 const TEXTURE_SIZES = {
   terrain: 50,
   skydome: 100,
-}
+};
 
 const CAMERA_GEOMETRY = Object.freeze({
   fov: 80,
@@ -94,7 +94,14 @@ function createSkydome() {
     colors: [COLORS.darkPurple, COLORS.darkBlue, COLORS.darkBlue, COLORS.darkPurple].flatMap(
       (color) => [color.r, color.g, color.b]
     ),
-    camera: new THREE.OrthographicCamera(-TEXTURE_SIZES.skydome / 2, TEXTURE_SIZES.skydome / 2, TEXTURE_SIZES.skydome / 2, -TEXTURE_SIZES.skydome / 2, 1, 100),
+    camera: new THREE.OrthographicCamera(
+      -TEXTURE_SIZES.skydome / 2,
+      TEXTURE_SIZES.skydome / 2,
+      TEXTURE_SIZES.skydome / 2,
+      -TEXTURE_SIZES.skydome / 2,
+      1,
+      100
+    ),
   };
 
   skydome_props.geometry.setIndex(skydome_props.indices);
