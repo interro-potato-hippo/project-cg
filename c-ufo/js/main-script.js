@@ -23,7 +23,7 @@ const TEXTURE_SIZES = {
 const PROP_AMOUNTS = {
   terrain: 100, // flowers
   skydome: 1500, // stars
-}
+};
 
 const CAMERA_GEOMETRY = Object.freeze({
   fov: 80,
@@ -152,9 +152,15 @@ function createSkydome() {
  * @param {int} amount - the amount of props to generate
  * @param {int} planeSize - the size of the plane the mesh is on
  * @param {Object} freedom - whether props may have non-zero coordinates on a given axis; by default, they can't
- * @param {Array} colors - the available colors for the props to be generated; by default, they're all white 
+ * @param {Array} colors - the available colors for the props to be generated; by default, they're all white
  */
-function generateProps(mesh, amount, planeSize, freedom = { x : 0, y : 0, z : 0}, colors = [COLORS.white]) {
+function generateProps(
+  mesh,
+  amount,
+  planeSize,
+  freedom = { x: 0, y: 0, z: 0 },
+  colors = [COLORS.white]
+) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(0.1, 32),
     new THREE.MeshBasicMaterial({ color: COLORS.white })
