@@ -4,10 +4,13 @@
 /* GLOBAL CONSTANTS */
 //////////////////////
 const MATERIAL = Object.freeze({
-  terrain: new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }),
+  terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: 0x00ff00 }),
+  skydome: new THREE.MeshBasicMaterial({ wireframe: true, color: 0xfff000, side: THREE.BackSide }),
 });
 const GEOMETRY = Object.freeze({
-  terrain: new THREE.PlaneGeometry(100, 100, 100, 100),
+  // the terrain's plane should be circular, with a radius of 50
+  terrain: new THREE.CircleGeometry(50, 32),
+  skydome: new THREE.SphereGeometry(50, 32, 32, 0, Math.PI),
 });
 
 const CAMERA_GEOMETRY = Object.freeze({
@@ -32,6 +35,7 @@ function createScene() {
   scene.add(new THREE.AxesHelper(20));
 
   createTerrain();
+  createSkydome();
 }
 
 //////////////////////
@@ -68,6 +72,12 @@ function createTerrain() {
   const plane = new THREE.Mesh(GEOMETRY.terrain, MATERIAL.terrain);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
   scene.add(plane);
+}
+
+function createSkydome() {
+  const skydome = new THREE.Mesh(GEOMETRY.skydome, MATERIAL.skydome);
+  skydome.rotateX(-Math.PI / 2);
+  scene.add(skydome);
 }
 
 //////////////////////
