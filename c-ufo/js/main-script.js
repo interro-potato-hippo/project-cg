@@ -17,12 +17,12 @@ const GEOMETRY = {
   skydome: new THREE.SphereGeometry(50, 32, 32),
 };
 const TEXTURE_SIZES = {
-  terrain: 50,
-  skydome: 100,
+  terrain: 64,
+  skydome: 128,
 };
 const PROP_AMOUNTS = {
-  terrain: 100, // flowers
-  skydome: 1500, // stars
+  terrain: 128, // flowers
+  skydome: 2048, // stars
 };
 
 const CAMERA_GEOMETRY = Object.freeze({
