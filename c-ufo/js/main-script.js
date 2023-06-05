@@ -3,6 +3,12 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
+const MATERIAL = Object.freeze({
+  terrain: new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }),
+});
+const GEOMETRY = Object.freeze({
+  terrain: new THREE.PlaneGeometry(100, 100, 100, 100),
+});
 
 const CAMERA_GEOMETRY = Object.freeze({
   fov: 80,
@@ -24,6 +30,8 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 function createScene() {
   scene = new THREE.Scene();
   scene.add(new THREE.AxesHelper(20));
+
+  createTerrain();
 }
 
 //////////////////////
@@ -56,6 +64,11 @@ function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
 ////////////////////////
 /* CREATE OBJECT3D(S) */
 ////////////////////////
+function createTerrain() {
+  const plane = new THREE.Mesh(GEOMETRY.terrain, MATERIAL.terrain);
+  plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+  scene.add(plane);
+}
 
 //////////////////////
 /* CHECK COLLISIONS */
