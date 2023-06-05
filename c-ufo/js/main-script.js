@@ -94,8 +94,16 @@ function createSkydome() {
       magFilter: THREE.NearestFilter,
     }),
     geometry: new THREE.BufferGeometry(),
-    positions: [0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0].map((x) => x * TEXTURE_SIZES.skydome),
-    indices: [0, 1, 2, 2, 3, 0],
+    positions: [
+      [0, 0, 0],
+      [0, 0, 1],
+      [1, 0, 1],
+      [1, 0, 0],
+    ].flatMap((position) => position.map((coord) => coord * TEXTURE_SIZES.skydome)),
+    indices: [
+      [0, 1, 2],
+      [2, 3, 0],
+    ].flatMap((triangle) => triangle),
     colors: [COLORS.darkPurple, COLORS.darkBlue, COLORS.darkBlue, COLORS.darkPurple].flatMap(
       (color) => [color.r, color.g, color.b]
     ),
