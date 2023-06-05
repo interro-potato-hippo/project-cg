@@ -6,7 +6,7 @@
 const CYLINDER_SEGMENTS = 15;
 const MATERIAL = Object.freeze({
   terrain: new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }),
-  oakTree : new THREE.MeshBasicMaterial({ color: 0xA96633 }),
+  oakTree: new THREE.MeshBasicMaterial({ color: 0xa96633 }),
 });
 const GEOMETRY = Object.freeze({
   terrain: new THREE.PlaneGeometry(100, 100, 100, 100),
@@ -77,12 +77,12 @@ function createTerrain() {
 }
 
 /**
-  * Create an oak tree with the given parameters and place it on the scene.
-  *
-  * @param {int} trunkHeight - Height of the trunk of the tree.
-  * @param {THREE.Vector3} position - A vector with the position of the tree relative to the center of the scene.
-  * @param {THREE.Euler} rotation - Orientation of the tree.
-  */
+ * Create an oak tree with the given parameters and place it on the scene.
+ *
+ * @param {int} trunkHeight - Height of the trunk of the tree.
+ * @param {THREE.Vector3} position - A vector with the position of the tree relative to the center of the scene.
+ * @param {THREE.Euler} rotation - Orientation of the tree.
+ */
 function createOakTree(trunkHeight, position, rotation) {
   const treeGroup = new THREE.Group();
   treeGroup.position.copy(position);
@@ -99,9 +99,17 @@ function createOakTree(trunkHeight, position, rotation) {
   const leftBranch = new THREE.Mesh(GEOMETRY.treeLeftBranch, MATERIAL.oakTree);
 
   const leftBranchIncl = Math.PI / 6;
-  const leftBranchX = Math.cos(leftBranchIncl) * (GEOMETRY.treeLeftBranch.parameters.height / 2 + (GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl))) - GEOMETRY.oakTree.parameters.radiusTop;
+  const leftBranchX =
+    Math.cos(leftBranchIncl) *
+      (GEOMETRY.treeLeftBranch.parameters.height / 2 +
+        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl)) -
+    GEOMETRY.oakTree.parameters.radiusTop;
 
-  leftBranch.position.set(leftBranchX, trunkHeight + GEOMETRY.treeLeftBranch.parameters.height / 2, 0);
+  leftBranch.position.set(
+    leftBranchX,
+    trunkHeight + GEOMETRY.treeLeftBranch.parameters.height / 2,
+    0
+  );
   leftBranch.rotation.set(0, 0, -Math.PI / 6); // 30 deg
   console.log(leftBranch);
   treeGroup.add(leftBranch);
@@ -223,7 +231,7 @@ function createCylinderMesh({ name, x = 0, y = 0, z = 0, parent }) {
  *
  * Automatically adds the created Mesh to the given parent.
  */
-function createSphereMesh({ name, x = 0, y = 0, z = 0, scale = [1,1,1], parent }) {
+function createSphereMesh({ name, x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   const { r, rx = 0, ry = 0, rz = 0 } = GEOMETRY[name];
   const material = MATERIAL[name];
 
