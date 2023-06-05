@@ -7,6 +7,7 @@ const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
+  white: new THREE.Color(0xffffff),
 });
 const MATERIAL = {
   terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
@@ -19,6 +20,10 @@ const TEXTURE_SIZES = {
   terrain: 50,
   skydome: 100,
 };
+const PROP_AMOUNTS = {
+  terrain: 100, // flowers
+  skydome: 1500, // stars
+}
 
 const CAMERA_GEOMETRY = Object.freeze({
   fov: 80,
@@ -113,16 +118,17 @@ function createSkydome() {
     'color',
     new THREE.Float32BufferAttribute(skydome_props.colors, 3)
   );
-  const texture_skydome = new THREE.Mesh(
+  const skydome_mesh = new THREE.Mesh(
     skydome_props.geometry,
     new THREE.MeshBasicMaterial({ vertexColors: true })
   );
-  skydome_props.scene.add(texture_skydome);
+  skydome_props.scene.add(skydome_mesh);
 
   skydome_props.camera.position.set(TEXTURE_SIZES.skydome / 2, 10, TEXTURE_SIZES.skydome / 2);
   skydome_props.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
   skydome_props.scene.add(skydome_props.camera);
 
+  generateProps(skydome_mesh, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 0, z: 1 });
   // creates the actual skydome sphere
   // TODO: should this be a half sphere?
   const sphere = new THREE.Mesh(
@@ -132,11 +138,38 @@ function createSkydome() {
       side: THREE.BackSide,
     })
   );
+  sphere.rotateX(Math.PI / 2); // rotating it allows for a more "natural" dawn/dusk
   scene.add(sphere);
 
   renderer.setRenderTarget(skydome_props.texture);
   renderer.render(skydome_props.scene, skydome_props.camera, skydome_props.texture);
   renderer.setRenderTarget(null);
+}
+
+/**
+ * Fills a texture with a given amount of props.
+ * @param {THREE.MESH} mesh - the mesh to generate props on
+ * @param {int} amount - the amount of props to generate
+ * @param {int} planeSize - the size of the plane the mesh is on
+ * @param {Object} freedom - whether props may have non-zero coordinates on a given axis; by default, they can't
+ * @param {Array} colors - the available colors for the props to be generated; by default, they're all white 
+ */
+function generateProps(mesh, amount, planeSize, freedom = { x : 0, y : 0, z : 0}, colors = [COLORS.white]) {
+  const prop = new THREE.Mesh(
+    new THREE.CircleGeometry(0.1, 32),
+    new THREE.MeshBasicMaterial({ color: COLORS.white })
+  );
+  for (let i = 0; i < amount; i++) {
+    const dot = prop.clone();
+    dot.position.set(
+      freedom.x * Math.random() * planeSize,
+      freedom.y * Math.random() * planeSize,
+      freedom.z * Math.random() * planeSize
+    );
+    dot.rotateX(-Math.PI / 2);
+    dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
+    mesh.add(dot);
+  }
 }
 
 //////////////////////
