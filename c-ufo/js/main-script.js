@@ -15,6 +15,10 @@ const GEOMETRY = {
   terrain: new THREE.PlaneGeometry(50, 50, 50, 50),
   skydome: new THREE.SphereGeometry(50, 32, 32),
 };
+const TEXTURE_SIZES = {
+  terrain: 50,
+  skydome: 100,
+}
 
 const CAMERA_GEOMETRY = Object.freeze({
   fov: 80,
@@ -87,12 +91,12 @@ function createSkydome() {
       magFilter: THREE.NearestFilter,
     }),
     geometry: new THREE.BufferGeometry(),
-    positions: [0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0].map((x) => x * 100),
+    positions: [0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 0].map((x) => x * TEXTURE_SIZES.skydome),
     indices: [0, 1, 2, 2, 3, 0],
     colors: [COLORS.darkPurple, COLORS.darkBlue, COLORS.darkBlue, COLORS.darkPurple].flatMap(
       (color) => [color.r, color.g, color.b]
     ),
-    camera: new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 100),
+    camera: new THREE.OrthographicCamera(-TEXTURE_SIZES.skydome / 2, TEXTURE_SIZES.skydome / 2, TEXTURE_SIZES.skydome / 2, -TEXTURE_SIZES.skydome / 2, 1, 100),
   };
 
   skydome_props.geometry.setIndex(skydome_props.indices);
@@ -110,8 +114,8 @@ function createSkydome() {
   );
   skydome_props.scene.add(texture_skydome);
 
-  skydome_props.camera.position.set(50, 10, 50);
-  skydome_props.camera.lookAt(50, 0, 50);
+  skydome_props.camera.position.set(TEXTURE_SIZES.skydome / 2, 10, TEXTURE_SIZES.skydome / 2);
+  skydome_props.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
   skydome_props.scene.add(skydome_props.camera);
 
   // creates the actual skydome sphere
