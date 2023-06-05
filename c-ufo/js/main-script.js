@@ -3,15 +3,18 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
-const MATERIAL = Object.freeze({
-  terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: 0x00ff00 }),
-  skydome: new THREE.MeshBasicMaterial({ wireframe: true, color: 0xfff000, side: THREE.BackSide }),
+const COLORS = Object.freeze({
+  darkBlue: new THREE.Color(0x00008b),
+  darkPurple: new THREE.Color(0x632cd4),
+  green: new THREE.Color(0x55cc55),
 });
-const GEOMETRY = Object.freeze({
-  // the terrain's plane should be circular, with a radius of 50
-  terrain: new THREE.CircleGeometry(50, 32),
-  skydome: new THREE.SphereGeometry(50, 32, 32, 0, Math.PI),
-});
+const MATERIAL = {
+  terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
+};
+const GEOMETRY = {
+  terrain: new THREE.PlaneGeometry(50, 50, 50, 50),
+  skydome: new THREE.SphereGeometry(100, 32, 32),
+};
 
 const CAMERA_GEOMETRY = Object.freeze({
   fov: 80,
@@ -75,9 +78,52 @@ function createTerrain() {
 }
 
 function createSkydome() {
-  const skydome = new THREE.Mesh(GEOMETRY.skydome, MATERIAL.skydome);
-  skydome.rotateX(-Math.PI / 2);
-  scene.add(skydome);
+  const skydome_props = {
+    scene: new THREE.Scene(),
+    texture: new THREE.WebGLRenderTarget(
+      window.innerWidth, window.innerHeight,
+      { minFilter: THREE.LinearFilter, magFilter: THREE.NearestFilter }
+    ),
+    geometry: new THREE.BufferGeometry(),
+    positions: [
+      0, 0, 0,
+      0, 0, 1,
+      1, 0, 1,
+      1, 0, 0,
+    ].map((x) => x * 100),
+    indices: [
+      0, 1, 2,
+      2, 3, 0,
+    ],
+    colors: [
+      COLORS.darkPurple,
+      COLORS.darkPurple,
+      COLORS.darkBlue,
+      COLORS.darkBlue,
+    ].flatMap((color) => [ color.r, color.g, color.b, ]),
+    camera: new THREE.OrthographicCamera(-50, 50, 50, -50, 1, 100),
+  }
+  
+  skydome_props.geometry.setIndex(skydome_props.indices);
+  skydome_props.geometry.setAttribute('position', new THREE.Float32BufferAttribute(skydome_props.positions, 3));
+  skydome_props.geometry.setAttribute('color', new THREE.Float32BufferAttribute(skydome_props.colors, 3));
+  skydome_props.camera.position.set(50, 25, 50);
+  skydome_props.camera.lookAt(50, 0, 50);
+
+  const texture_material = new THREE.MeshBasicMaterial({ vertexColors: true });
+  const texture_skydome = new THREE.Mesh(skydome_props.geometry, texture_material);
+  skydome_props.scene.add(texture_skydome);
+  skydome_props.scene.add(skydome_props.camera);
+
+  // create sphere
+  const sphere_material = new THREE.MeshBasicMaterial({ map: skydome_props.texture.texture, side: THREE.DoubleSide }); // TODO: change this to backside
+  const sphere = new THREE.Mesh(GEOMETRY.skydome, sphere_material);
+  sphere.position.set(0, 0, 0);
+  scene.add(sphere);
+
+  renderer.setRenderTarget(skydome_props.texture);
+  renderer.render(skydome_props.scene, skydome_props.camera, skydome_props.texture);
+  renderer.setRenderTarget(null);
 }
 
 //////////////////////
