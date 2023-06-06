@@ -14,6 +14,8 @@ const MATERIAL = {
 };
 const DOME_RADIUS = 50;
 const PROP_RADIUS = 0.1;
+const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS) ** 2;
+
 const GEOMETRY = {
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
   skydome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32),
@@ -183,8 +185,10 @@ function generateProps(
     do {
       position = generatePropPosition(planeSize, freedom);
     } while (
+      // we use distanceToSquared instead of distanceTo because it's faster, as
+      // no square root calculations are needed
       occupiedPositions.some(
-        (occupiedPosition) => occupiedPosition.distanceTo(position) <= 2 * PROP_RADIUS
+        (occupiedPosition) => occupiedPosition.distanceToSquared(position) <= MIN_PROP_DISTANCE_SQ
       )
     );
     dot.position.set(position.x, position.y, position.z);
