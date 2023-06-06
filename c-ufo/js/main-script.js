@@ -203,23 +203,24 @@ function generateProps(
  * Generates a random position within a plane.
  * @param {int} planeSize - the size of the plane where the props will be placed on
  * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
+ * @param {THREE.Vector3} basePoint - the base point of the plane; by default, it's the origin
  * @returns a new THREE.Vector3 with coordinates within the plane
  */
-function generatePropPosition(planeSize, freedom) {
+function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(0, 0, 0)) {
   return new THREE.Vector3(
     THREE.Math.clamp(
       freedom.x * Math.random() * planeSize,
-      0 + PROP_RADIUS,
+      basePoint.x + PROP_RADIUS,
       planeSize - PROP_RADIUS
     ),
     THREE.Math.clamp(
       freedom.y * Math.random() * planeSize,
-      0 + PROP_RADIUS,
+      basePoint.y + PROP_RADIUS,
       planeSize - PROP_RADIUS
     ),
     THREE.Math.clamp(
       freedom.z * Math.random() * planeSize,
-      0 + PROP_RADIUS,
+      basePoint.z + PROP_RADIUS,
       planeSize - PROP_RADIUS
     )
   );
