@@ -12,9 +12,10 @@ const COLORS = Object.freeze({
 const MATERIAL = {
   terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
 };
+const DOME_RADIUS = 50;
 const GEOMETRY = {
-  terrain: new THREE.PlaneGeometry(50, 50, 50, 50),
-  skydome: new THREE.SphereGeometry(50, 32, 32),
+  terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
+  skydome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32),
 };
 const TEXTURE_SIZES = {
   terrain: 64,
