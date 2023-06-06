@@ -13,6 +13,7 @@ const MATERIAL = {
   terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
 };
 const DOME_RADIUS = 50;
+const PROP_RADIUS = 0.1;
 const GEOMETRY = {
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
   skydome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32),
@@ -170,18 +171,42 @@ function generateProps(
   colors = [COLORS.white]
 ) {
   const prop = new THREE.Mesh(
-    new THREE.CircleGeometry(0.1, 32),
+    new THREE.CircleGeometry(PROP_RADIUS, 32),
     new THREE.MeshBasicMaterial({ color: COLORS.white })
   );
+  let occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
-    const dot = prop.clone();
-    dot.position.set(
-      freedom.x * Math.random() * planeSize,
-      freedom.y * Math.random() * planeSize,
-      freedom.z * Math.random() * planeSize
+    let dot = prop.clone();
+    let position;
+    // we can't generate props on top of each other, so we keep track of the occupied positions
+    // and generate a new one if the current one is already occupied
+    do {
+      position = new THREE.Vector3(
+        THREE.Math.clamp(
+          freedom.x * Math.random() * planeSize,
+          0 + PROP_RADIUS,
+          planeSize - PROP_RADIUS
+        ),
+        THREE.Math.clamp(
+          freedom.y * Math.random() * planeSize,
+          0 + PROP_RADIUS,
+          planeSize - PROP_RADIUS
+        ),
+        THREE.Math.clamp(
+          freedom.z * Math.random() * planeSize,
+          0 + PROP_RADIUS,
+          planeSize - PROP_RADIUS
+        )
+      );
+    } while (
+      occupiedPositions.some(
+        (occupiedPosition) => occupiedPosition.distanceTo(position) <= 2 * PROP_RADIUS
+      )
     );
+    dot.position.set(position.x, position.y, position.z);
     dot.rotateX(-Math.PI / 2);
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
+    occupiedPositions.push(position);
     mesh.add(dot);
   }
 }
