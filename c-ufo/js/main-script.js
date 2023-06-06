@@ -174,7 +174,7 @@ function generateProps(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
     new THREE.MeshBasicMaterial({ color: COLORS.white })
   );
-  let occupiedPositions = []; // props cannot be generated on top of each other
+  const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
     let dot = prop.clone();
     let position;
