@@ -8,17 +8,21 @@ const COLORS = Object.freeze({
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
   white: new THREE.Color(0xffffff),
+  moonYellow: new THREE.Color(0xebc815),
 });
 const MATERIAL = {
   terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
+  moon: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.moonYellow })
 };
 const DOME_RADIUS = 50;
 const PROP_RADIUS = 0.1;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS) ** 2;
+const MOON_RADIUS = 5;
 
 const GEOMETRY = {
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
   skydome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32),
+  moon: new THREE.SphereGeometry(MOON_RADIUS, 32),
 };
 const TEXTURE_SIZES = {
   terrain: 64,
@@ -52,6 +56,7 @@ function createScene() {
 
   createTerrain();
   createSkydome();
+  createMoon();
 }
 
 //////////////////////
@@ -224,6 +229,12 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
       planeSize - PROP_RADIUS
     )
   );
+}
+
+function createMoon() {
+  const moon = new THREE.Mesh(GEOMETRY.moon, MATERIAL.moon);
+  moon.position.set(10, 25, 10);
+  scene.add(moon);
 }
 
 //////////////////////
