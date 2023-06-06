@@ -140,7 +140,11 @@ function createSkydome() {
   skydomeProps.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
   skydomeProps.scene.add(skydomeProps.camera);
 
-  generateProps(skydome_mesh, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 1, z: 1 });
+  generateProps(skydomeProps.scene, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, {
+    x: 1,
+    y: 1,
+    z: 1,
+  });
   // creates the actual skydome sphere
   const sphere = new THREE.Mesh(
     GEOMETRY.skydome,
@@ -159,14 +163,14 @@ function createSkydome() {
 
 /**
  * Fills a texture with a given amount of props.
- * @param {THREE.MESH} mesh - the mesh to generate props on
+ * @param {THREE.Scene} scene - the scene where the props will be generated on
  * @param {int} amount - the amount of props to generate
  * @param {int} planeSize - the size of the plane the mesh is on
  * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @param {Array} colors - the available colors for the props to be generated; by default, they're all white
  */
 function generateProps(
-  mesh,
+  scene,
   amount,
   planeSize,
   freedom = { x: 0, y: 0, z: 0 },
@@ -195,7 +199,7 @@ function generateProps(
     dot.rotateX(-Math.PI / 2);
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
-    mesh.add(dot);
+    scene.add(dot);
   }
 }
 
