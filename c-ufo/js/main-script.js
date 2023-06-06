@@ -100,9 +100,9 @@ function createOakTree(trunkHeight, position, rotation) {
 
   const leftBranchIncl = Math.PI / 6;
   const leftBranchX =
-    Math.cos(leftBranchIncl) *
+    Math.cos(Math.PI / 2 - leftBranchIncl) *
       (GEOMETRY.treeLeftBranch.parameters.height / 2 +
-        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl)) -
+        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(leftBranchIncl)) -
     GEOMETRY.oakTree.parameters.radiusTop;
 
   leftBranch.position.set(
