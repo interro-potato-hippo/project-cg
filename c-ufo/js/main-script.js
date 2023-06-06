@@ -162,7 +162,7 @@ function createSkydome() {
  * @param {THREE.MESH} mesh - the mesh to generate props on
  * @param {int} amount - the amount of props to generate
  * @param {int} planeSize - the size of the plane the mesh is on
- * @param {Object} freedom - whether props may have non-zero coordinates on a given axis; by default, they can't
+ * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @param {Array} colors - the available colors for the props to be generated; by default, they're all white
  */
 function generateProps(
@@ -202,7 +202,7 @@ function generateProps(
 /**
  * Generates a random position within a plane.
  * @param {int} planeSize - the size of the plane where the props will be placed on
- * @param {Object} freedom - whether props may have non-zero coordinates on a given axis; by default, they can't
+ * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @returns a new THREE.Vector3 with coordinates within the plane
  */
 function generatePropPosition(planeSize, freedom) {
