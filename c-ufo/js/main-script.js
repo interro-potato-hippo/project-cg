@@ -140,7 +140,7 @@ function createSkydome() {
   skydomeProps.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
   skydomeProps.scene.add(skydomeProps.camera);
 
-  generateProps(skydome_mesh, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 1, z: 1 });
+  generateProps(skydomeProps.scene, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 1, z: 1 });
   // creates the actual skydome sphere
   const sphere = new THREE.Mesh(
     GEOMETRY.skydome,
