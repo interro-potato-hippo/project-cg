@@ -176,7 +176,7 @@ function generateProps(
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
-    let dot = prop.clone();
+    const dot = prop.clone();
     let position;
     // we can't generate props on top of each other, so we keep track of the occupied positions
     // and generate a new one if the current one is already occupied
