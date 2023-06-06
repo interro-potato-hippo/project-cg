@@ -181,23 +181,7 @@ function generateProps(
     // we can't generate props on top of each other, so we keep track of the occupied positions
     // and generate a new one if the current one is already occupied
     do {
-      position = new THREE.Vector3(
-        THREE.Math.clamp(
-          freedom.x * Math.random() * planeSize,
-          0 + PROP_RADIUS,
-          planeSize - PROP_RADIUS
-        ),
-        THREE.Math.clamp(
-          freedom.y * Math.random() * planeSize,
-          0 + PROP_RADIUS,
-          planeSize - PROP_RADIUS
-        ),
-        THREE.Math.clamp(
-          freedom.z * Math.random() * planeSize,
-          0 + PROP_RADIUS,
-          planeSize - PROP_RADIUS
-        )
-      );
+      position = generatePosition(planeSize, freedom);
     } while (
       occupiedPositions.some(
         (occupiedPosition) => occupiedPosition.distanceTo(position) <= 2 * PROP_RADIUS
@@ -209,6 +193,32 @@ function generateProps(
     occupiedPositions.push(position);
     mesh.add(dot);
   }
+}
+
+/**
+ * Generates a random position within a plane.
+ * @param {int} planeSize - the size of the plane the mesh is on
+ * @param {Object} freedom - whether props may have non-zero coordinates on a given axis; by default, they can't
+ * @returns a new THREE.Vector3 with coordinates within the plane
+ */
+function generatePosition(planeSize, freedom) {
+  return new THREE.Vector3(
+    THREE.Math.clamp(
+      freedom.x * Math.random() * planeSize,
+      0 + PROP_RADIUS,
+      planeSize - PROP_RADIUS
+    ),
+    THREE.Math.clamp(
+      freedom.y * Math.random() * planeSize,
+      0 + PROP_RADIUS,
+      planeSize - PROP_RADIUS
+    ),
+    THREE.Math.clamp(
+      freedom.z * Math.random() * planeSize,
+      0 + PROP_RADIUS,
+      planeSize - PROP_RADIUS
+    )
+  );
 }
 
 //////////////////////
