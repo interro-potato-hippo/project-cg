@@ -139,7 +139,6 @@ function createSkydome() {
 
   generateProps(skydome_mesh, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, { x: 1, y: 1, z: 1 });
   // creates the actual skydome sphere
-  // TODO: should this be a half sphere?
   const sphere = new THREE.Mesh(
     GEOMETRY.skydome,
     new THREE.MeshBasicMaterial({
