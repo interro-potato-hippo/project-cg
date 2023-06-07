@@ -17,13 +17,13 @@ const MATERIALS = {
   sky: () => new THREE.MeshBasicMaterial({ vertexColors: true }),
   skyDome: () =>
     // FIXME: use MeshStandardMaterial
-    new THREE.MeshBasicMaterial({
+    new THREE.MeshStandardMaterial({
       map: skyTexture.texture,
       side: THREE.BackSide,
     }),
 
   // FIXME: use MeshStandardMaterial
-  terrain: () => new THREE.MeshBasicMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
+  terrain: () => new THREE.MeshStandardMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
 };
 
 const DOME_RADIUS = 64;
