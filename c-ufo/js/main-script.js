@@ -37,6 +37,7 @@ const GEOMETRY = {
 const TEXTURE_SIZES = {
   sky: 64,
 };
+const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
   stars: 512,
 };
@@ -83,7 +84,7 @@ function createBufferScene() {
 
   createBufferSky();
 
-  skyTexture = new THREE.WebGLRenderTarget(TEXTURE_SIZES.sky, TEXTURE_SIZES.sky, {
+  skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.NearestFilter,
   });
