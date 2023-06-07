@@ -9,6 +9,7 @@ const COLORS = Object.freeze({
   green: new THREE.Color(0x55cc55),
   white: new THREE.Color(0xffffff),
   ambientLight: new THREE.Color(0xeec37f),
+  orange: new THREE.Color(0xea924b),
 });
 
 // must be functions because they depend on textures initialized later
@@ -18,8 +19,9 @@ const MATERIAL_PARAMS = {
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
 
-  // TODO: remove double side
+  // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseRoof: () => ({ vertexColors: true, side: THREE.DoubleSide }),
 };
 
 const DOME_RADIUS = 64;
@@ -31,6 +33,7 @@ const GEOMETRY = {
   skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
   houseWalls: createHouseWallsGeometry(),
+  houseRoof: createHouseRoofGeometry(),
 };
 const TEXTURE_SIZES = {
   sky: 64,
@@ -266,6 +269,7 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
 function createHouse() {
   const house = createGroup({ parent: scene });
   createNamedMesh('houseWalls', house);
+  createNamedMesh('houseRoof', house);
 }
 
 function createHouseWallsGeometry() {
@@ -371,6 +375,35 @@ function createHouseWallsGeometry() {
       // back wall
       [41, 45, 46],
       [41, 46, 44],
+    ],
+  });
+}
+
+function createHouseRoofGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // base of the roof
+      { x: 0, y: 4, z: 0, color: COLORS.orange }, // v0
+      { x: 0, y: 4, z: -5.5, color: COLORS.orange }, // v1
+      { x: 20, y: 4, z: 0, color: COLORS.orange }, // v2
+      { x: 20, y: 4, z: -5.5, color: COLORS.orange }, // v3
+
+      // top of the roof
+      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v4
+      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v5
+    ],
+    triangles: [
+      // least deep (closest to z = 0) roof side
+      [0, 2, 5],
+      [0, 5, 4],
+
+      // most deep (closest to z = -5.5) roof side
+      [1, 3, 5],
+      [1, 5, 4],
+
+      // sides
+      [1, 0, 4],
+      [2, 3, 5],
     ],
   });
 }
