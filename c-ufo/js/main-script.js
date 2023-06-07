@@ -17,6 +17,7 @@ const MATERIAL = {
   terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
   oakTree: new THREE.MeshBasicMaterial({ color: COLORS.brown }),
   treeLeaf: new THREE.MeshBasicMaterial({ color: COLORS.darkGreen }),
+  ufoBody: new THREE.MeshBasicMaterial({ color: COLORS.darkPurple }), // TODO change color
 };
 const DOME_RADIUS = 50;
 const PROP_RADIUS = 0.1;
@@ -69,6 +70,8 @@ function createScene() {
   createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
   createOakTree(3, new THREE.Vector3(14, 0, 9), new THREE.Euler(0, 0, 0));
   createOakTree(4, new THREE.Vector3(-36, 0, -14), new THREE.Euler(0, Math.PI / 6, 0));
+
+  createUfo(new THREE.Vector3(0, 10, 0));
 }
 
 //////////////////////
@@ -322,6 +325,19 @@ function createOakTree(trunkHeight, position, rotation) {
   );
 
   treeGroup.add(rightLeaf);
+}
+
+function createUfo(initialPosition) {
+  const ufoGroup = new THREE.Group();
+  ufoGroup.position.copy(initialPosition);
+  scene.add(ufoGroup);
+
+  const ufoBody = new THREE.Mesh(
+    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+    MATERIAL.ufoBody
+  );
+
+  ufoGroup.add(ufoBody);
 }
 
 //////////////////////
