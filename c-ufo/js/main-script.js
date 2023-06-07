@@ -17,7 +17,10 @@ const MATERIAL = {
   terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
   oakTree: new THREE.MeshBasicMaterial({ color: COLORS.brown }),
   treeLeaf: new THREE.MeshBasicMaterial({ color: COLORS.darkGreen }),
-  ufoBody: new THREE.MeshBasicMaterial({ color: COLORS.darkPurple }), // TODO change color
+  ufoBody: new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true }), // TODO change color: ;
+  ufoCockpit: new THREE.MeshBasicMaterial({ color: 0x00ffff }), // TODO change color
+  ufoSpotlight: new THREE.MeshBasicMaterial({ color: 0xff00ff }), // TODO change color
+  ufoSphere: new THREE.MeshBasicMaterial({ color: 0xffffff }), // TODO change color
 };
 const DOME_RADIUS = 50;
 const PROP_RADIUS = 0.1;
@@ -32,6 +35,10 @@ const GEOMETRY = {
   treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
   treeLeftLeaf: { rx: 2.3, ry: 1.1, rz: 1.5 }, // store radius in all axis since SphereGeometry only has one radius
   treeRightLeaf: { rx: 3, ry: 1.375, rz: 2.5 }, // store radius in all axis since SphereGeometry only has one radius
+  ufoBody: new THREE.Vector3(3.5, 1, 3.5),
+  ufoCockpit: new THREE.Vector3(1.5, 1.5, 1.5),
+  ufoSpotlight: new THREE.CylinderGeometry(1.5, 1.5, 0.5, CYLINDER_SEGMENTS),
+  ufoSphere: new THREE.Vector3(0.25, 0.25, 0.25),
 };
 const TEXTURE_SIZES = {
   terrain: 64,
@@ -338,12 +345,37 @@ function createUfo(initialPosition) {
   ufoGroup.position.copy(initialPosition);
   scene.add(ufoGroup);
 
-  const ufoBody = new THREE.Mesh(
+  const body = new THREE.Mesh(
     new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
     MATERIAL.ufoBody
   );
+  body.scale.copy(GEOMETRY.ufoBody);
+  ufoGroup.add(body);
 
-  ufoGroup.add(ufoBody);
+  const cockpit = new THREE.Mesh(
+    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+    MATERIAL.ufoCockpit
+  );
+  cockpit.scale.copy(GEOMETRY.ufoCockpit);
+  cockpit.position.set(0, GEOMETRY.ufoBody.y / 2, 0);
+  ufoGroup.add(cockpit);
+
+  const spotlight = new THREE.Mesh(GEOMETRY.ufoSpotlight, MATERIAL.ufoSpotlight);
+  spotlight.position.set(
+    0,
+    -GEOMETRY.ufoSpotlight.parameters.height / 2 - GEOMETRY.ufoBody.y / 2,
+    0
+  );
+  ufoGroup.add(spotlight);
+
+  const sphere = new THREE.Mesh(
+    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+    MATERIAL.ufoSphere
+  );
+  sphere.scale.copy(GEOMETRY.ufoSphere);
+  sphere.position.set(2.8, -GEOMETRY.ufoBody.y / 4, 0);
+  ufoGroup.add(sphere);
+  console.log(sphere);
 }
 
 //////////////////////
