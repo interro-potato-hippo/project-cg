@@ -299,7 +299,10 @@ function createOakTree(trunkHeight, position, rotation) {
 
   treeGroup.add(rightBranch);
 
-  const leftLeaf = new THREE.Mesh(new THREE.SphereGeometry(1, SPHERE_SEGMENTS), MATERIAL.treeLeaf);
+  const leftLeaf = new THREE.Mesh(
+    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+    MATERIAL.treeLeaf
+  );
   leftLeaf.position.set(
     leftBranchX * 2,
     trunkHeight + leftBranchY * 2 + GEOMETRY.treeLeftLeaf.ry / 2,
@@ -309,7 +312,10 @@ function createOakTree(trunkHeight, position, rotation) {
 
   treeGroup.add(leftLeaf);
 
-  const rightLeaf = new THREE.Mesh(new THREE.SphereGeometry(1, SPHERE_SEGMENTS), MATERIAL.treeLeaf);
+  const rightLeaf = new THREE.Mesh(
+    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+    MATERIAL.treeLeaf
+  );
   rightLeaf.position.set(
     (-GEOMETRY.treeRightBranch.parameters.height * 2) / 3,
     trunkHeight + leftBranchY * 2 + GEOMETRY.treeLeftLeaf.ry / 2,
