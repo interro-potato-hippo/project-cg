@@ -8,6 +8,7 @@ const COLORS = Object.freeze({
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
   white: new THREE.Color(0xffffff),
+  ambientLight: new THREE.Color(0xeec37f),
 });
 
 // must be functions because they depend on textures initialized later
@@ -15,14 +16,12 @@ const COLORS = Object.freeze({
 const MATERIALS = {
   sky: () => new THREE.MeshBasicMaterial({ vertexColors: true }),
   skyDome: () =>
-    // FIXME: use MeshStandardMaterial
-    new THREE.MeshBasicMaterial({
+    new THREE.MeshStandardMaterial({
       map: skyTexture.texture,
       side: THREE.BackSide,
     }),
 
-  // FIXME: use MeshStandardMaterial
-  terrain: () => new THREE.MeshBasicMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
+  terrain: () => new THREE.MeshStandardMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
 };
 
 const DOME_RADIUS = 64;
@@ -75,6 +74,7 @@ function createScene() {
   scene = new THREE.Scene();
   scene.add(new THREE.AxesHelper(20));
 
+  createLights();
   createTerrain();
   createSkyDome();
 }
@@ -141,6 +141,10 @@ function createOrthographicCamera({
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
+function createLights() {
+  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  // TODO: add directional lights
+}
 
 ////////////////////////
 /* CREATE OBJECT3D(S) */
