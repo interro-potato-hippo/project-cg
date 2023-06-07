@@ -181,6 +181,7 @@ function createBufferSky() {
   const mesh = new THREE.Mesh(geometry, MATERIALS.sky());
   sky.add(mesh);
 
+  // the negative y allows for the stars not to be directly on top of the sky
   const stars = createGroup({ y: -1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
