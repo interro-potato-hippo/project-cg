@@ -55,8 +55,8 @@ const SKY_CAMERA = createOrthographicCamera({
   top: TEXTURE_SIZES.sky / 2,
   bottom: -TEXTURE_SIZES.sky / 2,
   near: 1,
-  far: 1000,
-  y: 500,
+  far: 15,
+  y: 5,
   atY: 10,
 });
 
@@ -172,15 +172,15 @@ function createBufferSky() {
       { x: 1, y: 0, z: 0, color: COLORS.darkPurple },
     ],
     triangles: [
-      [0, 1, 2],
-      [2, 3, 0],
+      [2, 1, 0],
+      [0, 3, 2],
     ],
     scale: TEXTURE_SIZES.sky,
   });
   const mesh = new THREE.Mesh(geometry, MATERIALS.sky());
   sky.add(mesh);
 
-  const stars = createGroup({ y: 1, parent: sky });
+  const stars = createGroup({ y: -1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
     y: 0,
@@ -205,7 +205,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white })
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.BackSide })
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
