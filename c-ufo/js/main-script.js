@@ -12,16 +12,11 @@ const COLORS = Object.freeze({
 });
 
 // must be functions because they depend on textures initialized later
-// TODO: don't create new materials every time
-const MATERIALS = {
-  sky: () => new THREE.MeshBasicMaterial({ vertexColors: true }),
-  skyDome: () =>
-    new THREE.MeshStandardMaterial({
-      map: skyTexture.texture,
-      side: THREE.BackSide,
-    }),
+const MATERIAL_PARAMS = {
+  sky: () => ({ vertexColors: true }),
 
-  terrain: () => new THREE.MeshStandardMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
+  skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
+  terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
 };
 
 const DOME_RADIUS = 64;
@@ -59,13 +54,16 @@ const SKY_CAMERA = createOrthographicCamera({
   y: 5,
   atY: 10,
 });
+const NAMED_MESHES = {}; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-
 let renderer, scene, bufferScene, skyTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
+let activeMaterial = 'phong'; // starts as phong, may change afterwards
+let activeMaterialChanged = false; // used to know when to update the material of the meshes
+// ^ prevents logic in key event handlers, moving it to the update function
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -150,14 +148,12 @@ function createLights() {
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
-  const plane = new THREE.Mesh(GEOMETRY.terrain, MATERIALS.terrain());
+  const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
-  scene.add(plane);
 }
 
 function createSkyDome() {
-  const hemisphere = new THREE.Mesh(GEOMETRY.skyDome, MATERIALS.skyDome());
-  scene.add(hemisphere);
+  createNamedMesh('skyDome', scene);
 }
 
 function createBufferSky() {
@@ -181,7 +177,7 @@ function createBufferSky() {
     ],
     scale: TEXTURE_SIZES.sky,
   });
-  const mesh = new THREE.Mesh(geometry, MATERIALS.sky());
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.sky()));
   sky.add(mesh);
 
   // the negative y allows for the stars not to be directly on top of the sky
@@ -195,14 +191,14 @@ function createBufferSky() {
 
 /**
  * Fills a texture with a given amount of props.
- * @param {THREE.Group} group - the group to which the props will be added
+ * @param {THREE.Group} parent - the parent to which the props will be added
  * @param {number} amount - the amount of props to generate
  * @param {number} planeSize - the size of the plane the mesh is on
  * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @param {Array} colors - the available colors for the props to be generated; by default, they're all white
  */
 function generateProps(
-  group,
+  parent,
   amount,
   planeSize,
   freedom = { x: 0, y: 0, z: 0 },
@@ -231,7 +227,7 @@ function generateProps(
     dot.rotateX(-Math.PI / 2);
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
-    group.add(dot);
+    parent.add(dot);
   }
 }
 
@@ -307,7 +303,14 @@ function handleCollisions() {}
 ////////////
 /* UPDATE */
 ////////////
-function update() {}
+function update() {
+  if (activeMaterialChanged) {
+    activeMaterialChanged = false;
+    Object.values(NAMED_MESHES).forEach(
+      (mesh) => (mesh.material = mesh.userData.materials[activeMaterial])
+    );
+  }
+}
 
 /////////////
 /* DISPLAY */
@@ -333,12 +336,15 @@ function init() {
   createBufferScene();
   createScene();
   createCameras();
+
+  window.addEventListener('keydown', onKeyDown);
 }
 
 /////////////////////
 /* ANIMATION CYCLE */
 /////////////////////
 function animate() {
+  update();
   render();
   requestAnimationFrame(animate);
 }
@@ -358,7 +364,30 @@ function onResize() {
 ///////////////////////
 /* KEY DOWN CALLBACK */
 ///////////////////////
-function onKeyDown(e) {}
+const keyHandlers = {
+  KeyQ: changeMaterialHandlerFactory('gouraud'),
+  KeyW: changeMaterialHandlerFactory('phong'),
+  KeyE: changeMaterialHandlerFactory('cartoon'),
+  KeyR: changeMaterialHandlerFactory('standard'),
+};
+
+function onKeyDown(event) {
+  let { code } = event;
+
+  // Treat numpad digits like the number row
+  if (/^Numpad\d$/.test(code)) {
+    code = code.replace('Numpad', 'Digit');
+  }
+
+  keyHandlers[code]?.(event);
+}
+
+function changeMaterialHandlerFactory(material) {
+  return () => {
+    activeMaterial = material;
+    activeMaterialChanged = true;
+  };
+}
 
 ///////////////////////
 /* KEY UP CALLBACK */
@@ -385,4 +414,28 @@ function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   }
 
   return group;
+}
+
+/**
+ * Create a mesh using the parameters defined in GEOMETRY and MATERIAL_PARAMS,
+ * registering it in NAMED_MESHES to allow dynamic behavior such as material switching.
+ *
+ * This should not be used for buffer scene elements, as they are not dynamic.
+ * @param {string} name - the mesh's name, per GEOMETRY and MATERIAL_PARAMS
+ * @param {THREE.Object3D} parent - the parent to which the props will be added
+ * @returns {THREE.Mesh} - the newly created mesh
+ */
+function createNamedMesh(name, parent) {
+  const params = MATERIAL_PARAMS[name]();
+  const materials = {
+    standard: new THREE.MeshStandardMaterial({ ...params }),
+    gouraud: new THREE.MeshLambertMaterial({ ...params }),
+    phong: new THREE.MeshPhongMaterial({ ...params }),
+    cartoon: new THREE.MeshToonMaterial({ ...params }),
+  };
+  const mesh = new THREE.Mesh(GEOMETRY[name], materials[activeMaterial]);
+  Object.assign(mesh.userData, { name, materials });
+  NAMED_MESHES[name] = mesh;
+  parent.add(mesh);
+  return mesh;
 }
