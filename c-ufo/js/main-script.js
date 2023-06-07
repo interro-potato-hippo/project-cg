@@ -31,7 +31,7 @@ const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
 const GEOMETRY = {
-  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32),
+  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
 };
 const TEXTURE_SIZES = {
@@ -152,9 +152,8 @@ function createTerrain() {
 }
 
 function createSkyDome() {
-  const sphere = new THREE.Mesh(GEOMETRY.skyDome, MATERIALS.skyDome());
-  sphere.rotateX(Math.PI / 2); // rotating it allows for a more "natural" dawn/dusk
-  scene.add(sphere);
+  const hemisphere = new THREE.Mesh(GEOMETRY.skyDome, MATERIALS.skyDome());
+  scene.add(hemisphere);
 }
 
 function createBufferSky() {
