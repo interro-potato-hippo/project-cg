@@ -75,8 +75,8 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 function createScene() {
   scene = new THREE.Scene();
   scene.add(new THREE.AxesHelper(20));
-  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
 
+  createLights();
   createTerrain();
   createSkyDome();
 }
@@ -143,6 +143,11 @@ function createOrthographicCamera({
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
+
+function createLights() {
+  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  // TODO: add directional lights
+}
 
 ////////////////////////
 /* CREATE OBJECT3D(S) */
