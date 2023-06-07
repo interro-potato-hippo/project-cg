@@ -17,7 +17,7 @@ const MATERIAL = {
   terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
   oakTree: new THREE.MeshBasicMaterial({ color: COLORS.brown }),
   treeLeaf: new THREE.MeshBasicMaterial({ color: COLORS.darkGreen }),
-  ufoBody: new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true }), // TODO change color: ;
+  ufoBody: new THREE.MeshBasicMaterial({ color: 0xffff00 }), // TODO change color: ;
   ufoCockpit: new THREE.MeshBasicMaterial({ color: 0x00ffff }), // TODO change color
   ufoSpotlight: new THREE.MeshBasicMaterial({ color: 0xff00ff }), // TODO change color
   ufoSphere: new THREE.MeshBasicMaterial({ color: 0xffffff }), // TODO change color
@@ -361,21 +361,21 @@ function createUfo(initialPosition) {
   ufoGroup.add(cockpit);
 
   const spotlight = new THREE.Mesh(GEOMETRY.ufoSpotlight, MATERIAL.ufoSpotlight);
-  spotlight.position.set(
-    0,
-    -GEOMETRY.ufoSpotlight.parameters.height / 2 - GEOMETRY.ufoBody.y / 2,
-    0
-  );
+  spotlight.position.set(0, -GEOMETRY.ufoBody.y, 0);
   ufoGroup.add(spotlight);
 
-  const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
-    MATERIAL.ufoSphere
-  );
-  sphere.scale.copy(GEOMETRY.ufoSphere);
-  sphere.position.set(2.8, -GEOMETRY.ufoBody.y / 4, 0);
-  ufoGroup.add(sphere);
-  console.log(sphere);
+  for (let i = 0; i < 8; i++) {
+    const sphereGroup = new THREE.Group();
+    const sphere = new THREE.Mesh(
+      new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+      MATERIAL.ufoSphere
+    );
+    sphere.scale.copy(GEOMETRY.ufoSphere);
+    sphere.position.set(2.8, -GEOMETRY.ufoBody.y / 2, 0);
+    sphereGroup.rotation.set(0, (i * 2 * Math.PI) / 8, 0);
+    sphereGroup.add(sphere);
+    ufoGroup.add(sphereGroup);
+  }
 }
 
 //////////////////////
