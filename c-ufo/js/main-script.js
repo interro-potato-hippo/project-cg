@@ -143,7 +143,6 @@ function createOrthographicCamera({
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
-
 function createLights() {
   scene.add(new THREE.AmbientLight(COLORS.ambientLight));
   // TODO: add directional lights
