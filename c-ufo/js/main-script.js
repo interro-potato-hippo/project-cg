@@ -358,7 +358,7 @@ const keyHandlers = {
   KeyQ: changeMaterialHandlerFactory('gouraud'),
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
-  KeyR: changeMaterialHandlerFactory('standard'),
+  KeyR: changeMaterialHandlerFactory('basic'),
 };
 
 function onKeyDown(event) {
@@ -418,7 +418,7 @@ function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
 function createNamedMesh(name, parent) {
   const params = MATERIAL_PARAMS[name]();
   const materials = {
-    standard: new THREE.MeshStandardMaterial({ ...params }),
+    basic: new THREE.MeshBasicMaterial({ ...params }),
     gouraud: new THREE.MeshLambertMaterial({ ...params }),
     phong: new THREE.MeshPhongMaterial({ ...params }),
     cartoon: new THREE.MeshToonMaterial({ ...params }),
