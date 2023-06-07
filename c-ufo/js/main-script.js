@@ -307,7 +307,10 @@ function update() {}
 /* DISPLAY */
 /////////////
 function render() {
-  renderer.render(bufferScene, SKY_CAMERA, skyTexture);
+  renderer.setRenderTarget(skyTexture);
+  renderer.render(bufferScene, SKY_CAMERA);
+
+  renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
 }
 
