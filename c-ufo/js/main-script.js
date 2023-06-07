@@ -294,16 +294,6 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
   return geometry;
 }
 
-//////////////////////
-/* CHECK COLLISIONS */
-//////////////////////
-function checkCollisions() {}
-
-///////////////////////
-/* HANDLE COLLISIONS */
-///////////////////////
-function handleCollisions() {}
-
 ////////////
 /* UPDATE */
 ////////////
