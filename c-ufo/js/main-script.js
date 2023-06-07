@@ -62,8 +62,12 @@ const NAMED_MESHES = {}; // meshes registered as they are created
 let renderer, scene, bufferScene, skyTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
+// lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
+let newStarsGenerated = false;
+let newGrassGenerated = false;
 // ^ prevents logic in key event handlers, moving it to the update function
+let stars;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -181,7 +185,7 @@ function createBufferSky() {
   sky.add(mesh);
 
   // the negative y allows for the stars not to be directly on top of the sky
-  const stars = createGroup({ y: -1, parent: sky });
+  stars = createGroup({ y: -1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
     y: 0,
@@ -300,6 +304,11 @@ function update() {
       (mesh) => (mesh.material = mesh.userData.materials[activeMaterial])
     );
   }
+  if (newStarsGenerated) {
+    newStarsGenerated = false;
+    stars.children = [];
+    generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
+  }
 }
 
 /////////////
@@ -355,10 +364,19 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 const keyHandlers = {
+  // material switching
   KeyQ: changeMaterialHandlerFactory('gouraud'),
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // texture generation
+  Digit1: () => {
+    newStarsGenerated = true;
+  },
+  Digit2: () => {
+    newGrassGenerated = true;
+  },
 };
 
 function onKeyDown(event) {
