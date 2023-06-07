@@ -65,7 +65,10 @@ function createScene() {
   createTerrain();
   createSkydome();
 
-  createOakTree(5, new THREE.Vector3(0, 0, 0), new THREE.Euler(0, 0, 0));
+  createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
+  createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
+  createOakTree(3, new THREE.Vector3(14, 0, 9), new THREE.Euler(0, 0, 0));
+  createOakTree(4, new THREE.Vector3(-36, 0, -14), new THREE.Euler(0, Math.PI / 6, 0));
 }
 
 //////////////////////
