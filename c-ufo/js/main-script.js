@@ -22,7 +22,7 @@ const MATERIALS = {
     }),
 
   // FIXME: use MeshStandardMaterial
-  terrain: () => new THREE.MeshBasicMaterial({ color: COLORS.green }),
+  terrain: () => new THREE.MeshBasicMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
 };
 
 const DOME_RADIUS = 64;
