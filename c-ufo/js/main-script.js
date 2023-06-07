@@ -25,9 +25,9 @@ const MATERIALS = {
   terrain: () => new THREE.MeshBasicMaterial({ color: COLORS.green }),
 };
 
-const DOME_RADIUS = 50;
-const PROP_RADIUS = 0.1;
-const INTER_PROP_PADDING = 0.05;
+const DOME_RADIUS = 64;
+const PROP_RADIUS = 0.05;
+const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
 const GEOMETRY = {
@@ -38,7 +38,7 @@ const TEXTURE_SIZES = {
   sky: 64,
 };
 const PROP_AMOUNTS = {
-  stars: 2048,
+  stars: 512,
 };
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
