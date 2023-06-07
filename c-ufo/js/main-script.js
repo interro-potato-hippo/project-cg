@@ -9,38 +9,63 @@ const COLORS = Object.freeze({
   green: new THREE.Color(0x55cc55),
   white: new THREE.Color(0xffffff),
 });
-const MATERIAL = {
-  terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
+
+// must be functions because they depend on textures initialized later
+// TODO: don't create new materials every time
+const MATERIALS = {
+  sky: () => new THREE.MeshBasicMaterial({ vertexColors: true }),
+  skyDome: () =>
+    // FIXME: use MeshStandardMaterial
+    new THREE.MeshBasicMaterial({
+      map: skyTexture.texture,
+      side: THREE.BackSide,
+    }),
+
+  // FIXME: use MeshStandardMaterial
+  terrain: () => new THREE.MeshBasicMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
 };
-const DOME_RADIUS = 50;
-const PROP_RADIUS = 0.1;
-const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS) ** 2;
+
+const DOME_RADIUS = 64;
+const PROP_RADIUS = 0.05;
+const INTER_PROP_PADDING = PROP_RADIUS / 2;
+const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
 const GEOMETRY = {
+  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
-  skydome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32),
 };
 const TEXTURE_SIZES = {
-  terrain: 64,
-  skydome: 128,
+  sky: 64,
 };
+const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
-  terrain: 128, // flowers
-  skydome: 2048, // stars
+  stars: 512,
 };
 
-const CAMERA_GEOMETRY = Object.freeze({
+const ORBITAL_CAMERA = createPerspectiveCamera({
   fov: 80,
   near: 1,
   far: 1000,
+  x: -10,
+  y: 20,
+  z: -10,
 });
-const ORBITAL_CAMERA = createPerspectiveCamera({ x: -10, y: 20, z: -10 });
+const SKY_CAMERA = createOrthographicCamera({
+  left: -TEXTURE_SIZES.sky / 2,
+  right: TEXTURE_SIZES.sky / 2,
+  top: TEXTURE_SIZES.sky / 2,
+  bottom: -TEXTURE_SIZES.sky / 2,
+  near: 1,
+  far: 15,
+  y: 5,
+  atY: 10,
+});
 
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
 
-let renderer, scene;
+let renderer, scene, bufferScene, skyTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 
 /////////////////////
@@ -51,29 +76,65 @@ function createScene() {
   scene.add(new THREE.AxesHelper(20));
 
   createTerrain();
-  createSkydome();
+  createSkyDome();
+}
+
+function createBufferScene() {
+  bufferScene = new THREE.Scene();
+
+  createBufferSky();
+
+  skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.NearestFilter,
+  });
 }
 
 //////////////////////
 /* CREATE CAMERA(S) */
 //////////////////////
 function createCameras() {
-  const controls = new THREE.OrbitControls(activeCamera, renderer.domElement);
+  const controls = new THREE.OrbitControls(ORBITAL_CAMERA, renderer.domElement);
   controls.target.set(0, 0, 0);
   controls.update();
 }
 
-function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
+function createPerspectiveCamera({
+  fov,
+  near,
+  far,
+  x = 0,
+  y = 0,
+  z = 0,
+  atX = 0,
+  atY = 0,
+  atZ = 0,
+}) {
   const aspect = window.innerWidth / window.innerHeight;
 
-  const camera = new THREE.PerspectiveCamera(
-    CAMERA_GEOMETRY.fov,
-    aspect,
-    CAMERA_GEOMETRY.near,
-    CAMERA_GEOMETRY.far
-  );
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.set(x, y, z);
-  camera.lookAt(x, y, z);
+  camera.lookAt(atX, atY, atZ);
+  return camera;
+}
+
+function createOrthographicCamera({
+  left,
+  right,
+  top,
+  bottom,
+  near,
+  far,
+  x = 0,
+  y = 0,
+  z = 0,
+  atX = 0,
+  atY = 0,
+  atZ = 0,
+}) {
+  const camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+  camera.position.set(x, y, z);
+  camera.lookAt(atX, atY, atZ);
   return camera;
 }
 
@@ -85,92 +146,59 @@ function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
-  const plane = new THREE.Mesh(GEOMETRY.terrain, MATERIAL.terrain);
+  const plane = new THREE.Mesh(GEOMETRY.terrain, MATERIALS.terrain());
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
   scene.add(plane);
 }
 
-function createSkydome() {
-  const skydomeProps = {
-    scene: new THREE.Scene(),
-    texture: new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.NearestFilter,
-    }),
-    geometry: new THREE.BufferGeometry(),
-    positions: [
-      [0, 0, 0],
-      [0, 0, 1],
-      [1, 0, 1],
-      [1, 0, 0],
-    ].flatMap((position) => position.map((coord) => coord * TEXTURE_SIZES.skydome)),
-    indices: [
-      [0, 1, 2],
-      [2, 3, 0],
-    ].flatMap((triangle) => triangle),
-    colors: [COLORS.darkPurple, COLORS.darkBlue, COLORS.darkBlue, COLORS.darkPurple].flatMap(
-      (color) => [color.r, color.g, color.b]
-    ),
-    camera: new THREE.OrthographicCamera(
-      -TEXTURE_SIZES.skydome / 2,
-      TEXTURE_SIZES.skydome / 2,
-      TEXTURE_SIZES.skydome / 2,
-      -TEXTURE_SIZES.skydome / 2,
-      1,
-      100
-    ),
-  };
+function createSkyDome() {
+  const hemisphere = new THREE.Mesh(GEOMETRY.skyDome, MATERIALS.skyDome());
+  scene.add(hemisphere);
+}
 
-  skydomeProps.geometry.setIndex(skydomeProps.indices);
-  skydomeProps.geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(skydomeProps.positions, 3)
-  );
-  skydomeProps.geometry.setAttribute(
-    'color',
-    new THREE.Float32BufferAttribute(skydomeProps.colors, 3)
-  );
-  const skydome_mesh = new THREE.Mesh(
-    skydomeProps.geometry,
-    new THREE.MeshBasicMaterial({ vertexColors: true })
-  );
-  skydomeProps.scene.add(skydome_mesh);
+function createBufferSky() {
+  const sky = createGroup({
+    x: -TEXTURE_SIZES.sky / 2,
+    y: 10,
+    z: -TEXTURE_SIZES.sky / 2,
+    parent: bufferScene,
+  });
 
-  skydomeProps.camera.position.set(TEXTURE_SIZES.skydome / 2, 10, TEXTURE_SIZES.skydome / 2);
-  skydomeProps.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
-  skydomeProps.scene.add(skydomeProps.camera);
+  const geometry = createBufferGeometry({
+    vertices: [
+      { x: 0, y: 0, z: 0, color: COLORS.darkPurple },
+      { x: 0, y: 0, z: 1, color: COLORS.darkBlue },
+      { x: 1, y: 0, z: 1, color: COLORS.darkBlue },
+      { x: 1, y: 0, z: 0, color: COLORS.darkPurple },
+    ],
+    triangles: [
+      [2, 1, 0],
+      [0, 3, 2],
+    ],
+    scale: TEXTURE_SIZES.sky,
+  });
+  const mesh = new THREE.Mesh(geometry, MATERIALS.sky());
+  sky.add(mesh);
 
-  generateProps(skydomeProps.scene, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, {
+  // the negative y allows for the stars not to be directly on top of the sky
+  const stars = createGroup({ y: -1, parent: sky });
+  generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
-    y: 1,
+    y: 0,
     z: 1,
   });
-  // creates the actual skydome sphere
-  const sphere = new THREE.Mesh(
-    GEOMETRY.skydome,
-    new THREE.MeshBasicMaterial({
-      map: skydomeProps.texture.texture,
-      side: THREE.BackSide,
-    })
-  );
-  sphere.rotateX(Math.PI / 2); // rotating it allows for a more "natural" dawn/dusk
-  scene.add(sphere);
-
-  renderer.setRenderTarget(skydomeProps.texture);
-  renderer.render(skydomeProps.scene, skydomeProps.camera, skydomeProps.texture);
-  renderer.setRenderTarget(null);
 }
 
 /**
  * Fills a texture with a given amount of props.
- * @param {THREE.Scene} scene - the scene where the props will be generated on
- * @param {int} amount - the amount of props to generate
- * @param {int} planeSize - the size of the plane the mesh is on
+ * @param {THREE.Group} group - the group to which the props will be added
+ * @param {number} amount - the amount of props to generate
+ * @param {number} planeSize - the size of the plane the mesh is on
  * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @param {Array} colors - the available colors for the props to be generated; by default, they're all white
  */
 function generateProps(
-  scene,
+  group,
   amount,
   planeSize,
   freedom = { x: 0, y: 0, z: 0 },
@@ -178,7 +206,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white })
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.BackSide })
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
@@ -199,13 +227,13 @@ function generateProps(
     dot.rotateX(-Math.PI / 2);
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
-    scene.add(dot);
+    group.add(dot);
   }
 }
 
 /**
  * Generates a random position within a plane.
- * @param {int} planeSize - the size of the plane where the props will be placed on
+ * @param {number} planeSize - the size of the plane where the props will be placed on
  * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @param {THREE.Vector3} basePoint - the base point of the plane; by default, it's the origin
  * @returns a new THREE.Vector3 with coordinates within the plane
@@ -230,6 +258,38 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
   );
 }
 
+/**
+ * Creates a buffer geometry from a given set of parameters.
+ * @param {Object} p - an object containing the input parameters
+ * @param {{x: number, y: number, z: number, color: THREE.Color}[]} p.vertices - an array of vertices
+ * @param {number[][]} p.triangles - an array of triangles, given as an array of indices
+ * @param {number} p.scale - multiplier to be applied to all vertex coordinates (default: 1)
+ * @returns {THREE.BufferGeometry} - a THREE.BufferGeometry with the given attributes
+ *
+ * Note that triangle indices correspond to the indices of the vertices array.
+ * The returned geometry should be used with a mesh with vertexColors set to true.
+ */
+function createBufferGeometry({ vertices, triangles, scale = 1 }) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setIndex(triangles.flatMap((triangle) => triangle));
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(
+      vertices.flatMap((vertex) => [vertex.x, vertex.y, vertex.z]).map((coord) => coord * scale),
+      3
+    )
+  );
+  geometry.setAttribute(
+    'color',
+    new THREE.Float32BufferAttribute(
+      vertices.map((vertex) => vertex.color).flatMap((color) => [color.r, color.g, color.b]),
+      3
+    )
+  );
+
+  return geometry;
+}
+
 //////////////////////
 /* CHECK COLLISIONS */
 //////////////////////
@@ -249,6 +309,10 @@ function update() {}
 /* DISPLAY */
 /////////////
 function render() {
+  renderer.setRenderTarget(skyTexture);
+  renderer.render(bufferScene, SKY_CAMERA);
+
+  renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
 }
 
@@ -262,6 +326,7 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
+  createBufferScene();
   createScene();
   createCameras();
 }
@@ -295,3 +360,25 @@ function onKeyDown(e) {}
 /* KEY UP CALLBACK */
 ///////////////////////
 function onKeyUp(e) {}
+
+///////////////
+/* UTILITIES */
+///////////////
+/**
+ * Create a THREE.Group on the given position and with the given scale.
+ *
+ * Automatically adds the created Group to the given parent.
+ */
+function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.scale.set(...scale);
+
+  if (parent) {
+    parent.add(group);
+  } else {
+    scene.add(group);
+  }
+
+  return group;
+}
