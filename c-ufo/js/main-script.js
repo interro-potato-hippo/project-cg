@@ -8,6 +8,7 @@ const COLORS = Object.freeze({
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
   white: new THREE.Color(0xffffff),
+  ambientLight: new THREE.Color(0xeec37f),
 });
 
 // must be functions because they depend on textures initialized later
@@ -74,6 +75,7 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 function createScene() {
   scene = new THREE.Scene();
   scene.add(new THREE.AxesHelper(20));
+  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
 
   createTerrain();
   createSkyDome();
