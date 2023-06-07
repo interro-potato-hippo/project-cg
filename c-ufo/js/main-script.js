@@ -183,6 +183,7 @@ function createBufferSky() {
   const stars = createGroup({ y: 1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
+    y: 0,
     z: 1,
   });
 }
