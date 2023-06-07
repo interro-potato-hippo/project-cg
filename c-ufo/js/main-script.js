@@ -17,6 +17,9 @@ const MATERIAL_PARAMS = {
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+
+  // TODO: remove double side
+  houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
 };
 
 const DOME_RADIUS = 64;
@@ -27,6 +30,7 @@ const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 const GEOMETRY = {
   skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
+  houseWalls: createHouseWallsGeometry(),
 };
 const TEXTURE_SIZES = {
   sky: 64,
@@ -75,6 +79,7 @@ function createScene() {
   createLights();
   createTerrain();
   createSkyDome();
+  createHouse();
 }
 
 function createBufferScene() {
@@ -256,6 +261,118 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
       planeSize - PROP_RADIUS
     )
   );
+}
+
+function createHouse() {
+  const house = createGroup({ parent: scene });
+  createNamedMesh('houseWalls', house);
+}
+
+function createHouseWallsGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // TODO: maybe don't use vertex colors?
+      // front wall
+      { x: 0, y: 0, z: 0, color: COLORS.white }, // v0
+      { x: 1, y: 2.5, z: 0, color: COLORS.white }, // v1
+      { x: 0, y: 2.5, z: 0, color: COLORS.white }, // v2
+      { x: 1, y: 0, z: 0, color: COLORS.white }, // v3
+      { x: 2.5, y: 0, z: 0, color: COLORS.white }, // v4
+      { x: 2.5, y: 1, z: 0, color: COLORS.white }, // v5
+      { x: 1, y: 1, z: 0, color: COLORS.white }, // v6
+      { x: 4.5, y: 0, z: 0, color: COLORS.white }, // v7
+      { x: 4.5, y: 2.5, z: 0, color: COLORS.white }, // v8
+      { x: 2.5, y: 2.5, z: 0, color: COLORS.white }, // v9
+      { x: 6, y: 0, z: 0, color: COLORS.white }, // v10
+      { x: 6, y: 1, z: 0, color: COLORS.white }, // v11
+      { x: 4.5, y: 1, z: 0, color: COLORS.white }, // v12
+      { x: 8, y: 0, z: 0, color: COLORS.white }, // v13
+      { x: 8, y: 2.5, z: 0, color: COLORS.white }, // v14
+      { x: 6, y: 2.5, z: 0, color: COLORS.white }, // v15
+      { x: 9.25, y: 0, z: 0, color: COLORS.white }, // v16
+      { x: 9.25, y: 2.5, z: 0, color: COLORS.white }, // v17
+      { x: 11.5, y: 0, z: 0, color: COLORS.white }, // v18
+      { x: 11.5, y: 2.5, z: 0, color: COLORS.white }, // v19
+      { x: 13, y: 0, z: 0, color: COLORS.white }, // v20
+      { x: 13, y: 1, z: 0, color: COLORS.white }, // v21
+      { x: 11.5, y: 1, z: 0, color: COLORS.white }, // v22
+      { x: 17, y: 0, z: 0, color: COLORS.white }, // v23
+      { x: 17, y: 2.5, z: 0, color: COLORS.white }, // v24
+      { x: 13, y: 2.5, z: 0, color: COLORS.white }, // v25
+      { x: 18.5, y: 0, z: 0, color: COLORS.white }, // v26
+      { x: 18.5, y: 1, z: 0, color: COLORS.white }, // v27
+      { x: 17, y: 1, z: 0, color: COLORS.white }, // v28
+      { x: 20, y: 0, z: 0, color: COLORS.white }, // v29
+      { x: 20, y: 2.5, z: 0, color: COLORS.white }, // v30
+      { x: 18.5, y: 2.5, z: 0, color: COLORS.white }, // v31
+      { x: 8, y: 4, z: 0, color: COLORS.white }, // v32
+      { x: 0, y: 4, z: 0, color: COLORS.white }, // v33
+      { x: 13, y: 4, z: 0, color: COLORS.white }, // v34
+      { x: 20, y: 4, z: 0, color: COLORS.white }, // v35
+
+      // right wall (for a definition of right... - the one with the window)
+      { x: 20, y: 0, z: -3.5, color: COLORS.white }, // v36
+      { x: 20, y: 2.5, z: -3.5, color: COLORS.white }, // v37
+      { x: 20, y: 0, z: -5, color: COLORS.white }, // v38
+      { x: 20, y: 1, z: -5, color: COLORS.white }, // v39
+      { x: 20, y: 1, z: -3.5, color: COLORS.white }, // v40
+      { x: 20, y: 0, z: -5.5, color: COLORS.white }, // v41
+      { x: 20, y: 2.5, z: -5.5, color: COLORS.white }, // v42
+      { x: 20, y: 2.5, z: -5, color: COLORS.white }, // v43
+      { x: 20, y: 4, z: -5.5, color: COLORS.white }, // v44
+
+      // left wall
+      { x: 0, y: 0, z: -5.5, color: COLORS.white }, // v45
+      { x: 0, y: 4, z: -5.5, color: COLORS.white }, // v46
+    ],
+    triangles: [
+      // front wall
+      [0, 1, 2],
+      [0, 3, 1],
+      [3, 4, 5],
+      [3, 5, 6],
+      [4, 7, 8],
+      [4, 8, 9],
+      [7, 10, 11],
+      [7, 11, 12],
+      [10, 13, 14],
+      [10, 14, 15],
+      [16, 18, 19],
+      [16, 19, 17],
+      [18, 20, 21],
+      [18, 21, 22],
+      [20, 23, 24],
+      [20, 24, 25],
+      [23, 26, 27],
+      [23, 27, 28],
+      [26, 29, 30],
+      [26, 30, 31],
+      [2, 14, 32],
+      [2, 32, 33],
+      [14, 25, 34],
+      [14, 34, 32],
+      [25, 30, 35],
+      [25, 35, 34],
+
+      // right wall (for a definition of right... - the one with the window)
+      [29, 36, 37],
+      [29, 37, 30],
+      [36, 38, 39],
+      [36, 39, 40],
+      [38, 41, 42],
+      [38, 42, 43],
+      [30, 42, 44],
+      [30, 44, 35],
+
+      // left wall
+      [45, 0, 33],
+      [45, 33, 46],
+
+      // back wall
+      [41, 45, 46],
+      [41, 46, 44],
+    ],
+  });
 }
 
 /**
