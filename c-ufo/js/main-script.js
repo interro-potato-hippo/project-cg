@@ -3,16 +3,21 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
-const CYLINDER_SEGMENTS = 15;
+const CYLINDER_SEGMENTS = 30;
+const SPHERE_SEGMENTS = 30;
 const MATERIAL = Object.freeze({
   terrain: new THREE.MeshBasicMaterial({ color: 0x00ff00, wireframe: true }),
   oakTree: new THREE.MeshBasicMaterial({ color: 0xa96633 }),
+  treeLeaf: new THREE.MeshBasicMaterial({ color: 0x5e8c61 }),
 });
 const GEOMETRY = Object.freeze({
   terrain: new THREE.PlaneGeometry(100, 100, 100, 100),
   // height is replaced per instance of oak tree
   oakTree: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
   treeLeftBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
+  treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
+  treeLeftLeaf: { rx: 2.3, ry: 1.1, rz: 1.5 }, // store radius in all axis since SphereGeometry only has one radius
+  treeRightLeaf: { rx: 3, ry: 1.375, rz: 2.5 }, // store radius in all axis since SphereGeometry only has one radius
 });
 
 const CAMERA_GEOMETRY = Object.freeze({
@@ -98,21 +103,59 @@ function createOakTree(trunkHeight, position, rotation) {
   // Create left branch
   const leftBranch = new THREE.Mesh(GEOMETRY.treeLeftBranch, MATERIAL.oakTree);
 
-  const leftBranchIncl = Math.PI / 6;
+  const leftBranchIncl = Math.PI / 6; // 30 deg
   const leftBranchX =
     Math.cos(Math.PI / 2 - leftBranchIncl) *
       (GEOMETRY.treeLeftBranch.parameters.height / 2 +
         GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(leftBranchIncl)) -
     GEOMETRY.oakTree.parameters.radiusTop;
+  const leftBranchY =
+    Math.cos(leftBranchIncl) *
+      (GEOMETRY.treeLeftBranch.parameters.height / 2 +
+        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl)) -
+    GEOMETRY.oakTree.parameters.radiusTop;
 
-  leftBranch.position.set(
-    leftBranchX,
-    trunkHeight + GEOMETRY.treeLeftBranch.parameters.height / 2,
+  leftBranch.position.set(leftBranchX, trunkHeight + leftBranchY, 0);
+  leftBranch.rotation.set(0, 0, -leftBranchIncl);
+  treeGroup.add(leftBranch);
+
+  // Create right branch
+  const rightBranch = new THREE.Mesh(GEOMETRY.treeRightBranch, MATERIAL.oakTree);
+
+  const rightBranchIncl = Math.PI / 3; // 60 deg
+
+  rightBranch.rotation.set(0, 0, rightBranchIncl);
+  rightBranch.position.set(
+    -GEOMETRY.treeRightBranch.parameters.height / 4,
+    trunkHeight + GEOMETRY.treeRightBranch.parameters.height / 2,
     0
   );
-  leftBranch.rotation.set(0, 0, -Math.PI / 6); // 30 deg
-  console.log(leftBranch);
-  treeGroup.add(leftBranch);
+
+  treeGroup.add(rightBranch);
+
+  const leftLeaf = new THREE.Mesh(new THREE.SphereGeometry(1, SPHERE_SEGMENTS), MATERIAL.treeLeaf);
+  leftLeaf.position.set(
+    leftBranchX * 2,
+    trunkHeight + leftBranchY * 2 + GEOMETRY.treeLeftLeaf.ry / 2,
+    0
+  );
+  leftLeaf.scale.set(GEOMETRY.treeLeftLeaf.rx, GEOMETRY.treeLeftLeaf.ry, GEOMETRY.treeLeftLeaf.rz);
+
+  treeGroup.add(leftLeaf);
+
+  const rightLeaf = new THREE.Mesh(new THREE.SphereGeometry(1, SPHERE_SEGMENTS), MATERIAL.treeLeaf);
+  rightLeaf.position.set(
+    (-GEOMETRY.treeRightBranch.parameters.height * 2) / 3,
+    trunkHeight + leftBranchY * 2 + GEOMETRY.treeLeftLeaf.ry / 2,
+    0
+  );
+  rightLeaf.scale.set(
+    GEOMETRY.treeRightLeaf.rx,
+    GEOMETRY.treeRightLeaf.ry,
+    GEOMETRY.treeRightLeaf.rz
+  );
+
+  treeGroup.add(rightLeaf);
 }
 
 //////////////////////
