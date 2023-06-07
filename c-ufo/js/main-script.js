@@ -16,13 +16,11 @@ const COLORS = Object.freeze({
 const MATERIALS = {
   sky: () => new THREE.MeshBasicMaterial({ vertexColors: true }),
   skyDome: () =>
-    // FIXME: use MeshStandardMaterial
     new THREE.MeshStandardMaterial({
       map: skyTexture.texture,
       side: THREE.BackSide,
     }),
 
-  // FIXME: use MeshStandardMaterial
   terrain: () => new THREE.MeshStandardMaterial({ color: COLORS.green, side: THREE.DoubleSide }),
 };
 
