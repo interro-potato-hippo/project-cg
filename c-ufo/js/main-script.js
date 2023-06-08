@@ -49,7 +49,10 @@ const MATERIAL_PARAMS = {
 const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
   directional: 1,
+  ufoSpotlight: 2,
 });
+const UFO_SPOTLIGHT_ANGLE = Math.PI / 6;
+const UFO_SPOTLIGHT_PENUMBRA = 0.3;
 
 const DOME_RADIUS = 64;
 const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
@@ -151,8 +154,11 @@ let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let generateNewStars = false;
 let generateNewFlowers = false;
+let toggleUfoSpotlight = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars, ufo;
+
+let ufoSpotlight;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -716,6 +722,21 @@ function createUfo(initialPosition) {
   const spotlight = createNamedMesh('ufoSpotlight', ufoGroup);
   spotlight.position.set(0, -ELLIPSOID_SCALING.ufoBody.y, 0);
 
+  const spotlightTarget = new THREE.Object3D();
+  spotlightTarget.position.set(0, -10, 0); // point downwards
+  ufoGroup.add(spotlightTarget);
+
+  ufoSpotlight = new THREE.SpotLight(
+    COLORS.darkBlue,
+    LIGHT_INTENSITY.ufoSpotlight,
+    0,
+    UFO_SPOTLIGHT_ANGLE,
+    UFO_SPOTLIGHT_PENUMBRA
+  );
+  ufoSpotlight.position.copy(spotlight.position);
+  ufoSpotlight.target = spotlightTarget;
+  ufoGroup.add(ufoSpotlight);
+
   for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
     const sphereGroup = new THREE.Group();
     sphereGroup.rotation.set(0, (i * 2 * Math.PI) / UFO_SPHERE_COUNT, 0);
@@ -792,6 +813,10 @@ function update(timeDelta) {
       Object.values(COLORS)
     );
   }
+  if (toggleUfoSpotlight) {
+    ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
+    toggleUfoSpotlight = false;
+  }
 
   // Rotate UFO at constant angular velocity
   ufo.rotation.y = (ufo.rotation.y + timeDelta * UFO_ANGULAR_VELOCITY) % (2 * Math.PI);
@@ -859,6 +884,9 @@ const keyHandlers = {
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // toggle UFO lights
+  KeyS: () => (toggleUfoSpotlight = true),
 
   // texture generation
   Digit1: () => (generateNewStars = true),
