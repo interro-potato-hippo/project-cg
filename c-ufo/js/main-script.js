@@ -43,8 +43,8 @@ const MATERIAL_PARAMS = {
 
   ufoBody: () => ({ color: COLORS.imperialRed }),
   ufoCockpit: () => ({ color: COLORS.skyBlue }),
-  ufoSpotlight: () => ({ color: COLORS.lightCyan }),
-  ufoSphere: () => ({ color: COLORS.lightCyan }),
+  ufoSpotlight: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
+  ufoSphere: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
 
   // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
@@ -54,7 +54,7 @@ const MATERIAL_PARAMS = {
 };
 
 const LIGHT_INTENSITY = Object.freeze({
-  ambient: 0.25,
+  ambient: 0.15,
   directional: 1,
   ufoSpotlight: 2,
   ufoSphere: 0.4,
