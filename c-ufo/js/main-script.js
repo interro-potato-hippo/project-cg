@@ -227,8 +227,11 @@ function createLights() {
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
-  const plane = createNamedMesh('terrain', scene);
+  // the terrain doesn't need to be a named mesh, as it won't be dynamically changed
+  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.terrain() });
+  const plane = new THREE.Mesh(GEOMETRY.terrain, material);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+  scene.add(plane);
 }
 
 function createMoon() {
