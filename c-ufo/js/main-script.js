@@ -3,8 +3,6 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
-const CYLINDER_SEGMENTS = 30;
-const SPHERE_SEGMENTS = 30;
 const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
@@ -47,8 +45,10 @@ const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
+const CYLINDER_SEGMENTS = 32;
+const SPHERE_SEGMENTS = 32;
 const GEOMETRY = {
-  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
+  skyDome: new THREE.SphereGeometry(DOME_RADIUS, SPHERE_SEGMENTS, SPHERE_SEGMENTS, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
 
   // height is scaled per instance of oak tree
