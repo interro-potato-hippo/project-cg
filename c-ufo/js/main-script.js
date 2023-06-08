@@ -57,7 +57,7 @@ const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
   directional: 1,
   ufoSpotlight: 2,
-  ufoSphereLight: 0.4,
+  ufoSphere: 0.4,
 });
 const UFO_SPOTLIGHT_ANGLE = Math.PI / 6;
 const UFO_SPOTLIGHT_PENUMBRA = 0.3;
@@ -165,12 +165,11 @@ let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let generateNewStars = false;
 let generateNewFlowers = false;
+let toggleDirectionalLight = false;
 let toggleUfoSpotlight = false;
 let toggleUfoSphereLights = false;
 // ^ prevents logic in key event handlers, moving it to the update function
-let flowers, stars, ufo;
-
-let ufoSpotlight;
+let flowers, stars, directionalLight, ufoSpotlight, ufo;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -266,10 +265,7 @@ function createLights() {
   const ambientLight = new THREE.AmbientLight(COLORS.moonYellow, LIGHT_INTENSITY.ambient);
   scene.add(ambientLight);
 
-  const directionalLight = new THREE.DirectionalLight(
-    COLORS.moonYellow,
-    LIGHT_INTENSITY.directional
-  );
+  directionalLight = new THREE.DirectionalLight(COLORS.moonYellow, LIGHT_INTENSITY.directional);
   directionalLight.position.copy(MOON_POSITION);
   scene.add(directionalLight);
 }
@@ -770,7 +766,7 @@ function createUfo(initialPosition) {
 
     const sphereLight = new THREE.PointLight(
       COLORS.darkBlue,
-      LIGHT_INTENSITY.ufoSphereLight,
+      LIGHT_INTENSITY.ufoSphere,
       UFO_SPHERE_LIGHT_DISTANCE
     );
     sphereLight.position.set(sphereX, sphereY, 0);
@@ -836,15 +832,19 @@ function update(timeDelta) {
       Object.values(COLORS)
     );
   }
+  if (toggleDirectionalLight) {
+    toggleDirectionalLight = false;
+    directionalLight.intensity = directionalLight.intensity === 0 ? LIGHT_INTENSITY.directional : 0;
+  }
   if (toggleUfoSpotlight) {
-    ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
     toggleUfoSpotlight = false;
+    ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
   }
   if (toggleUfoSphereLights) {
-    UFO_SPHERE_LIGHTS.forEach((light) => {
-      light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphereLight : 0;
-    });
     toggleUfoSphereLights = false;
+    UFO_SPHERE_LIGHTS.forEach((light) => {
+      light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphere : 0;
+    });
   }
 
   // Rotate UFO at constant angular velocity
@@ -917,6 +917,9 @@ const keyHandlers = {
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // toggle directional light
+  KeyD: () => (toggleDirectionalLight = true),
 
   // toggle UFO lights
   KeyS: () => (toggleUfoSpotlight = true),
