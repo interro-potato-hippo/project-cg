@@ -25,7 +25,7 @@ const MATERIAL_PARAMS = {
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
 
-  oakTree: () => ({ color: COLORS.brown }),
+  treeTrunk: () => ({ color: COLORS.brown }),
   treeLeftBranch: () => ({ color: COLORS.brown }),
   treeRightBranch: () => ({ color: COLORS.brown }),
   treeLeaf: () => ({ color: COLORS.darkGreen }),
@@ -47,7 +47,7 @@ const GEOMETRY = {
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
 
   // height is scaled per instance of oak tree
-  oakTree: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
+  treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
   treeLeftBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
   treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
   treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
@@ -527,7 +527,7 @@ function createOakTree(trunkHeight, position, rotation) {
   scene.add(treeGroup);
 
   // Create trunk
-  const oakTrunk = createNamedMesh('oakTree', treeGroup);
+  const oakTrunk = createNamedMesh('treeTrunk', treeGroup);
   oakTrunk.scale.setY(trunkHeight);
   oakTrunk.position.setY(trunkHeight / 2); // Cylinder is centered by default
 
@@ -539,12 +539,12 @@ function createOakTree(trunkHeight, position, rotation) {
     Math.cos(Math.PI / 2 - leftBranchIncl) *
       (GEOMETRY.treeLeftBranch.parameters.height / 2 +
         GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(leftBranchIncl)) -
-    GEOMETRY.oakTree.parameters.radiusTop;
+    GEOMETRY.treeTrunk.parameters.radiusTop;
   const leftBranchY =
     Math.cos(leftBranchIncl) *
       (GEOMETRY.treeLeftBranch.parameters.height / 2 +
         GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl)) -
-    GEOMETRY.oakTree.parameters.radiusTop;
+    GEOMETRY.treeTrunk.parameters.radiusTop;
 
   leftBranch.position.set(leftBranchX, trunkHeight + leftBranchY, 0);
   leftBranch.rotation.set(0, 0, -leftBranchIncl);
