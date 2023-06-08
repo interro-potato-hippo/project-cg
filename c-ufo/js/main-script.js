@@ -7,11 +7,11 @@ const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
-  white: new THREE.Color(0xffffff),
-  ambientLight: new THREE.Color(0xeec37f),
   orange: new THREE.Color(0xea924b),
   lightBlue: new THREE.Color(0xb8e9ee),
   dodgerBlue: new THREE.Color(0x1e90ff),
+  white: new THREE.Color(0xffffff),
+  moonYellow: new THREE.Color(0xebc815),
 });
 
 // must be functions because they depend on textures initialized later
@@ -25,6 +25,7 @@ const MATERIAL_PARAMS = {
     displacementMap: terrainHeightMap,
     displacementScale: 10,
   }),
+  moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
@@ -33,7 +34,15 @@ const MATERIAL_PARAMS = {
   houseDoor: () => ({ vertexColors: true, side: THREE.DoubleSide }),
 };
 
+const LIGHT_INTENSITY = Object.freeze({
+  ambient: 0.25,
+  // TODO: add directional lights
+});
+
 const DOME_RADIUS = 64;
+const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
+const MOON_POSITION_COORD = Math.sqrt((DOME_RADIUS - MOON_DOME_PADDING) ** 2 / 2);
+const MOON_POSITION = new THREE.Vector3(MOON_POSITION_COORD, MOON_POSITION_COORD, 0);
 const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
@@ -41,6 +50,8 @@ const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 const GEOMETRY = {
   skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
+  moon: new THREE.SphereGeometry(5, 32, 32),
+
   houseWalls: createHouseWallsGeometry(),
   houseRoof: createHouseRoofGeometry(),
   houseWindows: createHouseWindowsGeometry(),
@@ -93,6 +104,7 @@ function createScene() {
   createLights();
   createTerrain();
   createSkyDome();
+  createMoon();
   createHouse();
 }
 
@@ -159,7 +171,9 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
+  ambientLight.intensity = LIGHT_INTENSITY.ambient;
+  scene.add(ambientLight);
   // TODO: add directional lights
 }
 
@@ -172,6 +186,11 @@ function createTerrain() {
 
   const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+}
+
+function createMoon() {
+  const moon = createNamedMesh('moon', scene);
+  moon.position.copy(MOON_POSITION);
 }
 
 function createSkyDome() {
@@ -524,6 +543,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
       3
     )
   );
+  geometry.computeVertexNormals();
 
   return geometry;
 }
