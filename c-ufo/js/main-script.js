@@ -600,35 +600,22 @@ function createUfo(initialPosition) {
   ufoGroup.position.copy(initialPosition);
   scene.add(ufoGroup);
 
-  const body = new THREE.Mesh(
-    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
-    MATERIAL.ufoBody
-  );
-  body.scale.copy(GEOMETRY.ufoBody);
-  ufoGroup.add(body);
+  const body = createNamedMesh('ufoBody', ufoGroup);
+  body.scale.copy(SPHERE_SCALING.ufoBody);
 
-  const cockpit = new THREE.Mesh(
-    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
-    MATERIAL.ufoCockpit
-  );
-  cockpit.scale.copy(GEOMETRY.ufoCockpit);
-  cockpit.position.set(0, GEOMETRY.ufoBody.y / 2, 0);
-  ufoGroup.add(cockpit);
+  const cockpit = createNamedMesh('ufoCockpit', ufoGroup);
+  cockpit.scale.copy(SPHERE_SCALING.ufoCockpit);
+  cockpit.position.set(0, SPHERE_SCALING.ufoBody.y / 2, 0);
 
-  const spotlight = new THREE.Mesh(GEOMETRY.ufoSpotlight, MATERIAL.ufoSpotlight);
-  spotlight.position.set(0, -GEOMETRY.ufoBody.y, 0);
-  ufoGroup.add(spotlight);
+  const spotlight = createNamedMesh('ufoSpotlight', ufoGroup);
+  spotlight.position.set(0, -SPHERE_SCALING.ufoBody.y, 0);
 
   for (let i = 0; i < 8; i++) {
     const sphereGroup = new THREE.Group();
-    const sphere = new THREE.Mesh(
-      new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
-      MATERIAL.ufoSphere
-    );
-    sphere.scale.copy(GEOMETRY.ufoSphere);
-    sphere.position.set(2.8, -GEOMETRY.ufoBody.y / 2, 0);
+    const sphere = createNamedMesh('ufoSphere', sphereGroup);
+    sphere.scale.copy(SPHERE_SCALING.ufoSphere);
+    sphere.position.set(2.8, -SPHERE_SCALING.ufoBody.y / 2, 0);
     sphereGroup.rotation.set(0, (i * 2 * Math.PI) / 8, 0);
-    sphereGroup.add(sphere);
     ufoGroup.add(sphereGroup);
   }
 }
