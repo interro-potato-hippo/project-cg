@@ -830,13 +830,12 @@ function update(timeDelta) {
   if (generateNewFlowers) {
     generateNewFlowers = false;
     flowers.clear();
-    generateProps(
-      flowers,
-      PROP_AMOUNTS.flowers,
-      TEXTURE_SIZES.field,
-      { x: 1, y: 0, z: 1 },
-      [COLORS.white, COLORS.yellow, COLORS.lilac, COLORS.lightBlue]
-    );
+    generateProps(flowers, PROP_AMOUNTS.flowers, TEXTURE_SIZES.field, { x: 1, y: 0, z: 1 }, [
+      COLORS.white,
+      COLORS.yellow,
+      COLORS.lilac,
+      COLORS.lightBlue,
+    ]);
   }
   if (toggleDirectionalLight) {
     toggleDirectionalLight = false;
