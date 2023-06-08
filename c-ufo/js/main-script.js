@@ -130,9 +130,9 @@ let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let newStarsGenerated = false;
-let newGrassGenerated = false;
+let newFlowersGenerated = false;
 // ^ prevents logic in key event handlers, moving it to the update function
-let stars;
+let flowers, stars;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -307,7 +307,7 @@ function createBufferField() {
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
   field.add(mesh);
 
-  const flowers = createGroup({ y: 1, parent: field });
+  flowers = createGroup({ y: 1, parent: field });
   generateProps(
     flowers,
     PROP_AMOUNTS.flowers,
@@ -721,6 +721,17 @@ function update() {
     stars.children = [];
     generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
   }
+  if (newFlowersGenerated) {
+    newFlowersGenerated = false;
+    flowers.children = [];
+    generateProps(
+      flowers,
+      PROP_AMOUNTS.flowers,
+      TEXTURE_SIZES.field,
+      { x: 1, y: 0, z: 1 },
+      Object.values(COLORS)
+    );
+  }
 }
 
 /////////////
@@ -790,7 +801,7 @@ const keyHandlers = {
     newStarsGenerated = true;
   },
   Digit2: () => {
-    newGrassGenerated = true;
+    newFlowersGenerated = true;
   },
 };
 
