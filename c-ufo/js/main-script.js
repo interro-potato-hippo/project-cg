@@ -127,8 +127,12 @@ const NAMED_MESHES = []; // meshes registered as they are created
 let renderer, scene, bufferScene, skyTexture, fieldTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
+// lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
+let generateNewStars = false;
+let generateNewFlowers = false;
 // ^ prevents logic in key event handlers, moving it to the update function
+let flowers, stars;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -276,7 +280,7 @@ function createBufferSky() {
   sky.add(mesh);
 
   // the negative y allows for the stars not to be directly on top of the sky
-  const stars = createGroup({ y: -1, parent: sky });
+  stars = createGroup({ y: -1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
     y: 0,
@@ -308,7 +312,7 @@ function createBufferField() {
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
   field.add(mesh);
 
-  const flowers = createGroup({ y: 1, parent: field });
+  flowers = createGroup({ y: 1, parent: field });
   generateProps(
     flowers,
     PROP_AMOUNTS.flowers,
@@ -717,6 +721,22 @@ function update() {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
+  if (generateNewStars) {
+    generateNewStars = false;
+    stars.clear();
+    generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
+  }
+  if (generateNewFlowers) {
+    generateNewFlowers = false;
+    flowers.clear();
+    generateProps(
+      flowers,
+      PROP_AMOUNTS.flowers,
+      TEXTURE_SIZES.field,
+      { x: 1, y: 0, z: 1 },
+      Object.values(COLORS)
+    );
+  }
 }
 
 /////////////
@@ -775,10 +795,15 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 const keyHandlers = {
+  // material switching
   KeyQ: changeMaterialHandlerFactory('gouraud'),
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // texture generation
+  Digit1: () => (generateNewStars = true),
+  Digit2: () => (generateNewFlowers = true),
 };
 
 function onKeyDown(event) {
