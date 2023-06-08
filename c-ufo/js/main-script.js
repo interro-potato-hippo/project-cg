@@ -106,6 +106,8 @@ const PROP_AMOUNTS = {
   stars: 512,
 };
 
+const UFO_ANGULAR_VELOCITY = 2 * Math.PI / 10; // 10 seconds per full rotation
+
 const ORBITAL_CAMERA = createPerspectiveCamera({
   fov: 80,
   near: 1,
@@ -126,6 +128,8 @@ const SKY_CAMERA = createOrthographicCamera({
 });
 const NAMED_MESHES = []; // meshes registered as they are created
 
+const CLOCK = new THREE.Clock(true);
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
@@ -134,6 +138,8 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 // ^ prevents logic in key event handlers, moving it to the update function
+
+let ufo;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -632,6 +638,7 @@ function createUfo(initialPosition) {
   const ufoGroup = new THREE.Group();
   ufoGroup.position.copy(initialPosition);
   scene.add(ufoGroup);
+  ufo = ufoGroup;
 
   const body = createNamedMesh('ufoBody', ufoGroup);
   body.scale.copy(SPHERE_SCALING.ufoBody);
@@ -699,11 +706,14 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
 ////////////
 /* UPDATE */
 ////////////
-function update() {
+function update(timeDelta) {
   if (activeMaterialChanged) {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
+
+  // Rotate UFO at constant angular velocity
+  ufo.rotation.y = (ufo.rotation.y + timeDelta * UFO_ANGULAR_VELOCITY) % (2 * Math.PI);
 }
 
 /////////////
@@ -738,7 +748,8 @@ function init() {
 /* ANIMATION CYCLE */
 /////////////////////
 function animate() {
-  update();
+  const timeDelta = CLOCK.getDelta();
+  update(timeDelta);
   render();
   requestAnimationFrame(animate);
 }
