@@ -258,6 +258,13 @@ function createOrthographicCamera({
   return camera;
 }
 
+function refreshCameraParameters() {
+  const parameters = { aspect: window.innerWidth / window.innerHeight };
+
+  Object.assign(activeCamera, parameters);
+  activeCamera.updateProjectionMatrix();
+}
+
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
@@ -884,6 +891,7 @@ function init() {
   createCameras();
 
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('resize', onResize);
 }
 
 /////////////////////
@@ -903,8 +911,7 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   if (window.innerHeight > 0 && window.innerWidth > 0) {
-    activeCamera.aspect = window.innerWidth / window.innerHeight;
-    activeCamera.updateProjectionMatrix();
+    refreshCameraParameters();
   }
 }
 
