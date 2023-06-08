@@ -168,6 +168,7 @@ let generateNewFlowers = false;
 let toggleDirectionalLight = false;
 let toggleUfoSpotlight = false;
 let toggleUfoSphereLights = false;
+let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars, directionalLight, ufoSpotlight, ufo;
 
@@ -851,6 +852,10 @@ function update(timeDelta) {
       light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphere : 0;
     });
   }
+  if (updateProjectionMatrix) {
+    updateProjectionMatrix = false;
+    refreshCameraParameters();
+  }
 
   // Rotate UFO at constant angular velocity
   ufo.rotation.y = (ufo.rotation.y + timeDelta * UFO_ANGULAR_VELOCITY) % (2 * Math.PI);
@@ -909,7 +914,7 @@ function onResize() {
   renderer.setSize(window.innerWidth, window.innerHeight);
 
   if (window.innerHeight > 0 && window.innerWidth > 0) {
-    refreshCameraParameters();
+    updateProjectionMatrix = true;
   }
 }
 
