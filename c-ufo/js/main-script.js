@@ -56,10 +56,10 @@ const MATERIAL_PARAMS = {
 const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
   directional: 1,
-  ufoSpotlight: 2,
+  ufoSpotlight: 3,
   ufoSphere: 0.4,
 });
-const UFO_SPOTLIGHT_ANGLE = Math.PI / 6;
+const UFO_SPOTLIGHT_ANGLE = Math.PI / 9;
 const UFO_SPOTLIGHT_PENUMBRA = 0.3;
 const UFO_SPHERE_LIGHT_DISTANCE = 25;
 
@@ -121,6 +121,7 @@ const PROP_AMOUNTS = {
 };
 
 const UFO_ANGULAR_VELOCITY = (2 * Math.PI) / 10; // 10 seconds per full rotation
+const UFO_LINEAR_VELOCITY = 5; // 5 unit per second
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
   fov: 80,
@@ -153,6 +154,13 @@ const FIELD_CAMERA = createOrthographicCamera({
 const NAMED_MESHES = []; // meshes registered as they are created
 const UFO_SPHERE_LIGHTS = []; // lights registered as they are created
 
+const MOVEMENT_FLAGS = Object.freeze({
+  positiveX: new THREE.Vector3(1, 0, 0),
+  negativeX: new THREE.Vector3(-1, 0, 0),
+  positiveZ: new THREE.Vector3(0, 0, 1),
+  negativeZ: new THREE.Vector3(0, 0, -1),
+});
+
 const CLOCK = new THREE.Clock();
 
 //////////////////////
@@ -168,6 +176,7 @@ let generateNewFlowers = false;
 let toggleDirectionalLight = false;
 let toggleUfoSpotlight = false;
 let toggleUfoSphereLights = false;
+let ufoMovementFlags = {};
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars, directionalLight, ufoSpotlight, ufo;
 
@@ -191,7 +200,7 @@ function createScene() {
   createOakTree(4, new THREE.Vector3(-14, 2.25, -23), new THREE.Euler(0, -Math.PI / 3, 0));
   createOakTree(8, new THREE.Vector3(15, 2.75, -26), new THREE.Euler(0, Math.PI / 3, 0));
 
-  createUfo(new THREE.Vector3(0, 10, 0));
+  createUfo(new THREE.Vector3(0, 20, 0));
 }
 
 function createBufferScene() {
@@ -847,6 +856,15 @@ function update(timeDelta) {
     });
   }
 
+  // Move UFO at constant velocity on key press
+  const ufoDeltaVector = Object.entries(ufoMovementFlags)
+    .filter(([_key, toggled]) => toggled) // Filter by pressed keys
+    .map(([key, _toggled]) => MOVEMENT_FLAGS[key]) // Get the corresponding vector
+    .reduce((resultingVector, vector) => resultingVector.add(vector), new THREE.Vector3())
+    .normalize()
+    .multiplyScalar(timeDelta * UFO_LINEAR_VELOCITY); // Multiply by its velocity
+  ufo.position.add(ufoDeltaVector);
+
   // Rotate UFO at constant angular velocity
   ufo.rotation.y = (ufo.rotation.y + timeDelta * UFO_ANGULAR_VELOCITY) % (2 * Math.PI);
 }
@@ -884,6 +902,7 @@ function init() {
   createCameras();
 
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('keyup', onKeyUp);
 }
 
 /////////////////////
@@ -919,15 +938,21 @@ const keyHandlers = {
   KeyR: changeMaterialHandlerFactory('basic'),
 
   // toggle directional light
-  KeyD: () => (toggleDirectionalLight = true),
+  KeyD: (_event, isDown) => (toggleDirectionalLight = isDown),
 
   // toggle UFO lights
-  KeyS: () => (toggleUfoSpotlight = true),
-  KeyP: () => (toggleUfoSphereLights = true),
+  KeyS: (_event, isDown) => (toggleUfoSpotlight = isDown),
+  KeyP: (_event, isDown) => (toggleUfoSphereLights = isDown),
+
+  // ufo movement
+  ArrowUp: moveUfoHandlerFactory('positiveX'),
+  ArrowDown: moveUfoHandlerFactory('negativeX'),
+  ArrowLeft: moveUfoHandlerFactory('negativeZ'),
+  ArrowRight: moveUfoHandlerFactory('positiveZ'),
 
   // texture generation
-  Digit1: () => (generateNewStars = true),
-  Digit2: () => (generateNewFlowers = true),
+  Digit1: (_event, isDown) => (generateNewStars = isDown),
+  Digit2: (_event, isDown) => (generateNewFlowers = isDown),
 };
 
 function onKeyDown(event) {
@@ -938,20 +963,39 @@ function onKeyDown(event) {
     code = code.replace('Numpad', 'Digit');
   }
 
-  keyHandlers[code]?.(event);
+  keyHandlers[code]?.(event, true);
 }
 
 function changeMaterialHandlerFactory(material) {
-  return () => {
+  return (event, isDown) => {
+    if (!isDown || event.repeat) {
+      return;
+    }
+
     activeMaterial = material;
     activeMaterialChanged = true;
+  };
+}
+
+function moveUfoHandlerFactory(direction) {
+  return (_event, isDown) => {
+    ufoMovementFlags[direction] = isDown;
   };
 }
 
 ///////////////////////
 /* KEY UP CALLBACK */
 ///////////////////////
-function onKeyUp(e) {}
+function onKeyUp(event) {
+  let { code } = event;
+
+  // Treat numpad digits like the number row
+  if (/^Numpad\d$/.test(code)) {
+    code = code.replace('Numpad', 'Digit');
+  }
+
+  keyHandlers[code]?.(event, false);
+}
 
 ///////////////
 /* UTILITIES */
