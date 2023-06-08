@@ -25,8 +25,8 @@ const MATERIAL_PARAMS = {
   moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   treeTrunk: () => ({ color: COLORS.brown }),
-  treeLeftBranch: () => ({ color: COLORS.brown }),
-  treeRightBranch: () => ({ color: COLORS.brown }),
+  treePrimaryBranch: () => ({ color: COLORS.brown }),
+  treeSecondaryBranch: () => ({ color: COLORS.brown }),
   treeLeaf: () => ({ color: COLORS.darkGreen }),
 
   // TODO: remove double side from these
@@ -66,8 +66,8 @@ const GEOMETRY = {
 
   // height is scaled per instance of oak tree
   treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
-  treeLeftBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
-  treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
+  treePrimaryBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
+  treeSecondaryBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
   treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
   houseWalls: createHouseWallsGeometry(),
@@ -76,8 +76,8 @@ const GEOMETRY = {
   houseDoor: createHouseDoorGeometry(),
 };
 const SPHERE_SCALING = {
-  treeLeftLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
-  treeRightLeaf: new THREE.Vector3(3, 1.375, 2.5),
+  treePrimaryBranchLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
+  treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
 };
 const TEXTURE_SIZES = {
   sky: 64,
@@ -558,50 +558,50 @@ function createOakTree(trunkHeight, position, rotation) {
   oakTrunk.position.setY(trunkHeight / 2); // Cylinder is centered by default
 
   // Create left branch
-  const leftBranch = createNamedMesh('treeLeftBranch', treeGroup);
+  const primaryBranch = createNamedMesh('treePrimaryBranch', treeGroup);
 
-  const leftBranchIncl = Math.PI / 6; // 30 deg
-  const leftBranchX =
-    Math.cos(Math.PI / 2 - leftBranchIncl) *
-      (GEOMETRY.treeLeftBranch.parameters.height / 2 +
-        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(leftBranchIncl)) -
+  const primaryBranchIncl = Math.PI / 6; // 30 deg
+  const primaryBranchX =
+    Math.cos(Math.PI / 2 - primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom / Math.tan(primaryBranchIncl)) -
     GEOMETRY.treeTrunk.parameters.radiusTop;
-  const leftBranchY =
-    Math.cos(leftBranchIncl) *
-      (GEOMETRY.treeLeftBranch.parameters.height / 2 +
-        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl)) -
+  const primaryBranchY =
+    Math.cos(primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - primaryBranchIncl)) -
     GEOMETRY.treeTrunk.parameters.radiusTop;
 
-  leftBranch.position.set(leftBranchX, trunkHeight + leftBranchY, 0);
-  leftBranch.rotation.set(0, 0, -leftBranchIncl);
+  primaryBranch.position.set(primaryBranchX, trunkHeight + primaryBranchY, 0);
+  primaryBranch.rotation.set(0, 0, -primaryBranchIncl);
 
   // Create right branch
-  const rightBranch = createNamedMesh('treeRightBranch', treeGroup);
+  const secondaryBranch = createNamedMesh('treeSecondaryBranch', treeGroup);
 
-  const rightBranchIncl = Math.PI / 3; // 60 deg
+  const secondaryBranchIncl = Math.PI / 3; // 60 deg
 
-  rightBranch.rotation.set(0, 0, rightBranchIncl);
-  rightBranch.position.set(
-    -GEOMETRY.treeRightBranch.parameters.height / 4,
-    trunkHeight + GEOMETRY.treeRightBranch.parameters.height / 2,
+  secondaryBranch.rotation.set(0, 0, secondaryBranchIncl);
+  secondaryBranch.position.set(
+    -GEOMETRY.treeSecondaryBranch.parameters.height / 4,
+    trunkHeight + GEOMETRY.treeSecondaryBranch.parameters.height / 2,
     0
   );
 
-  const leftLeaf = createNamedMesh('treeLeaf', treeGroup);
-  leftLeaf.position.set(
-    leftBranchX * 2,
-    trunkHeight + leftBranchY * 2 + SPHERE_SCALING.treeLeftLeaf.y / 2,
+  const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  primaryBranchLeaf.position.set(
+    primaryBranchX * 2,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  leftLeaf.scale.copy(SPHERE_SCALING.treeLeftLeaf);
+  primaryBranchLeaf.scale.copy(SPHERE_SCALING.treePrimaryBranchLeaf);
 
-  const rightLeaf = createNamedMesh('treeLeaf', treeGroup);
-  rightLeaf.position.set(
-    (-GEOMETRY.treeRightBranch.parameters.height * 2) / 3,
-    trunkHeight + leftBranchY * 2 + SPHERE_SCALING.treeLeftLeaf.y / 2,
+  const secondaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  secondaryBranchLeaf.position.set(
+    (-GEOMETRY.treeSecondaryBranch.parameters.height * 2) / 3,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  rightLeaf.scale.copy(SPHERE_SCALING.treeRightLeaf);
+  secondaryBranchLeaf.scale.copy(SPHERE_SCALING.treeSecondaryBranchLeaf);
 }
 
 /**
