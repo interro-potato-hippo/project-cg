@@ -225,6 +225,12 @@ function createBufferScene() {
 function createCameras() {
   const controls = new THREE.OrbitControls(ORBITAL_CAMERA, renderer.domElement);
   controls.target.set(0, 0, 0);
+  controls.keys = {
+    LEFT: 72, // h
+    UP: 75, // k
+    RIGHT: 76, // l
+    BOTTOM: 74, // j
+  };
   controls.update();
 }
 
