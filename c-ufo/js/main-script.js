@@ -154,7 +154,9 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  const ambientLight = new THREE.AmbientLight(COLORS.ambientLight);
+  ambientLight.intensity = 0.25;
+  scene.add(ambientLight);
   // TODO: add directional lights
 }
 
