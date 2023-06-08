@@ -49,6 +49,7 @@ const MATERIAL_PARAMS = {
 const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
   directional: 1,
+  ufoSpotlight: 2,
 });
 
 const DOME_RADIUS = 64;
@@ -147,8 +148,11 @@ let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let generateNewStars = false;
 let generateNewFlowers = false;
+let toggleUfoSpotlight = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars;
+
+let ufoSpotlight;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -718,11 +722,12 @@ function createUfo(initialPosition) {
 
   const spotlightLight = new THREE.SpotLight(COLORS.darkBlue);
   spotlightLight.angle = Math.PI / 6;
-  spotlightLight.intensity = 2;
+  spotlightLight.intensity = LIGHT_INTENSITY.ufoSpotlight;
   spotlightLight.penumbra = 0.3;
   spotlightLight.position.copy(spotlight.position);
   spotlightLight.target = spotlightTarget;
   ufoGroup.add(spotlightLight);
+  ufoSpotlight = spotlightLight;
 
   for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
     const sphereGroup = new THREE.Group();
@@ -800,6 +805,10 @@ function update() {
       Object.values(COLORS)
     );
   }
+  if (toggleUfoSpotlight) {
+    ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
+    toggleUfoSpotlight = false;
+  }
 }
 
 /////////////
@@ -863,6 +872,9 @@ const keyHandlers = {
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // toggle UFO lights
+  KeyS: () => (toggleUfoSpotlight = true),
 
   // texture generation
   Digit1: () => (generateNewStars = true),
