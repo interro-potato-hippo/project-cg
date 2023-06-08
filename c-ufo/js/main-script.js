@@ -51,6 +51,8 @@ const LIGHT_INTENSITY = Object.freeze({
   directional: 1,
   ufoSpotlight: 2,
 });
+const UFO_SPOTLIGHT_ANGLE = Math.PI / 3;
+const UFO_SPOTLIGHT_PENUMBRA = 0.3;
 
 const DOME_RADIUS = 64;
 const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
@@ -720,10 +722,13 @@ function createUfo(initialPosition) {
   spotlightTarget.position.set(0, -10, 0); // point downwards
   ufoGroup.add(spotlightTarget);
 
-  ufoSpotlight = new THREE.SpotLight(COLORS.darkBlue);
-  ufoSpotlight.angle = Math.PI / 6;
-  ufoSpotlight.intensity = LIGHT_INTENSITY.ufoSpotlight;
-  ufoSpotlight.penumbra = 0.3;
+  ufoSpotlight = new THREE.SpotLight(
+    COLORS.darkBlue,
+    LIGHT_INTENSITY.ufoSpotlight,
+    0,
+    UFO_SPOTLIGHT_ANGLE,
+    UFO_SPOTLIGHT_PENUMBRA
+  );
   ufoSpotlight.position.copy(spotlight.position);
   ufoSpotlight.target = spotlightTarget;
   ufoGroup.add(ufoSpotlight);
