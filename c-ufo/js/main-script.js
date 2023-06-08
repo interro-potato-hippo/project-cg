@@ -31,6 +31,8 @@ const MATERIAL_PARAMS = {
     map: fieldTexture.texture,
     color: COLORS.green,
     side: THREE.DoubleSide,
+    bumpMap: terrainHeightMap,
+    bumpScale: 1,
     displacementMap: terrainHeightMap,
     displacementScale: 10,
   }),
