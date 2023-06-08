@@ -240,7 +240,10 @@ function createMoon() {
 }
 
 function createSkyDome() {
-  createNamedMesh('skyDome', scene);
+  // the sky dome doesn't need to be a named mesh, as it won't be dynamically changed
+  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.skyDome() });
+  const plane = new THREE.Mesh(GEOMETRY.skyDome, material);
+  scene.add(plane);
 }
 
 function createBufferSky() {
