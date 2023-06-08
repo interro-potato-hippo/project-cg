@@ -121,7 +121,7 @@ const SKY_CAMERA = createOrthographicCamera({
   y: 5,
   atY: 10,
 });
-const NAMED_MESHES = {}; // meshes registered as they are created
+const NAMED_MESHES = []; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -696,9 +696,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
 function update() {
   if (activeMaterialChanged) {
     activeMaterialChanged = false;
-    Object.values(NAMED_MESHES).forEach(
-      (mesh) => (mesh.material = mesh.userData.materials[activeMaterial])
-    );
+    NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
 }
 
@@ -825,7 +823,7 @@ function createNamedMesh(name, parent) {
   };
   const mesh = new THREE.Mesh(GEOMETRY[name], materials[activeMaterial]);
   Object.assign(mesh.userData, { name, materials });
-  NAMED_MESHES[name] = mesh;
+  NAMED_MESHES.push(mesh);
   parent.add(mesh);
   return mesh;
 }
