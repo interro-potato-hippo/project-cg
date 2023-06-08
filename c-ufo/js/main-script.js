@@ -295,15 +295,15 @@ function createBufferField() {
       { x: 1, y: 0, z: 0, color: COLORS.darkGreen },
     ],
     triangles: [
-      [2, 1, 0],
-      [0, 3, 2],
+      [0, 1, 2],
+      [0, 2, 3],
     ],
     scale: TEXTURE_SIZES.field,
   });
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
   field.add(mesh);
 
-  const flowers = createGroup({ y: -1, parent: field });
+  const flowers = createGroup({ y: 1, parent: field });
   generateProps(
     flowers,
     PROP_AMOUNTS.flowers,
@@ -313,7 +313,7 @@ function createBufferField() {
       y: 0,
       z: 1,
     },
-    COLORS
+    Object.values(COLORS)
   );
 }
 
@@ -334,7 +334,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.DoubleSide }) // TODO: change side
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
@@ -353,6 +353,7 @@ function generateProps(
     );
     dot.position.set(position.x, position.y, position.z);
     dot.rotateX(-Math.PI / 2);
+    dot.material = dot.material.clone(); // materials are not correctly cloned by default
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
     parent.add(dot);
