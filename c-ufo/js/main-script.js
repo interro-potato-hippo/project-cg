@@ -9,11 +9,11 @@ const COLORS = Object.freeze({
   green: new THREE.Color(0x55cc55),
   darkGreen: new THREE.Color(0x5e8c61),
   brown: new THREE.Color(0xa96633),
-  white: new THREE.Color(0xffffff),
-  ambientLight: new THREE.Color(0xeec37f),
   orange: new THREE.Color(0xea924b),
   lightBlue: new THREE.Color(0xb8e9ee),
   dodgerBlue: new THREE.Color(0x1e90ff),
+  white: new THREE.Color(0xffffff),
+  moonYellow: new THREE.Color(0xebc815),
 });
 
 // must be functions because they depend on textures initialized later
@@ -22,6 +22,7 @@ const MATERIAL_PARAMS = {
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+  moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   treeTrunk: () => ({ color: COLORS.brown }),
   treeLeftBranch: () => ({ color: COLORS.brown }),
@@ -41,6 +42,9 @@ const LIGHT_INTENSITY = Object.freeze({
 });
 
 const DOME_RADIUS = 64;
+const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
+const MOON_POSITION_COORD = Math.sqrt((DOME_RADIUS - MOON_DOME_PADDING) ** 2 / 2);
+const MOON_POSITION = new THREE.Vector3(MOON_POSITION_COORD, MOON_POSITION_COORD, 0);
 const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
@@ -50,6 +54,7 @@ const SPHERE_SEGMENTS = 32;
 const GEOMETRY = {
   skyDome: new THREE.SphereGeometry(DOME_RADIUS, SPHERE_SEGMENTS, SPHERE_SEGMENTS, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
+  moon: new THREE.SphereGeometry(5, 32, 32),
 
   // height is scaled per instance of oak tree
   treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
@@ -113,6 +118,7 @@ function createScene() {
   createLights();
   createTerrain();
   createSkyDome();
+  createMoon();
   createHouse();
 
   createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
@@ -184,7 +190,7 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  const ambientLight = new THREE.AmbientLight(COLORS.ambientLight);
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
   ambientLight.intensity = LIGHT_INTENSITY.ambient;
   scene.add(ambientLight);
   // TODO: add directional lights
@@ -196,6 +202,11 @@ function createLights() {
 function createTerrain() {
   const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+}
+
+function createMoon() {
+  const moon = createNamedMesh('moon', scene);
+  moon.position.copy(MOON_POSITION);
 }
 
 function createSkyDome() {
