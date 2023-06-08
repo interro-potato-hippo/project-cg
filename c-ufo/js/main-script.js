@@ -758,7 +758,11 @@ function createUfo(initialPosition) {
 
     sphere.position.set(sphereX, sphereY, 0);
 
-    const sphereLight = new THREE.PointLight(COLORS.darkBlue, LIGHT_INTENSITY.ufoSphereLight, UFO_SPHERE_LIGHT_DISTANCE);
+    const sphereLight = new THREE.PointLight(
+      COLORS.darkBlue,
+      LIGHT_INTENSITY.ufoSphereLight,
+      UFO_SPHERE_LIGHT_DISTANCE
+    );
     sphereLight.position.set(sphereX, sphereY, 0);
     sphereGroup.add(sphereLight);
     ufoSphereLights.push(sphereLight);
@@ -827,9 +831,9 @@ function update(timeDelta) {
     toggleUfoSpotlight = false;
   }
   if (toggleUfoSphereLights) {
-    ufoSphereLights.forEach(light => {
-    light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphereLight : 0;
-    })
+    ufoSphereLights.forEach((light) => {
+      light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphereLight : 0;
+    });
     toggleUfoSphereLights = false;
   }
 
