@@ -887,8 +887,12 @@ function init() {
   renderer = new THREE.WebGLRenderer({
     antialias: true,
   });
+  renderer.setPixelRatio(window.devicePixelRatio);
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
+
+  renderer.xr.enabled = true;
+  document.body.appendChild(VRButton.createButton(renderer));
 
   createBufferScene();
 
@@ -909,7 +913,7 @@ function animate() {
   const timeDelta = CLOCK.getDelta();
   update(timeDelta);
   render();
-  requestAnimationFrame(animate);
+  renderer.setAnimationLoop(animate);
 }
 
 ////////////////////////////
