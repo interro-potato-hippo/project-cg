@@ -62,7 +62,7 @@ const GEOMETRY = {
     Math.PI / 2
   ),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
-  moon: new THREE.SphereGeometry(5, 32, 32),
+  moon: new THREE.SphereGeometry(5, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
   // height is scaled per instance of oak tree
   treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
