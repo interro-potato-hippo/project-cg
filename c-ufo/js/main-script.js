@@ -139,7 +139,7 @@ const FIELD_CAMERA = createOrthographicCamera({
 });
 const NAMED_MESHES = []; // meshes registered as they are created
 
-const CLOCK = new THREE.Clock(true);
+const CLOCK = new THREE.Clock();
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -152,9 +152,7 @@ let activeMaterialChanged = false; // used to know when to update the material o
 let generateNewStars = false;
 let generateNewFlowers = false;
 // ^ prevents logic in key event handlers, moving it to the update function
-let flowers, stars;
-
-let ufo;
+let flowers, stars, ufo;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -705,10 +703,9 @@ function createOakTree(trunkHeight, position, rotation) {
 }
 
 function createUfo(initialPosition) {
-  const ufoGroup = new THREE.Group();
-  ufoGroup.position.copy(initialPosition);
-  scene.add(ufoGroup);
-  ufo = ufoGroup;
+  ufo = new THREE.Group();
+  ufo.position.copy(initialPosition);
+  scene.add(ufo);
 
   const body = createNamedMesh('ufoBody', ufoGroup);
   body.scale.copy(ELLIPSOID_SCALING.ufoBody);
