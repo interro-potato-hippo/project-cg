@@ -28,6 +28,11 @@ const MATERIAL_PARAMS = {
   houseDoor: () => ({ vertexColors: true, side: THREE.DoubleSide }),
 };
 
+const LIGHT_INTENSITY = Object.freeze({
+  ambient: 0.25,
+  // TODO: add directional lights
+});
+
 const DOME_RADIUS = 64;
 const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
@@ -154,7 +159,9 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  const ambientLight = new THREE.AmbientLight(COLORS.ambientLight);
+  ambientLight.intensity = LIGHT_INTENSITY.ambient;
+  scene.add(ambientLight);
   // TODO: add directional lights
 }
 
@@ -516,6 +523,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
       3
     )
   );
+  geometry.computeVertexNormals();
 
   return geometry;
 }
