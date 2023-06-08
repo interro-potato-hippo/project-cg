@@ -107,6 +107,8 @@ const PROP_AMOUNTS = {
   flowers: 512,
 };
 
+const UFO_ANGULAR_VELOCITY = (2 * Math.PI) / 10; // 10 seconds per full rotation
+
 const ORBITAL_CAMERA = createPerspectiveCamera({
   fov: 80,
   near: 1,
@@ -137,6 +139,8 @@ const FIELD_CAMERA = createOrthographicCamera({
 });
 const NAMED_MESHES = []; // meshes registered as they are created
 
+const CLOCK = new THREE.Clock();
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
@@ -148,7 +152,7 @@ let activeMaterialChanged = false; // used to know when to update the material o
 let generateNewStars = false;
 let generateNewFlowers = false;
 // ^ prevents logic in key event handlers, moving it to the update function
-let flowers, stars;
+let flowers, stars, ufo;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -699,9 +703,9 @@ function createOakTree(trunkHeight, position, rotation) {
 }
 
 function createUfo(initialPosition) {
-  const ufoGroup = new THREE.Group();
-  ufoGroup.position.copy(initialPosition);
-  scene.add(ufoGroup);
+  ufo = new THREE.Group();
+  ufo.position.copy(initialPosition);
+  scene.add(ufo);
 
   const body = createNamedMesh('ufoBody', ufoGroup);
   body.scale.copy(ELLIPSOID_SCALING.ufoBody);
@@ -767,7 +771,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
 ////////////
 /* UPDATE */
 ////////////
-function update() {
+function update(timeDelta) {
   if (activeMaterialChanged) {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
@@ -788,6 +792,9 @@ function update() {
       Object.values(COLORS)
     );
   }
+
+  // Rotate UFO at constant angular velocity
+  ufo.rotation.y = (ufo.rotation.y + timeDelta * UFO_ANGULAR_VELOCITY) % (2 * Math.PI);
 }
 
 /////////////
@@ -825,7 +832,8 @@ function init() {
 /* ANIMATION CYCLE */
 /////////////////////
 function animate() {
-  update();
+  const timeDelta = CLOCK.getDelta();
+  update(timeDelta);
   render();
   requestAnimationFrame(animate);
 }
