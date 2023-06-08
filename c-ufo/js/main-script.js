@@ -107,7 +107,7 @@ const PROP_AMOUNTS = {
   flowers: 512,
 };
 
-const UFO_ANGULAR_VELOCITY = 2 * Math.PI / 10; // 10 seconds per full rotation
+const UFO_ANGULAR_VELOCITY = (2 * Math.PI) / 10; // 10 seconds per full rotation
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
   fov: 80,
