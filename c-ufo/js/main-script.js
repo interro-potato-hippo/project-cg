@@ -3,19 +3,17 @@
 //////////////////////
 /* GLOBAL CONSTANTS */
 //////////////////////
-const CYLINDER_SEGMENTS = 30;
-const SPHERE_SEGMENTS = 30;
 const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
   darkGreen: new THREE.Color(0x5e8c61),
-  white: new THREE.Color(0xffffff),
   brown: new THREE.Color(0xa96633),
-  ambientLight: new THREE.Color(0xeec37f),
   orange: new THREE.Color(0xea924b),
   lightBlue: new THREE.Color(0xb8e9ee),
   dodgerBlue: new THREE.Color(0x1e90ff),
+  white: new THREE.Color(0xffffff),
+  moonYellow: new THREE.Color(0xebc815),
 });
 
 // must be functions because they depend on textures initialized later
@@ -24,8 +22,9 @@ const MATERIAL_PARAMS = {
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+  moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
-  oakTree: () => ({ color: COLORS.brown }),
+  treeTrunk: () => ({ color: COLORS.brown }),
   treeLeftBranch: () => ({ color: COLORS.brown }),
   treeRightBranch: () => ({ color: COLORS.brown }),
   treeLeaf: () => ({ color: COLORS.darkGreen }),
@@ -42,17 +41,36 @@ const MATERIAL_PARAMS = {
   houseDoor: () => ({ vertexColors: true, side: THREE.DoubleSide }),
 };
 
+const LIGHT_INTENSITY = Object.freeze({
+  ambient: 0.25,
+  // TODO: add directional lights
+});
+
 const DOME_RADIUS = 64;
+const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
+const MOON_POSITION_COORD = Math.sqrt((DOME_RADIUS - MOON_DOME_PADDING) ** 2 / 2);
+const MOON_POSITION = new THREE.Vector3(MOON_POSITION_COORD, MOON_POSITION_COORD, 0);
 const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
+const CYLINDER_SEGMENTS = 32;
+const SPHERE_SEGMENTS = 32;
 const GEOMETRY = {
-  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
+  skyDome: new THREE.SphereGeometry(
+    DOME_RADIUS,
+    SPHERE_SEGMENTS,
+    SPHERE_SEGMENTS,
+    0,
+    2 * Math.PI,
+    0,
+    Math.PI / 2
+  ),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
+  moon: new THREE.SphereGeometry(5, 32, 32),
 
   // height is scaled per instance of oak tree
-  oakTree: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
+  treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
   treeLeftBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
   treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
   treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
@@ -123,6 +141,7 @@ function createScene() {
   createLights();
   createTerrain();
   createSkyDome();
+  createMoon();
   createHouse();
 
   createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
@@ -196,7 +215,9 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
+  ambientLight.intensity = LIGHT_INTENSITY.ambient;
+  scene.add(ambientLight);
   // TODO: add directional lights
 }
 
@@ -206,6 +227,11 @@ function createLights() {
 function createTerrain() {
   const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+}
+
+function createMoon() {
+  const moon = createNamedMesh('moon', scene);
+  moon.position.copy(MOON_POSITION);
 }
 
 function createSkyDome() {
@@ -544,7 +570,7 @@ function createOakTree(trunkHeight, position, rotation) {
   scene.add(treeGroup);
 
   // Create trunk
-  const oakTrunk = createNamedMesh('oakTree', treeGroup);
+  const oakTrunk = createNamedMesh('treeTrunk', treeGroup);
   oakTrunk.scale.setY(trunkHeight);
   oakTrunk.position.setY(trunkHeight / 2); // Cylinder is centered by default
 
@@ -556,12 +582,12 @@ function createOakTree(trunkHeight, position, rotation) {
     Math.cos(Math.PI / 2 - leftBranchIncl) *
       (GEOMETRY.treeLeftBranch.parameters.height / 2 +
         GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(leftBranchIncl)) -
-    GEOMETRY.oakTree.parameters.radiusTop;
+    GEOMETRY.treeTrunk.parameters.radiusTop;
   const leftBranchY =
     Math.cos(leftBranchIncl) *
       (GEOMETRY.treeLeftBranch.parameters.height / 2 +
         GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl)) -
-    GEOMETRY.oakTree.parameters.radiusTop;
+    GEOMETRY.treeTrunk.parameters.radiusTop;
 
   leftBranch.position.set(leftBranchX, trunkHeight + leftBranchY, 0);
   leftBranch.rotation.set(0, 0, -leftBranchIncl);
@@ -648,6 +674,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
       3
     )
   );
+  geometry.computeVertexNormals();
 
   return geometry;
 }
