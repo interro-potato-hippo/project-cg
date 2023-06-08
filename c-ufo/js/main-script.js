@@ -854,7 +854,11 @@ function update(timeDelta) {
   }
   if (updateProjectionMatrix) {
     updateProjectionMatrix = false;
-    refreshCameraParameters();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    if (window.innerHeight > 0 && window.innerWidth > 0) {
+      refreshCameraParameters();
+    }
   }
 
   // Rotate UFO at constant angular velocity
@@ -911,11 +915,7 @@ function animate() {
 /* RESIZE WINDOW CALLBACK */
 ////////////////////////////
 function onResize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-
-  if (window.innerHeight > 0 && window.innerWidth > 0) {
-    updateProjectionMatrix = true;
-  }
+  updateProjectionMatrix = true;
 }
 
 ///////////////////////
