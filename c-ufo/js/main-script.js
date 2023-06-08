@@ -152,8 +152,8 @@ function createScene() {
 function createBufferScene() {
   bufferScene = new THREE.Scene();
 
-  createBufferField();
   createBufferSky();
+  createBufferField();
 
   skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
     minFilter: THREE.LinearFilter,
