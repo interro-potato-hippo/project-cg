@@ -7,12 +7,11 @@ const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
-  white: new THREE.Color(0xffffff),
-  moonYellow: new THREE.Color(0xebc815),
-  ambientLight: new THREE.Color(0xeec37f),
   orange: new THREE.Color(0xea924b),
   lightBlue: new THREE.Color(0xb8e9ee),
   dodgerBlue: new THREE.Color(0x1e90ff),
+  white: new THREE.Color(0xffffff),
+  moonYellow: new THREE.Color(0xebc815),
 });
 
 // must be functions because they depend on textures initialized later
@@ -47,7 +46,7 @@ const GEOMETRY = {
   skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
   moon: new THREE.SphereGeometry(5, 32, 32),
-  
+
   houseWalls: createHouseWallsGeometry(),
   houseRoof: createHouseRoofGeometry(),
   houseWindows: createHouseWindowsGeometry(),
@@ -167,7 +166,7 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  const ambientLight = new THREE.AmbientLight(COLORS.ambientLight);
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
   ambientLight.intensity = LIGHT_INTENSITY.ambient;
   scene.add(ambientLight);
   // TODO: add directional lights
