@@ -574,7 +574,7 @@ function createOakTree(trunkHeight, position, rotation) {
     GEOMETRY.treeTrunk.parameters.radiusTop;
 
   primaryBranch.position.set(primaryBranchX, trunkHeight + primaryBranchY, 0);
-  primaryBranch.rotation.setZ(-primaryBranchIncl);
+  primaryBranch.rotation.set(0, 0, -primaryBranchIncl);
 
   // Create secondary branch
   const secondaryBranch = createNamedMesh('treeSecondaryBranch', treeGroup);
@@ -586,7 +586,7 @@ function createOakTree(trunkHeight, position, rotation) {
     trunkHeight + GEOMETRY.treeSecondaryBranch.parameters.height / 2,
     0
   );
-  secondaryBranch.rotation.setZ(secondaryBranchIncl);
+  secondaryBranch.rotation.set(0, 0, secondaryBranchIncl);
 
   // Position leaf above top of primary branch
   const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
