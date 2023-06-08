@@ -79,9 +79,9 @@ const GEOMETRY = {
   treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
   ufoBody: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
-  ufoCockpit: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+  ufoCockpit: new THREE.SphereGeometry(1.5, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
   ufoSpotlight: new THREE.CylinderGeometry(1.5, 1.5, 0.5, CYLINDER_SEGMENTS),
-  ufoSphere: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+  ufoSphere: new THREE.SphereGeometry(0.25, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
   houseWalls: createHouseWallsGeometry(),
   houseRoof: createHouseRoofGeometry(),
@@ -89,14 +89,11 @@ const GEOMETRY = {
   houseDoor: createHouseDoorGeometry(),
 };
 const UFO_SPHERE_COUNT = 8;
-const SPHERE_SCALING = {
+const ELLIPSOID_SCALING = {
   treePrimaryBranchLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
   treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
 
   ufoBody: new THREE.Vector3(3.5, 1, 3.5),
-  ufoCockpit: new THREE.Vector3(1.5, 1.5, 1.5),
-  ufoSpotlight: new THREE.CylinderGeometry(1.5, 1.5, 0.5, CYLINDER_SEGMENTS),
-  ufoSphere: new THREE.Vector3(0.25, 0.25, 0.25),
 };
 const TEXTURE_SIZES = {
   sky: 64,
@@ -613,19 +610,19 @@ function createOakTree(trunkHeight, position, rotation) {
   const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
   primaryBranchLeaf.position.set(
     primaryBranchX * 2,
-    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    trunkHeight + primaryBranchY * 2 + ELLIPSOID_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  primaryBranchLeaf.scale.copy(SPHERE_SCALING.treePrimaryBranchLeaf);
+  primaryBranchLeaf.scale.copy(ELLIPSOID_SCALING.treePrimaryBranchLeaf);
 
   // Position leaf above top of secondary branch
   const secondaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
   secondaryBranchLeaf.position.set(
     (-GEOMETRY.treeSecondaryBranch.parameters.height * 2) / 3,
-    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    trunkHeight + primaryBranchY * 2 + ELLIPSOID_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  secondaryBranchLeaf.scale.copy(SPHERE_SCALING.treeSecondaryBranchLeaf);
+  secondaryBranchLeaf.scale.copy(ELLIPSOID_SCALING.treeSecondaryBranchLeaf);
 }
 
 function createUfo(initialPosition) {
@@ -634,14 +631,13 @@ function createUfo(initialPosition) {
   scene.add(ufoGroup);
 
   const body = createNamedMesh('ufoBody', ufoGroup);
-  body.scale.copy(SPHERE_SCALING.ufoBody);
+  body.scale.copy(ELLIPSOID_SCALING.ufoBody);
 
   const cockpit = createNamedMesh('ufoCockpit', ufoGroup);
-  cockpit.scale.copy(SPHERE_SCALING.ufoCockpit);
-  cockpit.position.set(0, SPHERE_SCALING.ufoBody.y / 2, 0);
+  cockpit.position.set(0, ELLIPSOID_SCALING.ufoBody.y / 2, 0);
 
   const spotlight = createNamedMesh('ufoSpotlight', ufoGroup);
-  spotlight.position.set(0, -SPHERE_SCALING.ufoBody.y, 0);
+  spotlight.position.set(0, -ELLIPSOID_SCALING.ufoBody.y, 0);
 
   for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
     const sphereGroup = new THREE.Group();
@@ -650,15 +646,14 @@ function createUfo(initialPosition) {
 
     const sphere = createNamedMesh('ufoSphere', sphereGroup);
 
-    const sphereY = -SPHERE_SCALING.ufoBody.y / 2;
+    const sphereY = -ELLIPSOID_SCALING.ufoBody.y / 2;
     // Calculate sphereX by intercepting the ellipse equation at this Y coordinate
     // Ellipse equation: x^2/a^2 + y^2/b^2 = 1, where a is rx and b is ry.
     // Therefore, x = sqrt(a^2 * (1 - y^2/b^2))
     const sphereX = Math.sqrt(
-      SPHERE_SCALING.ufoBody.x ** 2 * (1 - sphereY ** 2 / SPHERE_SCALING.ufoBody.y ** 2)
+      ELLIPSOID_SCALING.ufoBody.x ** 2 * (1 - sphereY ** 2 / ELLIPSOID_SCALING.ufoBody.y ** 2)
     );
 
-    sphere.scale.copy(SPHERE_SCALING.ufoSphere);
     sphere.position.set(sphereX, sphereY, 0);
   }
 }
