@@ -35,7 +35,7 @@ const MATERIAL_PARAMS = {
 };
 
 const LIGHT_INTENSITY = Object.freeze({
-  ambient: 0.25,
+  ambient: 1,
   // TODO: add directional lights
 });
 
@@ -94,6 +94,7 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 // ^ prevents logic in key event handlers, moving it to the update function
+let addedSide = false;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -183,10 +184,55 @@ function createLights() {
 ////////////////////////
 function createTerrain() {
   // the terrain doesn't need to be a named mesh, as it won't be dynamically changed
-  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.terrain() });
+  const material = new THREE.MeshPhongMaterial(MATERIAL_PARAMS.terrain());
   const plane = new THREE.Mesh(GEOMETRY.terrain, material);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
   scene.add(plane);
+
+  const flatMaterial = new THREE.MeshPhongMaterial({ color: COLORS.green, side: THREE.DoubleSide });
+  const flatPlane = new THREE.Mesh(GEOMETRY.terrain, flatMaterial);
+  flatPlane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+  scene.add(flatPlane);
+
+  // const sideGeometry = new THREE.BufferGeometry();
+
+  // const canvas = document.createElement('canvas');
+  // canvas.width = terrainHeightMap.image.width;
+  // canvas.height = terrainHeightMap.image.height;
+  // const context = canvas.getContext('2d');
+  // context.drawImage(terrainHeightMap.image, 0, 0);
+  // const pixelData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+
+  // const res = 128;
+
+  // const positions = [];
+  // for (let i = 0; i < res; i++) {
+  //   const angle = (i / res) * Math.PI * 2;
+  //   const u = (i / res) * canvas.width;
+  //   const v = canvas.height; //! <----
+
+  //   const index = (Math.floor(v) * canvas.width + Math.floor(u)) * 4;
+  //   const height = (pixelData[index] / 255) * 10; // FIXME: 10 is displacement scale
+
+  //   positions.push(Math.cos(angle) * DOME_RADIUS, height, Math.sin(angle) * DOME_RADIUS);
+  // }
+
+  // const indices = [];
+  // for (let i = 0; i < res - 1; i++) {
+  //   indices.push(i, i + 1, res);
+  // }
+
+  // sideGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  // sideGeometry.setIndex(indices);
+  // sideGeometry.computeVertexNormals();
+
+  // const sideMaterial = new THREE.MeshPhongMaterial({
+  //   color: COLORS.orange,
+  //   side: THREE.DoubleSide,
+  // });
+  // // const sideGeometry = new THREE.CylinderGeometry(DOME_RADIUS, DOME_RADIUS, 5, 128, 1, true);
+  // const side = new THREE.Mesh(sideGeometry, sideMaterial);
+  // scene.add(side);
 }
 
 function createMoon() {
@@ -556,6 +602,66 @@ function update() {
   if (activeMaterialChanged) {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
+  }
+
+  if (terrainHeightMap.image && !addedSide) {
+    addedSide = true;
+
+    const sideGeometry = new THREE.BufferGeometry();
+
+    const canvas = document.createElement('canvas');
+    canvas.width = terrainHeightMap.image.width;
+    canvas.height = terrainHeightMap.image.height;
+    const context = canvas.getContext('2d');
+    context.drawImage(terrainHeightMap.image, 0, 0);
+    const pixelData = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    console.log(pixelData);
+
+    const res = 128;
+
+    const positions = [];
+    const auxPositions = []; //! FIXME: DELETE ME, DEBUG ONLY
+    for (let i = 0; i < res; i++) {
+      const angle = (i / res) * Math.PI * 2;
+      const u = (i / (res - 1)) * (canvas.width - 1);
+      const v = (canvas.height - 1) * (i / (res - 1));
+
+      const index = (Math.floor(v) * canvas.width + Math.floor(u)) * 4;
+      const height = (pixelData[index] / 255) * 10; // FIXME: 10 is displacement scale
+
+      auxPositions.push([Math.cos(angle) * DOME_RADIUS, 0, Math.sin(angle) * DOME_RADIUS]);
+      auxPositions.push([Math.cos(angle) * DOME_RADIUS, height, Math.sin(angle) * DOME_RADIUS]);
+    }
+
+    //! DEBUG ONLY
+    const pointMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, side: THREE.DoubleSide });
+    const pointGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+    for (const pos of auxPositions) {
+      const point = new THREE.Mesh(pointGeometry, pointMaterial);
+      point.position.set(...pos);
+      scene.add(point);
+      positions.push(...pos);
+    }
+    //! END DEBUG ONLY
+
+    const indices = [];
+    for (let i = 2; i < 2 * res - 1; i += 2) {
+      indices.push(i, i - 1, i - 2);
+      indices.push(i, i + 1, i - 1);
+    }
+    indices.push(0, 2 * res - 1, 2 * res - 2);
+    indices.push(0, 1, 2 * res - 1);
+
+    sideGeometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+    sideGeometry.setIndex(indices);
+    sideGeometry.computeVertexNormals();
+
+    const sideMaterial = new THREE.MeshPhongMaterial({
+      color: COLORS.orange,
+      side: THREE.DoubleSide,
+    });
+    const side = new THREE.Mesh(sideGeometry, sideMaterial);
+    scene.add(side);
   }
 }
 
