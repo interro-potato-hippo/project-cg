@@ -6,6 +6,7 @@
 const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
+  lilac: new THREE.Color(0xc8a2c8),
   green: new THREE.Color(0x55cc55),
   darkGreen: new THREE.Color(0x5e8c61),
   imperialRed: new THREE.Color(0xf03a47),
@@ -16,6 +17,7 @@ const COLORS = Object.freeze({
   lightBlue: new THREE.Color(0xb8e9ee),
   dodgerBlue: new THREE.Color(0x1e90ff),
   white: new THREE.Color(0xffffff),
+  yellow: new THREE.Color(0xffff00),
   moonYellow: new THREE.Color(0xebc815),
 });
 
@@ -55,9 +57,11 @@ const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
   directional: 1,
   ufoSpotlight: 2,
+  ufoSphereLight: 0.4,
 });
 const UFO_SPOTLIGHT_ANGLE = Math.PI / 6;
 const UFO_SPOTLIGHT_PENUMBRA = 0.3;
+const UFO_SPHERE_LIGHT_DISTANCE = 25;
 
 const DOME_RADIUS = 64;
 const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
@@ -147,6 +151,7 @@ const FIELD_CAMERA = createOrthographicCamera({
   atY: 0,
 });
 const NAMED_MESHES = []; // meshes registered as they are created
+const UFO_SPHERE_LIGHTS = []; // lights registered as they are created
 
 const CLOCK = new THREE.Clock();
 
@@ -161,6 +166,7 @@ let activeMaterialChanged = false; // used to know when to update the material o
 let generateNewStars = false;
 let generateNewFlowers = false;
 let toggleUfoSpotlight = false;
+let toggleUfoSphereLights = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars, ufo;
 
@@ -358,7 +364,7 @@ function createBufferField() {
       y: 0,
       z: 1,
     },
-    Object.values(COLORS)
+    [COLORS.white, COLORS.yellow, COLORS.lilac, COLORS.lightBlue]
   );
 }
 
@@ -721,18 +727,18 @@ function createUfo(initialPosition) {
   ufo.position.copy(initialPosition);
   scene.add(ufo);
 
-  const body = createNamedMesh('ufoBody', ufoGroup);
+  const body = createNamedMesh('ufoBody', ufo);
   body.scale.copy(ELLIPSOID_SCALING.ufoBody);
 
-  const cockpit = createNamedMesh('ufoCockpit', ufoGroup);
+  const cockpit = createNamedMesh('ufoCockpit', ufo);
   cockpit.position.set(0, ELLIPSOID_SCALING.ufoBody.y / 2, 0);
 
-  const spotlight = createNamedMesh('ufoSpotlight', ufoGroup);
+  const spotlight = createNamedMesh('ufoSpotlight', ufo);
   spotlight.position.set(0, -ELLIPSOID_SCALING.ufoBody.y, 0);
 
   const spotlightTarget = new THREE.Object3D();
   spotlightTarget.position.set(0, -10, 0); // point downwards
-  ufoGroup.add(spotlightTarget);
+  ufo.add(spotlightTarget);
 
   ufoSpotlight = new THREE.SpotLight(
     COLORS.darkBlue,
@@ -743,12 +749,12 @@ function createUfo(initialPosition) {
   );
   ufoSpotlight.position.copy(spotlight.position);
   ufoSpotlight.target = spotlightTarget;
-  ufoGroup.add(ufoSpotlight);
+  ufo.add(ufoSpotlight);
 
   for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
     const sphereGroup = new THREE.Group();
     sphereGroup.rotation.set(0, (i * 2 * Math.PI) / UFO_SPHERE_COUNT, 0);
-    ufoGroup.add(sphereGroup);
+    ufo.add(sphereGroup);
 
     const sphere = createNamedMesh('ufoSphere', sphereGroup);
 
@@ -761,6 +767,15 @@ function createUfo(initialPosition) {
     );
 
     sphere.position.set(sphereX, sphereY, 0);
+
+    const sphereLight = new THREE.PointLight(
+      COLORS.darkBlue,
+      LIGHT_INTENSITY.ufoSphereLight,
+      UFO_SPHERE_LIGHT_DISTANCE
+    );
+    sphereLight.position.set(sphereX, sphereY, 0);
+    sphereGroup.add(sphereLight);
+    UFO_SPHERE_LIGHTS.push(sphereLight);
   }
 }
 
@@ -824,6 +839,12 @@ function update(timeDelta) {
   if (toggleUfoSpotlight) {
     ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
     toggleUfoSpotlight = false;
+  }
+  if (toggleUfoSphereLights) {
+    UFO_SPHERE_LIGHTS.forEach((light) => {
+      light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphereLight : 0;
+    });
+    toggleUfoSphereLights = false;
   }
 
   // Rotate UFO at constant angular velocity
@@ -899,6 +920,7 @@ const keyHandlers = {
 
   // toggle UFO lights
   KeyS: () => (toggleUfoSpotlight = true),
+  KeyP: () => (toggleUfoSphereLights = true),
 
   // texture generation
   Digit1: () => (generateNewStars = true),
