@@ -85,6 +85,7 @@ const GEOMETRY = {
   houseWindows: createHouseWindowsGeometry(),
   houseDoor: createHouseDoorGeometry(),
 };
+const UFO_SPHERE_COUNT = 8;
 const SPHERE_SCALING = {
   treeLeftLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
   treeRightLeaf: new THREE.Vector3(3, 1.375, 2.5),
@@ -636,13 +637,23 @@ function createUfo(initialPosition) {
   const spotlight = createNamedMesh('ufoSpotlight', ufoGroup);
   spotlight.position.set(0, -SPHERE_SCALING.ufoBody.y, 0);
 
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
     const sphereGroup = new THREE.Group();
-    const sphere = createNamedMesh('ufoSphere', sphereGroup);
-    sphere.scale.copy(SPHERE_SCALING.ufoSphere);
-    sphere.position.set(2.8, -SPHERE_SCALING.ufoBody.y / 2, 0);
-    sphereGroup.rotation.set(0, (i * 2 * Math.PI) / 8, 0);
+    sphereGroup.rotation.set(0, (i * 2 * Math.PI) / UFO_SPHERE_COUNT, 0);
     ufoGroup.add(sphereGroup);
+
+    const sphere = createNamedMesh('ufoSphere', sphereGroup);
+
+    const sphereY = -SPHERE_SCALING.ufoBody.y / 2;
+    // Calculate sphereX by intercepting the ellipse equation at this Y coordinate
+    // Ellipse equation: x^2/a^2 + y^2/b^2 = 1, where a is rx and b is ry.
+    // Therefore, x = sqrt(a^2 * (1 - y^2/b^2))
+    const sphereX = Math.sqrt(
+      SPHERE_SCALING.ufoBody.x ** 2 * (1 - sphereY ** 2 / SPHERE_SCALING.ufoBody.y ** 2)
+    );
+
+    sphere.scale.copy(SPHERE_SCALING.ufoSphere);
+    sphere.position.set(sphereX, sphereY, 0);
   }
 }
 
