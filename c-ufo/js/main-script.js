@@ -518,6 +518,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
       3
     )
   );
+  geometry.computeVertexNormals();
 
   return geometry;
 }
