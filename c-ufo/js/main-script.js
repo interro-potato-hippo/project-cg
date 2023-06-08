@@ -31,6 +31,8 @@ const MATERIAL_PARAMS = {
     map: fieldTexture.texture,
     color: COLORS.green,
     side: THREE.DoubleSide,
+    bumpMap: terrainHeightMap,
+    bumpScale: 1,
     displacementMap: terrainHeightMap,
     displacementScale: 10,
   }),
@@ -43,8 +45,8 @@ const MATERIAL_PARAMS = {
 
   ufoBody: () => ({ color: COLORS.imperialRed }),
   ufoCockpit: () => ({ color: COLORS.skyBlue }),
-  ufoSpotlight: () => ({ color: COLORS.lightCyan }),
-  ufoSphere: () => ({ color: COLORS.lightCyan }),
+  ufoSpotlight: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
+  ufoSphere: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
 
   // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
@@ -54,7 +56,7 @@ const MATERIAL_PARAMS = {
 };
 
 const LIGHT_INTENSITY = Object.freeze({
-  ambient: 0.25,
+  ambient: 0.15,
   directional: 1,
   ufoSpotlight: 3,
   ufoSphere: 0.4,
@@ -177,6 +179,7 @@ let toggleDirectionalLight = false;
 let toggleUfoSpotlight = false;
 let toggleUfoSphereLights = false;
 let ufoMovementFlags = {};
+let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars, directionalLight, ufoSpotlight, ufo;
 
@@ -271,6 +274,11 @@ function createOrthographicCamera({
   camera.position.set(x, y, z);
   camera.lookAt(atX, atY, atZ);
   return camera;
+}
+
+function refreshCameraParameters() {
+  activeCamera.aspect = window.innerWidth / window.innerHeight;
+  activeCamera.updateProjectionMatrix();
 }
 
 /////////////////////
@@ -839,13 +847,12 @@ function update(timeDelta) {
   if (generateNewFlowers) {
     generateNewFlowers = false;
     flowers.clear();
-    generateProps(
-      flowers,
-      PROP_AMOUNTS.flowers,
-      TEXTURE_SIZES.field,
-      { x: 1, y: 0, z: 1 },
-      Object.values(COLORS)
-    );
+    generateProps(flowers, PROP_AMOUNTS.flowers, TEXTURE_SIZES.field, { x: 1, y: 0, z: 1 }, [
+      COLORS.white,
+      COLORS.yellow,
+      COLORS.lilac,
+      COLORS.lightBlue,
+    ]);
   }
   if (toggleDirectionalLight) {
     toggleDirectionalLight = false;
@@ -860,6 +867,14 @@ function update(timeDelta) {
     UFO_SPHERE_LIGHTS.forEach((light) => {
       light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphere : 0;
     });
+  }
+  if (updateProjectionMatrix) {
+    updateProjectionMatrix = false;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    if (window.innerHeight > 0 && window.innerWidth > 0) {
+      refreshCameraParameters();
+    }
   }
 
   // Move UFO at constant velocity on key press
@@ -909,6 +924,7 @@ function init() {
 
   window.addEventListener('keydown', onKeyDown);
   window.addEventListener('keyup', onKeyUp);
+  window.addEventListener('resize', onResize);
 }
 
 /////////////////////
@@ -925,12 +941,7 @@ function animate() {
 /* RESIZE WINDOW CALLBACK */
 ////////////////////////////
 function onResize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-
-  if (window.innerHeight > 0 && window.innerWidth > 0) {
-    activeCamera.aspect = window.innerWidth / window.innerHeight;
-    activeCamera.updateProjectionMatrix();
-  }
+  updateProjectionMatrix = true;
 }
 
 ///////////////////////
