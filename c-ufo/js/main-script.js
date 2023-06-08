@@ -247,11 +247,15 @@ function createSkyDome() {
 }
 
 function createBufferSky() {
+  const rotatedSky = createGroup({
+    y: 10,
+    rotation: new THREE.Euler(Math.PI, 0, 0),
+    parent: bufferScene,
+  });
   const sky = createGroup({
     x: -TEXTURE_SIZES.sky / 2,
-    y: 10,
     z: -TEXTURE_SIZES.sky / 2,
-    parent: bufferScene,
+    parent: rotatedSky,
   });
 
   const geometry = createBufferGeometry({
@@ -262,8 +266,8 @@ function createBufferSky() {
       { x: 1, y: 0, z: 0, color: COLORS.darkPurple },
     ],
     triangles: [
-      [2, 1, 0],
-      [0, 3, 2],
+      [0, 1, 2],
+      [2, 3, 0],
     ],
     scale: TEXTURE_SIZES.sky,
   });
@@ -271,7 +275,7 @@ function createBufferSky() {
   sky.add(mesh);
 
   // the negative y allows for the stars not to be directly on top of the sky
-  const stars = createGroup({ y: -1, parent: sky });
+  const stars = createGroup({ y: 1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
     y: 0,
@@ -332,13 +336,13 @@ function generateProps(
   freedom = { x: 0, y: 0, z: 0 },
   colors = [COLORS.white]
 ) {
-  const prop = new THREE.Mesh(
-    new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.DoubleSide }) // TODO: change side
-  );
+  const geometry = new THREE.CircleGeometry(PROP_RADIUS, 32);
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
-    const dot = prop.clone();
+    const material = new THREE.MeshBasicMaterial({
+      color: colors[Math.floor(Math.random() * colors.length)],
+    });
+    const dot = new THREE.Mesh(geometry, material);
     let position;
     // we can't generate props on top of each other, so we keep track of the occupied positions
     // and generate a new one if the current one is already occupied
@@ -353,8 +357,6 @@ function generateProps(
     );
     dot.position.set(position.x, position.y, position.z);
     dot.rotateX(-Math.PI / 2);
-    dot.material = dot.material.clone(); // materials are not correctly cloned by default
-    dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
     parent.add(dot);
   }
@@ -807,10 +809,18 @@ function onKeyUp(e) {}
  *
  * Automatically adds the created Group to the given parent.
  */
-function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
+function createGroup({
+  x = 0,
+  y = 0,
+  z = 0,
+  scale = new THREE.Vector3(1, 1, 1),
+  rotation = new THREE.Euler(0, 0, 0),
+  parent,
+}) {
   const group = new THREE.Group();
   group.position.set(x, y, z);
-  group.scale.set(...scale);
+  group.scale.copy(scale);
+  group.rotation.copy(rotation);
 
   if (parent) {
     parent.add(group);
