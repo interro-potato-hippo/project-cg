@@ -720,14 +720,13 @@ function createUfo(initialPosition) {
   spotlightTarget.position.set(0, -10, 0); // point downwards
   ufoGroup.add(spotlightTarget);
 
-  const spotlightLight = new THREE.SpotLight(COLORS.darkBlue);
-  spotlightLight.angle = Math.PI / 6;
-  spotlightLight.intensity = LIGHT_INTENSITY.ufoSpotlight;
-  spotlightLight.penumbra = 0.3;
-  spotlightLight.position.copy(spotlight.position);
-  spotlightLight.target = spotlightTarget;
-  ufoGroup.add(spotlightLight);
-  ufoSpotlight = spotlightLight;
+  ufoSpotlight = new THREE.SpotLight(COLORS.darkBlue);
+  ufoSpotlight.angle = Math.PI / 6;
+  ufoSpotlight.intensity = LIGHT_INTENSITY.ufoSpotlight;
+  ufoSpotlight.penumbra = 0.3;
+  ufoSpotlight.position.copy(spotlight.position);
+  ufoSpotlight.target = spotlightTarget;
+  ufoGroup.add(ufoSpotlight);
 
   for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
     const sphereGroup = new THREE.Group();
