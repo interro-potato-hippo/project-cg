@@ -47,6 +47,7 @@ const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
+const TERRAIN_HEIGHT_MAP_PATH = 'assets/height_map.png';
 const GEOMETRY = {
   skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
@@ -181,9 +182,6 @@ function createLights() {
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
-  const loader = new THREE.TextureLoader();
-  terrainHeightMap = loader.load('assets/height_map.png');
-
   const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
 }
@@ -582,6 +580,10 @@ function init() {
   document.body.appendChild(renderer.domElement);
 
   createBufferScene();
+
+  const loader = new THREE.TextureLoader();
+  terrainHeightMap = loader.load(TERRAIN_HEIGHT_MAP_PATH);
+
   createScene();
   createCameras();
 
