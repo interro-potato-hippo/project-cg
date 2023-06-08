@@ -153,10 +153,12 @@ function createScene() {
   createMoon();
   createHouse();
 
-  createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
-  createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
-  createOakTree(3, new THREE.Vector3(14, 0, 9), new THREE.Euler(0, 0, 0));
-  createOakTree(4, new THREE.Vector3(-36, 0, -14), new THREE.Euler(0, Math.PI / 6, 0));
+  // in clockwise order, from the moon's perspective
+  createOakTree(3, new THREE.Vector3(24, 2.25, 34), new THREE.Euler(0, 0, 0));
+  createOakTree(1.5, new THREE.Vector3(-28, 2.75, 17), new THREE.Euler(0, Math.PI / 2, 0));
+  createOakTree(4, new THREE.Vector3(-41, 2.75, -14), new THREE.Euler(0, Math.PI / 6, 0));
+  createOakTree(4, new THREE.Vector3(-14, 2.25, -23), new THREE.Euler(0, -Math.PI / 3, 0));
+  createOakTree(8, new THREE.Vector3(15, 2.75, -26), new THREE.Euler(0, Math.PI / 3, 0));
 }
 
 function createBufferScene() {
@@ -403,7 +405,7 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
 }
 
 function createHouse() {
-  const house = createGroup({ parent: scene });
+  const house = createGroup({ x: -10, y: 2.1, z: 15, parent: scene });
   createNamedMesh('houseWalls', house);
   createNamedMesh('houseRoof', house);
   createNamedMesh('houseWindows', house);
