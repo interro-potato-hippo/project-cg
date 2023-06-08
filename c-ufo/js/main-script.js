@@ -143,6 +143,7 @@ const FIELD_CAMERA = createOrthographicCamera({
   atY: 0,
 });
 const NAMED_MESHES = []; // meshes registered as they are created
+const UFO_SPHERE_LIGHTS = []; // lights registered as they are created
 
 const CLOCK = new THREE.Clock();
 
@@ -162,7 +163,6 @@ let toggleUfoSphereLights = false;
 let flowers, stars, ufo;
 
 let ufoSpotlight;
-let ufoSphereLights = [];
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -765,7 +765,7 @@ function createUfo(initialPosition) {
     );
     sphereLight.position.set(sphereX, sphereY, 0);
     sphereGroup.add(sphereLight);
-    ufoSphereLights.push(sphereLight);
+    UFO_SPHERE_LIGHTS.push(sphereLight);
   }
 }
 
@@ -831,7 +831,7 @@ function update(timeDelta) {
     toggleUfoSpotlight = false;
   }
   if (toggleUfoSphereLights) {
-    ufoSphereLights.forEach((light) => {
+    UFO_SPHERE_LIGHTS.forEach((light) => {
       light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphereLight : 0;
     });
     toggleUfoSphereLights = false;
