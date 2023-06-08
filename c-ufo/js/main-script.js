@@ -643,6 +643,11 @@ function createUfo(initialPosition) {
   const spotlight = createNamedMesh('ufoSpotlight', ufoGroup);
   spotlight.position.set(0, -SPHERE_SCALING.ufoBody.y, 0);
 
+  const spotlightLight = new THREE.SpotLight(COLORS.lightCyan);
+  spotlightLight.position.copy(spotlight.position);
+  ufoGroup.add(spotlightLight);
+  scene.add(new THREE.SpotLightHelper(spotlightLight));
+
   for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
     const sphereGroup = new THREE.Group();
     sphereGroup.rotation.set(0, (i * 2 * Math.PI) / UFO_SPHERE_COUNT, 0);
