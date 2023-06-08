@@ -17,6 +17,7 @@ const COLORS = Object.freeze({
   lightBlue: new THREE.Color(0xb8e9ee),
   dodgerBlue: new THREE.Color(0x1e90ff),
   white: new THREE.Color(0xffffff),
+  yellow: new THREE.Color(0xffff00),
   moonYellow: new THREE.Color(0xebc815),
 });
 
@@ -351,7 +352,7 @@ function createBufferField() {
       y: 0,
       z: 1,
     },
-    [COLORS.white, COLORS.moonYellow, COLORS.lightBlue, COLORS.lilac]
+    [COLORS.white, COLORS.yellow, COLORS.lilac, COLORS.lightBlue]
   );
 }
 
