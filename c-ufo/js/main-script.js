@@ -7,8 +7,13 @@ const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
+  darkGreen: new THREE.Color(0x5e8c61),
+  brown: new THREE.Color(0xa96633),
+  orange: new THREE.Color(0xea924b),
+  lightBlue: new THREE.Color(0xb8e9ee),
+  dodgerBlue: new THREE.Color(0x1e90ff),
   white: new THREE.Color(0xffffff),
-  ambientLight: new THREE.Color(0xeec37f),
+  moonYellow: new THREE.Color(0xebc815),
 });
 
 // must be functions because they depend on textures initialized later
@@ -17,16 +22,62 @@ const MATERIAL_PARAMS = {
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+  moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
+
+  treeTrunk: () => ({ color: COLORS.brown }),
+  treePrimaryBranch: () => ({ color: COLORS.brown }),
+  treeSecondaryBranch: () => ({ color: COLORS.brown }),
+  treeLeaf: () => ({ color: COLORS.darkGreen }),
+
+  // TODO: remove double side from these
+  houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseRoof: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseWindows: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseDoor: () => ({ vertexColors: true, side: THREE.DoubleSide }),
 };
 
+const LIGHT_INTENSITY = Object.freeze({
+  ambient: 0.25,
+  // TODO: add directional lights
+});
+
 const DOME_RADIUS = 64;
+const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
+const MOON_POSITION_COORD = Math.sqrt((DOME_RADIUS - MOON_DOME_PADDING) ** 2 / 2);
+const MOON_POSITION = new THREE.Vector3(MOON_POSITION_COORD, MOON_POSITION_COORD, 0);
 const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
+const CYLINDER_SEGMENTS = 32;
+const SPHERE_SEGMENTS = 32;
 const GEOMETRY = {
-  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
+  skyDome: new THREE.SphereGeometry(
+    DOME_RADIUS,
+    SPHERE_SEGMENTS,
+    SPHERE_SEGMENTS,
+    0,
+    2 * Math.PI,
+    0,
+    Math.PI / 2
+  ),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
+  moon: new THREE.SphereGeometry(5, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+
+  // height is scaled per instance of oak tree
+  treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
+  treePrimaryBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
+  treeSecondaryBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
+  treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+
+  houseWalls: createHouseWallsGeometry(),
+  houseRoof: createHouseRoofGeometry(),
+  houseWindows: createHouseWindowsGeometry(),
+  houseDoor: createHouseDoorGeometry(),
+};
+const SPHERE_SCALING = {
+  treePrimaryBranchLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
+  treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
 };
 const TEXTURE_SIZES = {
   sky: 64,
@@ -54,7 +105,7 @@ const SKY_CAMERA = createOrthographicCamera({
   y: 5,
   atY: 10,
 });
-const NAMED_MESHES = {}; // meshes registered as they are created
+const NAMED_MESHES = []; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
@@ -79,6 +130,13 @@ function createScene() {
   createLights();
   createTerrain();
   createSkyDome();
+  createMoon();
+  createHouse();
+
+  createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
+  createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
+  createOakTree(3, new THREE.Vector3(14, 0, 9), new THREE.Euler(0, 0, 0));
+  createOakTree(4, new THREE.Vector3(-36, 0, -14), new THREE.Euler(0, Math.PI / 6, 0));
 }
 
 function createBufferScene() {
@@ -144,7 +202,9 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
+  ambientLight.intensity = LIGHT_INTENSITY.ambient;
+  scene.add(ambientLight);
   // TODO: add directional lights
 }
 
@@ -154,6 +214,11 @@ function createLights() {
 function createTerrain() {
   const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+}
+
+function createMoon() {
+  const moon = createNamedMesh('moon', scene);
+  moon.position.copy(MOON_POSITION);
 }
 
 function createSkyDome() {
@@ -262,6 +327,290 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
   );
 }
 
+function createHouse() {
+  const house = createGroup({ parent: scene });
+  createNamedMesh('houseWalls', house);
+  createNamedMesh('houseRoof', house);
+  createNamedMesh('houseWindows', house);
+  createNamedMesh('houseDoor', house);
+}
+
+function createHouseWallsGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // TODO: maybe don't use vertex colors?
+      // front wall
+      { x: 0, y: 0, z: 0, color: COLORS.white }, // v0
+      { x: 1, y: 2.5, z: 0, color: COLORS.white }, // v1
+      { x: 0, y: 2.5, z: 0, color: COLORS.white }, // v2
+      { x: 1, y: 0, z: 0, color: COLORS.white }, // v3
+      { x: 2.5, y: 0, z: 0, color: COLORS.white }, // v4
+      { x: 2.5, y: 1, z: 0, color: COLORS.white }, // v5
+      { x: 1, y: 1, z: 0, color: COLORS.white }, // v6
+      { x: 4.5, y: 0, z: 0, color: COLORS.white }, // v7
+      { x: 4.5, y: 2.5, z: 0, color: COLORS.white }, // v8
+      { x: 2.5, y: 2.5, z: 0, color: COLORS.white }, // v9
+      { x: 6, y: 0, z: 0, color: COLORS.white }, // v10
+      { x: 6, y: 1, z: 0, color: COLORS.white }, // v11
+      { x: 4.5, y: 1, z: 0, color: COLORS.white }, // v12
+      { x: 8, y: 0, z: 0, color: COLORS.white }, // v13
+      { x: 8, y: 2.5, z: 0, color: COLORS.white }, // v14
+      { x: 6, y: 2.5, z: 0, color: COLORS.white }, // v15
+      { x: 9.25, y: 0, z: 0, color: COLORS.white }, // v16
+      { x: 9.25, y: 2.5, z: 0, color: COLORS.white }, // v17
+      { x: 11.5, y: 0, z: 0, color: COLORS.white }, // v18
+      { x: 11.5, y: 2.5, z: 0, color: COLORS.white }, // v19
+      { x: 13, y: 0, z: 0, color: COLORS.white }, // v20
+      { x: 13, y: 1, z: 0, color: COLORS.white }, // v21
+      { x: 11.5, y: 1, z: 0, color: COLORS.white }, // v22
+      { x: 17, y: 0, z: 0, color: COLORS.white }, // v23
+      { x: 17, y: 2.5, z: 0, color: COLORS.white }, // v24
+      { x: 13, y: 2.5, z: 0, color: COLORS.white }, // v25
+      { x: 18.5, y: 0, z: 0, color: COLORS.white }, // v26
+      { x: 18.5, y: 1, z: 0, color: COLORS.white }, // v27
+      { x: 17, y: 1, z: 0, color: COLORS.white }, // v28
+      { x: 20, y: 0, z: 0, color: COLORS.white }, // v29
+      { x: 20, y: 2.5, z: 0, color: COLORS.white }, // v30
+      { x: 18.5, y: 2.5, z: 0, color: COLORS.white }, // v31
+      { x: 8, y: 4, z: 0, color: COLORS.white }, // v32
+      { x: 0, y: 4, z: 0, color: COLORS.white }, // v33
+      { x: 13, y: 4, z: 0, color: COLORS.white }, // v34
+      { x: 20, y: 4, z: 0, color: COLORS.white }, // v35
+
+      // right wall (for a definition of right... - the one with the window)
+      { x: 20, y: 0, z: -3.5, color: COLORS.white }, // v36
+      { x: 20, y: 2.5, z: -3.5, color: COLORS.white }, // v37
+      { x: 20, y: 0, z: -5, color: COLORS.white }, // v38
+      { x: 20, y: 1, z: -5, color: COLORS.white }, // v39
+      { x: 20, y: 1, z: -3.5, color: COLORS.white }, // v40
+      { x: 20, y: 0, z: -5.5, color: COLORS.white }, // v41
+      { x: 20, y: 2.5, z: -5.5, color: COLORS.white }, // v42
+      { x: 20, y: 2.5, z: -5, color: COLORS.white }, // v43
+      { x: 20, y: 4, z: -5.5, color: COLORS.white }, // v44
+
+      // left wall
+      { x: 0, y: 0, z: -5.5, color: COLORS.white }, // v45
+      { x: 0, y: 4, z: -5.5, color: COLORS.white }, // v46
+    ],
+    triangles: [
+      // front wall
+      [0, 1, 2],
+      [0, 3, 1],
+      [3, 4, 5],
+      [3, 5, 6],
+      [4, 7, 8],
+      [4, 8, 9],
+      [7, 10, 11],
+      [7, 11, 12],
+      [10, 13, 14],
+      [10, 14, 15],
+      [16, 18, 19],
+      [16, 19, 17],
+      [18, 20, 21],
+      [18, 21, 22],
+      [20, 23, 24],
+      [20, 24, 25],
+      [23, 26, 27],
+      [23, 27, 28],
+      [26, 29, 30],
+      [26, 30, 31],
+      [2, 14, 32],
+      [2, 32, 33],
+      [14, 25, 34],
+      [14, 34, 32],
+      [25, 30, 35],
+      [25, 35, 34],
+
+      // right wall (for a definition of right... - the one with the window)
+      [29, 36, 37],
+      [29, 37, 30],
+      [36, 38, 39],
+      [36, 39, 40],
+      [38, 41, 42],
+      [38, 42, 43],
+      [30, 42, 44],
+      [30, 44, 35],
+
+      // left wall
+      [45, 0, 33],
+      [45, 33, 46],
+
+      // back wall
+      [41, 45, 46],
+      [41, 46, 44],
+    ],
+  });
+}
+
+function createHouseRoofGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // base of the roof
+      { x: 0, y: 4, z: 0, color: COLORS.orange }, // v0
+      { x: 0, y: 4, z: -5.5, color: COLORS.orange }, // v1
+      { x: 20, y: 4, z: 0, color: COLORS.orange }, // v2
+      { x: 20, y: 4, z: -5.5, color: COLORS.orange }, // v3
+
+      // top of the roof
+      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v4
+      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v5
+    ],
+    triangles: [
+      // least deep (closest to z = 0) roof side
+      [0, 2, 5],
+      [0, 5, 4],
+
+      // most deep (closest to z = -5.5) roof side
+      [1, 3, 5],
+      [1, 5, 4],
+
+      // sides
+      [1, 0, 4],
+      [2, 3, 5],
+    ],
+  });
+}
+
+function createHouseWindowsGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // leftmost window (as seen from the front)
+      { x: 1, y: 1, z: 0, color: COLORS.lightBlue }, // v0
+      { x: 2.5, y: 1, z: 0, color: COLORS.lightBlue }, // v1
+      { x: 2.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v2
+      { x: 1, y: 2.5, z: 0, color: COLORS.lightBlue }, // v3
+
+      // second-to-leftmost window (as seen from the front)
+      { x: 4.5, y: 1, z: 0, color: COLORS.lightBlue }, // v4
+      { x: 6, y: 1, z: 0, color: COLORS.lightBlue }, // v5
+      { x: 6, y: 2.5, z: 0, color: COLORS.lightBlue }, // v5
+      { x: 4.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v7
+
+      // second-to-rightmost window (as seen from the front)
+      { x: 11.5, y: 1, z: 0, color: COLORS.lightBlue }, // v8
+      { x: 13, y: 1, z: 0, color: COLORS.lightBlue }, // v9
+      { x: 13, y: 2.5, z: 0, color: COLORS.lightBlue }, // v10
+      { x: 11.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v11
+
+      // rightmost window (as seen from the front)
+      { x: 17, y: 1, z: 0, color: COLORS.lightBlue }, // v12
+      { x: 18.5, y: 1, z: 0, color: COLORS.lightBlue }, // v13
+      { x: 18.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v14
+      { x: 17, y: 2.5, z: 0, color: COLORS.lightBlue }, // v15
+
+      // side window
+      { x: 20, y: 1, z: -3.5, color: COLORS.lightBlue }, // v16
+      { x: 20, y: 1, z: -5, color: COLORS.lightBlue }, // v17
+      { x: 20, y: 2.5, z: -5, color: COLORS.lightBlue }, // v18
+      { x: 20, y: 2.5, z: -3.5, color: COLORS.lightBlue }, // v19
+    ],
+    triangles: [
+      // leftmost window (as seen from the front)
+      [0, 1, 2],
+      [0, 2, 3],
+
+      // second-to-leftmost window (as seen from the front)
+      [4, 5, 6],
+      [4, 6, 7],
+
+      // second-to-rightmost window (as seen from the front)
+      [8, 9, 10],
+      [8, 10, 11],
+
+      // rightmost window (as seen from the front)
+      [12, 13, 14],
+      [12, 14, 15],
+
+      // side window
+      [16, 17, 18],
+      [16, 18, 19],
+    ],
+  });
+}
+
+function createHouseDoorGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      { x: 8, y: 0, z: 0, color: COLORS.dodgerBlue }, // v0
+      { x: 9.25, y: 0, z: 0, color: COLORS.dodgerBlue }, // v1
+      { x: 9.25, y: 2.5, z: 0, color: COLORS.dodgerBlue }, // v2
+      { x: 8, y: 2.5, z: 0, color: COLORS.dodgerBlue }, // v3
+    ],
+    triangles: [
+      [0, 1, 2],
+      [0, 2, 3],
+    ],
+  });
+}
+
+/**
+ * Create an oak tree with the given parameters and place it on the scene.
+ *
+ * @param {number} trunkHeight - Height of the trunk of the tree.
+ * @param {THREE.Vector3} position - A vector with the position of the tree relative to the center of the scene.
+ * @param {THREE.Euler} rotation - Orientation of the tree.
+ */
+function createOakTree(trunkHeight, position, rotation) {
+  const treeGroup = new THREE.Group();
+  treeGroup.position.copy(position);
+  treeGroup.rotation.copy(rotation);
+  scene.add(treeGroup);
+
+  // Create trunk
+  const oakTrunk = createNamedMesh('treeTrunk', treeGroup);
+  oakTrunk.scale.setY(trunkHeight);
+  oakTrunk.position.setY(trunkHeight / 2); // Cylinder is centered by default
+
+  // Create primary branch
+  const primaryBranch = createNamedMesh('treePrimaryBranch', treeGroup);
+
+  const primaryBranchIncl = Math.PI / 6; // 30 deg
+  // Calculate position to perfectly align the base of the branch with the trunk
+  const primaryBranchX =
+    Math.sin(primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom / Math.tan(primaryBranchIncl)) -
+    GEOMETRY.treeTrunk.parameters.radiusTop;
+  const primaryBranchY =
+    Math.cos(primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom * Math.tan(primaryBranchIncl)) -
+    GEOMETRY.treeTrunk.parameters.radiusTop;
+
+  primaryBranch.position.set(primaryBranchX, trunkHeight + primaryBranchY, 0);
+  primaryBranch.rotation.setZ(-primaryBranchIncl);
+
+  // Create secondary branch
+  const secondaryBranch = createNamedMesh('treeSecondaryBranch', treeGroup);
+
+  const secondaryBranchIncl = Math.PI / 3; // 60 deg
+  // Position secondary branch in a way that its base is inside the primary branch
+  secondaryBranch.position.set(
+    -GEOMETRY.treeSecondaryBranch.parameters.height / 4,
+    trunkHeight + GEOMETRY.treeSecondaryBranch.parameters.height / 2,
+    0
+  );
+  secondaryBranch.rotation.setZ(secondaryBranchIncl);
+
+  // Position leaf above top of primary branch
+  const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  primaryBranchLeaf.position.set(
+    primaryBranchX * 2,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    0
+  );
+  primaryBranchLeaf.scale.copy(SPHERE_SCALING.treePrimaryBranchLeaf);
+
+  // Position leaf above top of secondary branch
+  const secondaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  secondaryBranchLeaf.position.set(
+    (-GEOMETRY.treeSecondaryBranch.parameters.height * 2) / 3,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    0
+  );
+  secondaryBranchLeaf.scale.copy(SPHERE_SCALING.treeSecondaryBranchLeaf);
+}
+
 /**
  * Creates a buffer geometry from a given set of parameters.
  * @param {Object} p - an object containing the input parameters
@@ -290,6 +639,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
       3
     )
   );
+  geometry.computeVertexNormals();
 
   return geometry;
 }
@@ -300,9 +650,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
 function update() {
   if (activeMaterialChanged) {
     activeMaterialChanged = false;
-    Object.values(NAMED_MESHES).forEach(
-      (mesh) => (mesh.material = mesh.userData.materials[activeMaterial])
-    );
+    NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
   if (newStarsGenerated) {
     newStarsGenerated = false;
@@ -443,7 +791,7 @@ function createNamedMesh(name, parent) {
   };
   const mesh = new THREE.Mesh(GEOMETRY[name], materials[activeMaterial]);
   Object.assign(mesh.userData, { name, materials });
-  NAMED_MESHES[name] = mesh;
+  NAMED_MESHES.push(mesh);
   parent.add(mesh);
   return mesh;
 }
