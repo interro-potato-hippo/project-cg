@@ -27,8 +27,13 @@ const MATERIAL_PARAMS = {
   field: () => ({ vertexColors: true }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
-  terrain: () => ({ map: fieldTexture.texture, side: THREE.DoubleSide }),
-
+  terrain: () => ({
+    map: fieldTexture.texture,
+    color: COLORS.green,
+    side: THREE.DoubleSide,
+    displacementMap: terrainHeightMap,
+    displacementScale: 10,
+  }),
   moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   treeTrunk: () => ({ color: COLORS.brown }),
@@ -66,6 +71,7 @@ const PROP_RADIUS = 0.05;
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
+const TERRAIN_HEIGHT_MAP_PATH = 'assets/height_map.png';
 const CYLINDER_SEGMENTS = 32;
 const SPHERE_SEGMENTS = 32;
 const GEOMETRY = {
@@ -152,7 +158,7 @@ const CLOCK = new THREE.Clock();
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-let renderer, scene, bufferScene, skyTexture, fieldTexture;
+let renderer, scene, bufferScene, skyTexture, fieldTexture, terrainHeightMap;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
@@ -179,10 +185,12 @@ function createScene() {
   createMoon();
   createHouse();
 
-  createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
-  createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
-  createOakTree(3, new THREE.Vector3(14, 0, 9), new THREE.Euler(0, 0, 0));
-  createOakTree(4, new THREE.Vector3(-36, 0, -14), new THREE.Euler(0, Math.PI / 6, 0));
+  // in clockwise order, from the moon's perspective
+  createOakTree(3, new THREE.Vector3(24, 2.25, 34), new THREE.Euler(0, 0, 0));
+  createOakTree(1.5, new THREE.Vector3(-28, 2.75, 17), new THREE.Euler(0, Math.PI / 2, 0));
+  createOakTree(4, new THREE.Vector3(-41, 2.75, -14), new THREE.Euler(0, Math.PI / 6, 0));
+  createOakTree(4, new THREE.Vector3(-14, 2.25, -23), new THREE.Euler(0, -Math.PI / 3, 0));
+  createOakTree(8, new THREE.Vector3(15, 2.75, -26), new THREE.Euler(0, Math.PI / 3, 0));
 
   createUfo(new THREE.Vector3(0, 10, 0));
 }
@@ -431,7 +439,7 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
 }
 
 function createHouse() {
-  const house = createGroup({ parent: scene });
+  const house = createGroup({ x: -10, y: 2.1, z: 15, parent: scene });
   createNamedMesh('houseWalls', house);
   createNamedMesh('houseRoof', house);
   createNamedMesh('houseWindows', house);
@@ -868,6 +876,10 @@ function init() {
   document.body.appendChild(renderer.domElement);
 
   createBufferScene();
+
+  const loader = new THREE.TextureLoader();
+  terrainHeightMap = loader.load(TERRAIN_HEIGHT_MAP_PATH);
+
   createScene();
   createCameras();
 
