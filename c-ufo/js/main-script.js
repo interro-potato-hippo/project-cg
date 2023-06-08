@@ -88,7 +88,7 @@ const TEXTURE_SIZES = {
 const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
   stars: 512,
-  flowers: 256,
+  flowers: 512,
 };
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
