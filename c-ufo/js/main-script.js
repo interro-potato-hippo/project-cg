@@ -22,9 +22,11 @@ const COLORS = Object.freeze({
 // must be functions because they depend on textures initialized later
 const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
+  field: () => ({ vertexColors: true }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
-  terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+  terrain: () => ({ map: fieldTexture.texture, side: THREE.DoubleSide }),
+
   moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   treeTrunk: () => ({ color: COLORS.brown }),
@@ -46,7 +48,7 @@ const MATERIAL_PARAMS = {
 
 const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
-  // TODO: add directional lights
+  directional: 1,
 });
 
 const DOME_RADIUS = 64;
@@ -96,11 +98,13 @@ const ELLIPSOID_SCALING = {
   ufoBody: new THREE.Vector3(3.5, 1, 3.5),
 };
 const TEXTURE_SIZES = {
-  sky: 64,
+  sky: DOME_RADIUS,
+  field: DOME_RADIUS,
 };
 const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
   stars: 512,
+  flowers: 512,
 };
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
@@ -121,16 +125,30 @@ const SKY_CAMERA = createOrthographicCamera({
   y: 5,
   atY: 10,
 });
+const FIELD_CAMERA = createOrthographicCamera({
+  left: -TEXTURE_SIZES.sky / 2,
+  right: TEXTURE_SIZES.sky / 2,
+  top: TEXTURE_SIZES.sky / 2,
+  bottom: -TEXTURE_SIZES.sky / 2,
+  near: 1,
+  far: 15,
+  y: 5,
+  atY: 0,
+});
 const NAMED_MESHES = []; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-let renderer, scene, bufferScene, skyTexture;
+let renderer, scene, bufferScene, skyTexture, fieldTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
+// lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
+let generateNewStars = false;
+let generateNewFlowers = false;
 // ^ prevents logic in key event handlers, moving it to the update function
+let flowers, stars;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -157,8 +175,13 @@ function createBufferScene() {
   bufferScene = new THREE.Scene();
 
   createBufferSky();
+  createBufferField();
 
   skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.NearestFilter,
+  });
+  fieldTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.NearestFilter,
   });
@@ -216,18 +239,26 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
-  ambientLight.intensity = LIGHT_INTENSITY.ambient;
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow, LIGHT_INTENSITY.ambient);
   scene.add(ambientLight);
-  // TODO: add directional lights
+
+  const directionalLight = new THREE.DirectionalLight(
+    COLORS.moonYellow,
+    LIGHT_INTENSITY.directional
+  );
+  directionalLight.position.copy(MOON_POSITION);
+  scene.add(directionalLight);
 }
 
 ////////////////////////
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
-  const plane = createNamedMesh('terrain', scene);
+  // the terrain doesn't need to be a named mesh, as it won't be dynamically changed
+  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.terrain() });
+  const plane = new THREE.Mesh(GEOMETRY.terrain, material);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+  scene.add(plane);
 }
 
 function createMoon() {
@@ -236,7 +267,10 @@ function createMoon() {
 }
 
 function createSkyDome() {
-  createNamedMesh('skyDome', scene);
+  // the sky dome doesn't need to be a named mesh, as it won't be dynamically changed
+  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.skyDome() });
+  const plane = new THREE.Mesh(GEOMETRY.skyDome, material);
+  scene.add(plane);
 }
 
 function createBufferSky() {
@@ -264,12 +298,50 @@ function createBufferSky() {
   sky.add(mesh);
 
   // the negative y allows for the stars not to be directly on top of the sky
-  const stars = createGroup({ y: -1, parent: sky });
+  stars = createGroup({ y: -1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
     y: 0,
     z: 1,
   });
+}
+
+function createBufferField() {
+  const field = createGroup({
+    x: -TEXTURE_SIZES.field / 2,
+    y: 0,
+    z: -TEXTURE_SIZES.field / 2,
+    parent: bufferScene,
+  });
+
+  const geometry = createBufferGeometry({
+    vertices: [
+      { x: 0, y: 0, z: 0, color: COLORS.darkGreen },
+      { x: 0, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 0, color: COLORS.darkGreen },
+    ],
+    triangles: [
+      [0, 1, 2],
+      [0, 2, 3],
+    ],
+    scale: TEXTURE_SIZES.field,
+  });
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
+  field.add(mesh);
+
+  flowers = createGroup({ y: 1, parent: field });
+  generateProps(
+    flowers,
+    PROP_AMOUNTS.flowers,
+    TEXTURE_SIZES.field,
+    {
+      x: 1,
+      y: 0,
+      z: 1,
+    },
+    Object.values(COLORS)
+  );
 }
 
 /**
@@ -289,7 +361,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.DoubleSide }) // TODO: change side
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
@@ -308,6 +380,7 @@ function generateProps(
     );
     dot.position.set(position.x, position.y, position.z);
     dot.rotateX(-Math.PI / 2);
+    dot.material = dot.material.clone(); // materials are not correctly cloned by default
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
     parent.add(dot);
@@ -699,6 +772,22 @@ function update() {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
+  if (generateNewStars) {
+    generateNewStars = false;
+    stars.clear();
+    generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
+  }
+  if (generateNewFlowers) {
+    generateNewFlowers = false;
+    flowers.clear();
+    generateProps(
+      flowers,
+      PROP_AMOUNTS.flowers,
+      TEXTURE_SIZES.field,
+      { x: 1, y: 0, z: 1 },
+      Object.values(COLORS)
+    );
+  }
 }
 
 /////////////
@@ -707,6 +796,9 @@ function update() {
 function render() {
   renderer.setRenderTarget(skyTexture);
   renderer.render(bufferScene, SKY_CAMERA);
+
+  renderer.setRenderTarget(fieldTexture);
+  renderer.render(bufferScene, FIELD_CAMERA);
 
   renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
@@ -754,10 +846,15 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 const keyHandlers = {
+  // material switching
   KeyQ: changeMaterialHandlerFactory('gouraud'),
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // texture generation
+  Digit1: () => (generateNewStars = true),
+  Digit2: () => (generateNewFlowers = true),
 };
 
 function onKeyDown(event) {
