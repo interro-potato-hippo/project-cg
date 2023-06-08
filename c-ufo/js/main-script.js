@@ -19,9 +19,11 @@ const COLORS = Object.freeze({
 // must be functions because they depend on textures initialized later
 const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
+  field: () => ({ vertexColors: true }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
-  terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+  terrain: () => ({ map: fieldTexture.texture, side: THREE.DoubleSide }),
+
   moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   treeTrunk: () => ({ color: COLORS.brown }),
@@ -80,11 +82,13 @@ const SPHERE_SCALING = {
   treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
 };
 const TEXTURE_SIZES = {
-  sky: 64,
+  sky: DOME_RADIUS,
+  field: DOME_RADIUS,
 };
 const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
   stars: 512,
+  flowers: 512,
 };
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
@@ -105,12 +109,22 @@ const SKY_CAMERA = createOrthographicCamera({
   y: 5,
   atY: 10,
 });
+const FIELD_CAMERA = createOrthographicCamera({
+  left: -TEXTURE_SIZES.sky / 2,
+  right: TEXTURE_SIZES.sky / 2,
+  top: TEXTURE_SIZES.sky / 2,
+  bottom: -TEXTURE_SIZES.sky / 2,
+  near: 1,
+  far: 15,
+  y: 5,
+  atY: 0,
+});
 const NAMED_MESHES = []; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-let renderer, scene, bufferScene, skyTexture;
+let renderer, scene, bufferScene, skyTexture, fieldTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
@@ -143,8 +157,13 @@ function createBufferScene() {
   bufferScene = new THREE.Scene();
 
   createBufferSky();
+  createBufferField();
 
   skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.NearestFilter,
+  });
+  fieldTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.NearestFilter,
   });
@@ -212,8 +231,11 @@ function createLights() {
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
-  const plane = createNamedMesh('terrain', scene);
+  // the terrain doesn't need to be a named mesh, as it won't be dynamically changed
+  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.terrain() });
+  const plane = new THREE.Mesh(GEOMETRY.terrain, material);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
+  scene.add(plane);
 }
 
 function createMoon() {
@@ -222,7 +244,10 @@ function createMoon() {
 }
 
 function createSkyDome() {
-  createNamedMesh('skyDome', scene);
+  // the sky dome doesn't need to be a named mesh, as it won't be dynamically changed
+  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.skyDome() });
+  const plane = new THREE.Mesh(GEOMETRY.skyDome, material);
+  scene.add(plane);
 }
 
 function createBufferSky() {
@@ -258,6 +283,44 @@ function createBufferSky() {
   });
 }
 
+function createBufferField() {
+  const field = createGroup({
+    x: -TEXTURE_SIZES.field / 2,
+    y: 0,
+    z: -TEXTURE_SIZES.field / 2,
+    parent: bufferScene,
+  });
+
+  const geometry = createBufferGeometry({
+    vertices: [
+      { x: 0, y: 0, z: 0, color: COLORS.darkGreen },
+      { x: 0, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 0, color: COLORS.darkGreen },
+    ],
+    triangles: [
+      [0, 1, 2],
+      [0, 2, 3],
+    ],
+    scale: TEXTURE_SIZES.field,
+  });
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
+  field.add(mesh);
+
+  const flowers = createGroup({ y: 1, parent: field });
+  generateProps(
+    flowers,
+    PROP_AMOUNTS.flowers,
+    TEXTURE_SIZES.field,
+    {
+      x: 1,
+      y: 0,
+      z: 1,
+    },
+    Object.values(COLORS)
+  );
+}
+
 /**
  * Fills a texture with a given amount of props.
  * @param {THREE.Group} parent - the parent to which the props will be added
@@ -275,7 +338,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.DoubleSide }) // TODO: change side
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
@@ -294,6 +357,7 @@ function generateProps(
     );
     dot.position.set(position.x, position.y, position.z);
     dot.rotateX(-Math.PI / 2);
+    dot.material = dot.material.clone(); // materials are not correctly cloned by default
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
     parent.add(dot);
@@ -578,7 +642,7 @@ function createOakTree(trunkHeight, position, rotation) {
     GEOMETRY.treeTrunk.parameters.radiusTop;
 
   primaryBranch.position.set(primaryBranchX, trunkHeight + primaryBranchY, 0);
-  primaryBranch.rotation.setZ(-primaryBranchIncl);
+  primaryBranch.rotation.set(0, 0, -primaryBranchIncl);
 
   // Create secondary branch
   const secondaryBranch = createNamedMesh('treeSecondaryBranch', treeGroup);
@@ -590,7 +654,7 @@ function createOakTree(trunkHeight, position, rotation) {
     trunkHeight + GEOMETRY.treeSecondaryBranch.parameters.height / 2,
     0
   );
-  secondaryBranch.rotation.setZ(secondaryBranchIncl);
+  secondaryBranch.rotation.set(0, 0, secondaryBranchIncl);
 
   // Position leaf above top of primary branch
   const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
@@ -665,6 +729,9 @@ function update() {
 function render() {
   renderer.setRenderTarget(skyTexture);
   renderer.render(bufferScene, SKY_CAMERA);
+
+  renderer.setRenderTarget(fieldTexture);
+  renderer.render(bufferScene, FIELD_CAMERA);
 
   renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
