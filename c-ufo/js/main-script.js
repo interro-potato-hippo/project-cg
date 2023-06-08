@@ -168,6 +168,7 @@ let generateNewFlowers = false;
 let toggleDirectionalLight = false;
 let toggleUfoSpotlight = false;
 let toggleUfoSphereLights = false;
+let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars, directionalLight, ufoSpotlight, ufo;
 
@@ -256,6 +257,11 @@ function createOrthographicCamera({
   camera.position.set(x, y, z);
   camera.lookAt(atX, atY, atZ);
   return camera;
+}
+
+function refreshCameraParameters() {
+  activeCamera.aspect = window.innerWidth / window.innerHeight;
+  activeCamera.updateProjectionMatrix();
 }
 
 /////////////////////
@@ -846,6 +852,14 @@ function update(timeDelta) {
       light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphere : 0;
     });
   }
+  if (updateProjectionMatrix) {
+    updateProjectionMatrix = false;
+    renderer.setSize(window.innerWidth, window.innerHeight);
+
+    if (window.innerHeight > 0 && window.innerWidth > 0) {
+      refreshCameraParameters();
+    }
+  }
 
   // Rotate UFO at constant angular velocity
   ufo.rotation.y = (ufo.rotation.y + timeDelta * UFO_ANGULAR_VELOCITY) % (2 * Math.PI);
@@ -884,6 +898,7 @@ function init() {
   createCameras();
 
   window.addEventListener('keydown', onKeyDown);
+  window.addEventListener('resize', onResize);
 }
 
 /////////////////////
@@ -900,12 +915,7 @@ function animate() {
 /* RESIZE WINDOW CALLBACK */
 ////////////////////////////
 function onResize() {
-  renderer.setSize(window.innerWidth, window.innerHeight);
-
-  if (window.innerHeight > 0 && window.innerWidth > 0) {
-    activeCamera.aspect = window.innerWidth / window.innerHeight;
-    activeCamera.updateProjectionMatrix();
-  }
+  updateProjectionMatrix = true;
 }
 
 ///////////////////////
