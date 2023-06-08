@@ -16,7 +16,12 @@ const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
-  terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+  terrain: () => ({
+    color: COLORS.green,
+    side: THREE.DoubleSide,
+    displacementMap: terrainHeightMap,
+    displacementScale: 10,
+  }),
 };
 
 const DOME_RADIUS = 64;
@@ -59,7 +64,7 @@ const NAMED_MESHES = {}; // meshes registered as they are created
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-let renderer, scene, bufferScene, skyTexture;
+let renderer, scene, bufferScene, skyTexture, terrainHeightMap;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
@@ -148,6 +153,9 @@ function createLights() {
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
+  const loader = new THREE.TextureLoader();
+  terrainHeightMap = loader.load('assets/height_map.png');
+
   const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
 }
