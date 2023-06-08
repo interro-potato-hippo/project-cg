@@ -52,7 +52,15 @@ const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 const CYLINDER_SEGMENTS = 32;
 const SPHERE_SEGMENTS = 32;
 const GEOMETRY = {
-  skyDome: new THREE.SphereGeometry(DOME_RADIUS, SPHERE_SEGMENTS, SPHERE_SEGMENTS, 0, 2 * Math.PI, 0, Math.PI / 2),
+  skyDome: new THREE.SphereGeometry(
+    DOME_RADIUS,
+    SPHERE_SEGMENTS,
+    SPHERE_SEGMENTS,
+    0,
+    2 * Math.PI,
+    0,
+    Math.PI / 2
+  ),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
   moon: new THREE.SphereGeometry(5, 32, 32),
 
