@@ -19,9 +19,11 @@ const COLORS = Object.freeze({
 // must be functions because they depend on textures initialized later
 const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
+  field: () => ({ vertexColors: true }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
-  terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+  terrain: () => ({ map: fieldTexture.texture, side: THREE.DoubleSide }),
+
   moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   treeTrunk: () => ({ color: COLORS.brown }),
@@ -80,11 +82,13 @@ const SPHERE_SCALING = {
   treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
 };
 const TEXTURE_SIZES = {
-  sky: 64,
+  sky: DOME_RADIUS,
+  field: DOME_RADIUS,
 };
 const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
   stars: 512,
+  flowers: 256,
 };
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
@@ -105,12 +109,22 @@ const SKY_CAMERA = createOrthographicCamera({
   y: 5,
   atY: 10,
 });
+const FIELD_CAMERA = createOrthographicCamera({
+  left: -TEXTURE_SIZES.sky / 2,
+  right: TEXTURE_SIZES.sky / 2,
+  top: TEXTURE_SIZES.sky / 2,
+  bottom: -TEXTURE_SIZES.sky / 2,
+  near: 1,
+  far: 15,
+  y: 5,
+  atY: 0,
+});
 const NAMED_MESHES = []; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-let renderer, scene, bufferScene, skyTexture;
+let renderer, scene, bufferScene, skyTexture, fieldTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
@@ -138,9 +152,14 @@ function createScene() {
 function createBufferScene() {
   bufferScene = new THREE.Scene();
 
+  createBufferField();
   createBufferSky();
 
   skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.NearestFilter,
+  });
+  fieldTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.NearestFilter,
   });
@@ -252,6 +271,44 @@ function createBufferSky() {
     y: 0,
     z: 1,
   });
+}
+
+function createBufferField() {
+  const field = createGroup({
+    x: -TEXTURE_SIZES.field / 2,
+    y: 0,
+    z: -TEXTURE_SIZES.field / 2,
+    parent: bufferScene,
+  });
+
+  const geometry = createBufferGeometry({
+    vertices: [
+      { x: 0, y: 0, z: 0, color: COLORS.darkGreen },
+      { x: 0, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 0, color: COLORS.darkGreen },
+    ],
+    triangles: [
+      [2, 1, 0],
+      [0, 3, 2],
+    ],
+    scale: TEXTURE_SIZES.field,
+  });
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
+  field.add(mesh);
+
+  const flowers = createGroup({ y: -1, parent: field });
+  generateProps(
+    flowers,
+    PROP_AMOUNTS.flowers,
+    TEXTURE_SIZES.field,
+    {
+      x: 1,
+      y: 0,
+      z: 1,
+    },
+    COLORS
+  );
 }
 
 /**
@@ -656,6 +713,9 @@ function update() {
 function render() {
   renderer.setRenderTarget(skyTexture);
   renderer.render(bufferScene, SKY_CAMERA);
+
+  renderer.setRenderTarget(fieldTexture);
+  renderer.render(bufferScene, FIELD_CAMERA);
 
   renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
