@@ -955,11 +955,11 @@ const keyHandlers = {
   KeyR: changeMaterialHandlerFactory('basic'),
 
   // toggle directional light
-  KeyD: (_event, isDown) => (toggleDirectionalLight = isDown),
+  KeyD: keyActionFactory(() => (toggleDirectionalLight = true)),
 
   // toggle UFO lights
-  KeyS: (_event, isDown) => (toggleUfoSpotlight = isDown),
-  KeyP: (_event, isDown) => (toggleUfoSphereLights = isDown),
+  KeyS: keyActionFactory(() => (toggleUfoSpotlight = true)),
+  KeyP: keyActionFactory(() => (toggleUfoSphereLights = true)),
 
   // ufo movement
   ArrowUp: moveUfoHandlerFactory('positiveX'),
@@ -968,8 +968,8 @@ const keyHandlers = {
   ArrowRight: moveUfoHandlerFactory('positiveZ'),
 
   // texture generation
-  Digit1: (_event, isDown) => (generateNewStars = isDown),
-  Digit2: (_event, isDown) => (generateNewFlowers = isDown),
+  Digit1: keyActionFactory(() => (generateNewStars = true)),
+  Digit2: keyActionFactory(() => (generateNewFlowers = true)),
 };
 
 function onKeyDown(event) {
@@ -981,6 +981,20 @@ function onKeyDown(event) {
   }
 
   keyHandlers[code]?.(event, true);
+}
+
+/**
+ * Build a key handler that only executes once on keydown.
+ * Ignores the keyup event, as well as duplicate keydown events.
+ */
+function keyActionFactory(handler) {
+  return (event, isDown) => {
+    if (!isDown || event.repeat) {
+      return;
+    }
+
+    handler(event);
+  };
 }
 
 function changeMaterialHandlerFactory(material) {
