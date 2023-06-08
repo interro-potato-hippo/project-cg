@@ -40,7 +40,7 @@ const MATERIAL_PARAMS = {
 
 const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
-  // TODO: add directional lights
+  directional: 1,
 });
 
 const DOME_RADIUS = 64;
@@ -217,10 +217,15 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
-  ambientLight.intensity = LIGHT_INTENSITY.ambient;
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow, LIGHT_INTENSITY.ambient);
   scene.add(ambientLight);
-  // TODO: add directional lights
+
+  const directionalLight = new THREE.DirectionalLight(
+    COLORS.moonYellow,
+    LIGHT_INTENSITY.directional
+  );
+  directionalLight.position.copy(MOON_POSITION);
+  scene.add(directionalLight);
 }
 
 ////////////////////////
