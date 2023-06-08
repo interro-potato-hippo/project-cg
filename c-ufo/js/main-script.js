@@ -8,6 +8,9 @@ const COLORS = Object.freeze({
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
   darkGreen: new THREE.Color(0x5e8c61),
+  imperialRed: new THREE.Color(0xF03A47),
+  skyBlue: new THREE.Color(0x84CAE7),
+  lightCyan: new THREE.Color(0xC9E4E7),
   brown: new THREE.Color(0xa96633),
   orange: new THREE.Color(0xea924b),
   lightBlue: new THREE.Color(0xb8e9ee),
@@ -29,10 +32,10 @@ const MATERIAL_PARAMS = {
   treeRightBranch: () => ({ color: COLORS.brown }),
   treeLeaf: () => ({ color: COLORS.darkGreen }),
 
-  ufoBody: () => ({ color: 0xffff00 }), // TODO change color: ;
-  ufoCockpit: () => ({ color: 0x00ffff }), // TODO change color
-  ufoSpotlight: () => ({ color: 0xff00ff }), // TODO change color
-  ufoSphere: () => ({ color: 0xffffff }), // TODO change color
+  ufoBody: () => ({ color: COLORS.imperialRed }),
+  ufoCockpit: () => ({ color: COLORS.skyBlue }),
+  ufoSpotlight: () => ({ color: COLORS.lightCyan }),
+  ufoSphere: () => ({ color: COLORS.lightCyan }),
 
   // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
