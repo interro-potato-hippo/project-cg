@@ -7,6 +7,8 @@ const COLORS = Object.freeze({
   darkBlue: new THREE.Color(0x00008b),
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
+  darkGreen: new THREE.Color(0x5e8c61),
+  brown: new THREE.Color(0xa96633),
   orange: new THREE.Color(0xea924b),
   lightBlue: new THREE.Color(0xb8e9ee),
   dodgerBlue: new THREE.Color(0x1e90ff),
@@ -17,15 +19,22 @@ const COLORS = Object.freeze({
 // must be functions because they depend on textures initialized later
 const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
+  field: () => ({ vertexColors: true }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({
+    map: fieldTexture.texture,
     color: COLORS.green,
     side: THREE.DoubleSide,
     displacementMap: terrainHeightMap,
     displacementScale: 10,
   }),
   moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
+
+  treeTrunk: () => ({ color: COLORS.brown }),
+  treePrimaryBranch: () => ({ color: COLORS.brown }),
+  treeSecondaryBranch: () => ({ color: COLORS.brown }),
+  treeLeaf: () => ({ color: COLORS.darkGreen }),
 
   // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
@@ -36,7 +45,7 @@ const MATERIAL_PARAMS = {
 
 const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
-  // TODO: add directional lights
+  directional: 1,
 });
 
 const DOME_RADIUS = 64;
@@ -48,22 +57,44 @@ const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
 const TERRAIN_HEIGHT_MAP_PATH = 'assets/height_map.png';
+const CYLINDER_SEGMENTS = 32;
+const SPHERE_SEGMENTS = 32;
 const GEOMETRY = {
-  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
+  skyDome: new THREE.SphereGeometry(
+    DOME_RADIUS,
+    SPHERE_SEGMENTS,
+    SPHERE_SEGMENTS,
+    0,
+    2 * Math.PI,
+    0,
+    Math.PI / 2
+  ),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
-  moon: new THREE.SphereGeometry(5, 32, 32),
+  moon: new THREE.SphereGeometry(5, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+
+  // height is scaled per instance of oak tree
+  treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
+  treePrimaryBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
+  treeSecondaryBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
+  treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
   houseWalls: createHouseWallsGeometry(),
   houseRoof: createHouseRoofGeometry(),
   houseWindows: createHouseWindowsGeometry(),
   houseDoor: createHouseDoorGeometry(),
 };
+const SPHERE_SCALING = {
+  treePrimaryBranchLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
+  treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
+};
 const TEXTURE_SIZES = {
-  sky: 64,
+  sky: DOME_RADIUS,
+  field: DOME_RADIUS,
 };
 const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
   stars: 512,
+  flowers: 512,
 };
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
@@ -84,16 +115,30 @@ const SKY_CAMERA = createOrthographicCamera({
   y: 5,
   atY: 10,
 });
+const FIELD_CAMERA = createOrthographicCamera({
+  left: -TEXTURE_SIZES.sky / 2,
+  right: TEXTURE_SIZES.sky / 2,
+  top: TEXTURE_SIZES.sky / 2,
+  bottom: -TEXTURE_SIZES.sky / 2,
+  near: 1,
+  far: 15,
+  y: 5,
+  atY: 0,
+});
 const NAMED_MESHES = []; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-let renderer, scene, bufferScene, skyTexture, terrainHeightMap;
+let renderer, scene, bufferScene, skyTexture, fieldTexture, terrainHeightMap;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
+// lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
+let generateNewStars = false;
+let generateNewFlowers = false;
 // ^ prevents logic in key event handlers, moving it to the update function
+let flowers, stars;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -107,14 +152,24 @@ function createScene() {
   createSkyDome();
   createMoon();
   createHouse();
+
+  createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
+  createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
+  createOakTree(3, new THREE.Vector3(14, 0, 9), new THREE.Euler(0, 0, 0));
+  createOakTree(4, new THREE.Vector3(-36, 0, -14), new THREE.Euler(0, Math.PI / 6, 0));
 }
 
 function createBufferScene() {
   bufferScene = new THREE.Scene();
 
   createBufferSky();
+  createBufferField();
 
   skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.NearestFilter,
+  });
+  fieldTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
     minFilter: THREE.LinearFilter,
     magFilter: THREE.NearestFilter,
   });
@@ -172,10 +227,15 @@ function createOrthographicCamera({
 /* CREATE LIGHT(S) */
 /////////////////////
 function createLights() {
-  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow);
-  ambientLight.intensity = LIGHT_INTENSITY.ambient;
+  const ambientLight = new THREE.AmbientLight(COLORS.moonYellow, LIGHT_INTENSITY.ambient);
   scene.add(ambientLight);
-  // TODO: add directional lights
+
+  const directionalLight = new THREE.DirectionalLight(
+    COLORS.moonYellow,
+    LIGHT_INTENSITY.directional
+  );
+  directionalLight.position.copy(MOON_POSITION);
+  scene.add(directionalLight);
 }
 
 ////////////////////////
@@ -195,7 +255,10 @@ function createMoon() {
 }
 
 function createSkyDome() {
-  createNamedMesh('skyDome', scene);
+  // the sky dome doesn't need to be a named mesh, as it won't be dynamically changed
+  const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.skyDome() });
+  const plane = new THREE.Mesh(GEOMETRY.skyDome, material);
+  scene.add(plane);
 }
 
 function createBufferSky() {
@@ -223,12 +286,50 @@ function createBufferSky() {
   sky.add(mesh);
 
   // the negative y allows for the stars not to be directly on top of the sky
-  const stars = createGroup({ y: -1, parent: sky });
+  stars = createGroup({ y: -1, parent: sky });
   generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
     y: 0,
     z: 1,
   });
+}
+
+function createBufferField() {
+  const field = createGroup({
+    x: -TEXTURE_SIZES.field / 2,
+    y: 0,
+    z: -TEXTURE_SIZES.field / 2,
+    parent: bufferScene,
+  });
+
+  const geometry = createBufferGeometry({
+    vertices: [
+      { x: 0, y: 0, z: 0, color: COLORS.darkGreen },
+      { x: 0, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 1, color: COLORS.darkGreen },
+      { x: 1, y: 0, z: 0, color: COLORS.darkGreen },
+    ],
+    triangles: [
+      [0, 1, 2],
+      [0, 2, 3],
+    ],
+    scale: TEXTURE_SIZES.field,
+  });
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
+  field.add(mesh);
+
+  flowers = createGroup({ y: 1, parent: field });
+  generateProps(
+    flowers,
+    PROP_AMOUNTS.flowers,
+    TEXTURE_SIZES.field,
+    {
+      x: 1,
+      y: 0,
+      z: 1,
+    },
+    Object.values(COLORS)
+  );
 }
 
 /**
@@ -248,7 +349,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.BackSide })
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.DoubleSide }) // TODO: change side
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
@@ -267,6 +368,7 @@ function generateProps(
     );
     dot.position.set(position.x, position.y, position.z);
     dot.rotateX(-Math.PI / 2);
+    dot.material = dot.material.clone(); // materials are not correctly cloned by default
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
     parent.add(dot);
@@ -517,6 +619,74 @@ function createHouseDoorGeometry() {
 }
 
 /**
+ * Create an oak tree with the given parameters and place it on the scene.
+ *
+ * @param {number} trunkHeight - Height of the trunk of the tree.
+ * @param {THREE.Vector3} position - A vector with the position of the tree relative to the center of the scene.
+ * @param {THREE.Euler} rotation - Orientation of the tree.
+ */
+function createOakTree(trunkHeight, position, rotation) {
+  const treeGroup = new THREE.Group();
+  treeGroup.position.copy(position);
+  treeGroup.rotation.copy(rotation);
+  scene.add(treeGroup);
+
+  // Create trunk
+  const oakTrunk = createNamedMesh('treeTrunk', treeGroup);
+  oakTrunk.scale.setY(trunkHeight);
+  oakTrunk.position.setY(trunkHeight / 2); // Cylinder is centered by default
+
+  // Create primary branch
+  const primaryBranch = createNamedMesh('treePrimaryBranch', treeGroup);
+
+  const primaryBranchIncl = Math.PI / 6; // 30 deg
+  // Calculate position to perfectly align the base of the branch with the trunk
+  const primaryBranchX =
+    Math.sin(primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom / Math.tan(primaryBranchIncl)) -
+    GEOMETRY.treeTrunk.parameters.radiusTop;
+  const primaryBranchY =
+    Math.cos(primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom * Math.tan(primaryBranchIncl)) -
+    GEOMETRY.treeTrunk.parameters.radiusTop;
+
+  primaryBranch.position.set(primaryBranchX, trunkHeight + primaryBranchY, 0);
+  primaryBranch.rotation.set(0, 0, -primaryBranchIncl);
+
+  // Create secondary branch
+  const secondaryBranch = createNamedMesh('treeSecondaryBranch', treeGroup);
+
+  const secondaryBranchIncl = Math.PI / 3; // 60 deg
+  // Position secondary branch in a way that its base is inside the primary branch
+  secondaryBranch.position.set(
+    -GEOMETRY.treeSecondaryBranch.parameters.height / 4,
+    trunkHeight + GEOMETRY.treeSecondaryBranch.parameters.height / 2,
+    0
+  );
+  secondaryBranch.rotation.set(0, 0, secondaryBranchIncl);
+
+  // Position leaf above top of primary branch
+  const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  primaryBranchLeaf.position.set(
+    primaryBranchX * 2,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    0
+  );
+  primaryBranchLeaf.scale.copy(SPHERE_SCALING.treePrimaryBranchLeaf);
+
+  // Position leaf above top of secondary branch
+  const secondaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  secondaryBranchLeaf.position.set(
+    (-GEOMETRY.treeSecondaryBranch.parameters.height * 2) / 3,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    0
+  );
+  secondaryBranchLeaf.scale.copy(SPHERE_SCALING.treeSecondaryBranchLeaf);
+}
+
+/**
  * Creates a buffer geometry from a given set of parameters.
  * @param {Object} p - an object containing the input parameters
  * @param {{x: number, y: number, z: number, color: THREE.Color}[]} p.vertices - an array of vertices
@@ -557,6 +727,22 @@ function update() {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
+  if (generateNewStars) {
+    generateNewStars = false;
+    stars.clear();
+    generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
+  }
+  if (generateNewFlowers) {
+    generateNewFlowers = false;
+    flowers.clear();
+    generateProps(
+      flowers,
+      PROP_AMOUNTS.flowers,
+      TEXTURE_SIZES.field,
+      { x: 1, y: 0, z: 1 },
+      Object.values(COLORS)
+    );
+  }
 }
 
 /////////////
@@ -565,6 +751,9 @@ function update() {
 function render() {
   renderer.setRenderTarget(skyTexture);
   renderer.render(bufferScene, SKY_CAMERA);
+
+  renderer.setRenderTarget(fieldTexture);
+  renderer.render(bufferScene, FIELD_CAMERA);
 
   renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
@@ -616,10 +805,15 @@ function onResize() {
 /* KEY DOWN CALLBACK */
 ///////////////////////
 const keyHandlers = {
+  // material switching
   KeyQ: changeMaterialHandlerFactory('gouraud'),
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // texture generation
+  Digit1: () => (generateNewStars = true),
+  Digit2: () => (generateNewFlowers = true),
 };
 
 function onKeyDown(event) {
