@@ -8,6 +8,9 @@ const COLORS = Object.freeze({
   darkPurple: new THREE.Color(0x632cd4),
   green: new THREE.Color(0x55cc55),
   darkGreen: new THREE.Color(0x5e8c61),
+  imperialRed: new THREE.Color(0xf03a47),
+  skyBlue: new THREE.Color(0x84cae7),
+  lightCyan: new THREE.Color(0xc9e4e7),
   brown: new THREE.Color(0xa96633),
   orange: new THREE.Color(0xea924b),
   lightBlue: new THREE.Color(0xb8e9ee),
@@ -36,6 +39,11 @@ const MATERIAL_PARAMS = {
   treeSecondaryBranch: () => ({ color: COLORS.brown }),
   treeLeaf: () => ({ color: COLORS.darkGreen }),
 
+  ufoBody: () => ({ color: COLORS.imperialRed }),
+  ufoCockpit: () => ({ color: COLORS.skyBlue }),
+  ufoSpotlight: () => ({ color: COLORS.lightCyan }),
+  ufoSphere: () => ({ color: COLORS.lightCyan }),
+
   // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
   houseRoof: () => ({ vertexColors: true, side: THREE.DoubleSide }),
@@ -46,7 +54,10 @@ const MATERIAL_PARAMS = {
 const LIGHT_INTENSITY = Object.freeze({
   ambient: 0.25,
   directional: 1,
+  ufoSpotlight: 2,
 });
+const UFO_SPOTLIGHT_ANGLE = Math.PI / 6;
+const UFO_SPOTLIGHT_PENUMBRA = 0.3;
 
 const DOME_RADIUS = 64;
 const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADDING smaller radius
@@ -78,14 +89,22 @@ const GEOMETRY = {
   treeSecondaryBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
   treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
+  ufoBody: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+  ufoCockpit: new THREE.SphereGeometry(1.5, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+  ufoSpotlight: new THREE.CylinderGeometry(1.5, 1.5, 0.5, CYLINDER_SEGMENTS),
+  ufoSphere: new THREE.SphereGeometry(0.25, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+
   houseWalls: createHouseWallsGeometry(),
   houseRoof: createHouseRoofGeometry(),
   houseWindows: createHouseWindowsGeometry(),
   houseDoor: createHouseDoorGeometry(),
 };
-const SPHERE_SCALING = {
+const UFO_SPHERE_COUNT = 8;
+const ELLIPSOID_SCALING = {
   treePrimaryBranchLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
   treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
+
+  ufoBody: new THREE.Vector3(3.5, 1, 3.5),
 };
 const TEXTURE_SIZES = {
   sky: DOME_RADIUS,
@@ -96,6 +115,8 @@ const PROP_AMOUNTS = {
   stars: 512,
   flowers: 512,
 };
+
+const UFO_ANGULAR_VELOCITY = (2 * Math.PI) / 10; // 10 seconds per full rotation
 
 const ORBITAL_CAMERA = createPerspectiveCamera({
   fov: 80,
@@ -127,6 +148,8 @@ const FIELD_CAMERA = createOrthographicCamera({
 });
 const NAMED_MESHES = []; // meshes registered as they are created
 
+const CLOCK = new THREE.Clock();
+
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
@@ -137,8 +160,11 @@ let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let generateNewStars = false;
 let generateNewFlowers = false;
+let toggleUfoSpotlight = false;
 // ^ prevents logic in key event handlers, moving it to the update function
-let flowers, stars;
+let flowers, stars, ufo;
+
+let ufoSpotlight;
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -159,6 +185,8 @@ function createScene() {
   createOakTree(4, new THREE.Vector3(-41, 2.75, -14), new THREE.Euler(0, Math.PI / 6, 0));
   createOakTree(4, new THREE.Vector3(-14, 2.25, -23), new THREE.Euler(0, -Math.PI / 3, 0));
   createOakTree(8, new THREE.Vector3(15, 2.75, -26), new THREE.Euler(0, Math.PI / 3, 0));
+
+  createUfo(new THREE.Vector3(0, 10, 0));
 }
 
 function createBufferScene() {
@@ -673,19 +701,67 @@ function createOakTree(trunkHeight, position, rotation) {
   const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
   primaryBranchLeaf.position.set(
     primaryBranchX * 2,
-    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    trunkHeight + primaryBranchY * 2 + ELLIPSOID_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  primaryBranchLeaf.scale.copy(SPHERE_SCALING.treePrimaryBranchLeaf);
+  primaryBranchLeaf.scale.copy(ELLIPSOID_SCALING.treePrimaryBranchLeaf);
 
   // Position leaf above top of secondary branch
   const secondaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
   secondaryBranchLeaf.position.set(
     (-GEOMETRY.treeSecondaryBranch.parameters.height * 2) / 3,
-    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
+    trunkHeight + primaryBranchY * 2 + ELLIPSOID_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  secondaryBranchLeaf.scale.copy(SPHERE_SCALING.treeSecondaryBranchLeaf);
+  secondaryBranchLeaf.scale.copy(ELLIPSOID_SCALING.treeSecondaryBranchLeaf);
+}
+
+function createUfo(initialPosition) {
+  ufo = new THREE.Group();
+  ufo.position.copy(initialPosition);
+  scene.add(ufo);
+
+  const body = createNamedMesh('ufoBody', ufoGroup);
+  body.scale.copy(ELLIPSOID_SCALING.ufoBody);
+
+  const cockpit = createNamedMesh('ufoCockpit', ufoGroup);
+  cockpit.position.set(0, ELLIPSOID_SCALING.ufoBody.y / 2, 0);
+
+  const spotlight = createNamedMesh('ufoSpotlight', ufoGroup);
+  spotlight.position.set(0, -ELLIPSOID_SCALING.ufoBody.y, 0);
+
+  const spotlightTarget = new THREE.Object3D();
+  spotlightTarget.position.set(0, -10, 0); // point downwards
+  ufoGroup.add(spotlightTarget);
+
+  ufoSpotlight = new THREE.SpotLight(
+    COLORS.darkBlue,
+    LIGHT_INTENSITY.ufoSpotlight,
+    0,
+    UFO_SPOTLIGHT_ANGLE,
+    UFO_SPOTLIGHT_PENUMBRA
+  );
+  ufoSpotlight.position.copy(spotlight.position);
+  ufoSpotlight.target = spotlightTarget;
+  ufoGroup.add(ufoSpotlight);
+
+  for (let i = 0; i < UFO_SPHERE_COUNT; i++) {
+    const sphereGroup = new THREE.Group();
+    sphereGroup.rotation.set(0, (i * 2 * Math.PI) / UFO_SPHERE_COUNT, 0);
+    ufoGroup.add(sphereGroup);
+
+    const sphere = createNamedMesh('ufoSphere', sphereGroup);
+
+    const sphereY = -ELLIPSOID_SCALING.ufoBody.y / 2;
+    // Calculate sphereX by intercepting the ellipse equation at this Y coordinate
+    // Ellipse equation: x^2/a^2 + y^2/b^2 = 1, where a is rx and b is ry.
+    // Therefore, x = sqrt(a^2 * (1 - y^2/b^2))
+    const sphereX = Math.sqrt(
+      ELLIPSOID_SCALING.ufoBody.x ** 2 * (1 - sphereY ** 2 / ELLIPSOID_SCALING.ufoBody.y ** 2)
+    );
+
+    sphere.position.set(sphereX, sphereY, 0);
+  }
 }
 
 /**
@@ -724,7 +800,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
 ////////////
 /* UPDATE */
 ////////////
-function update() {
+function update(timeDelta) {
   if (activeMaterialChanged) {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
@@ -745,6 +821,13 @@ function update() {
       Object.values(COLORS)
     );
   }
+  if (toggleUfoSpotlight) {
+    ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
+    toggleUfoSpotlight = false;
+  }
+
+  // Rotate UFO at constant angular velocity
+  ufo.rotation.y = (ufo.rotation.y + timeDelta * UFO_ANGULAR_VELOCITY) % (2 * Math.PI);
 }
 
 /////////////
@@ -786,7 +869,8 @@ function init() {
 /* ANIMATION CYCLE */
 /////////////////////
 function animate() {
-  update();
+  const timeDelta = CLOCK.getDelta();
+  update(timeDelta);
   render();
   requestAnimationFrame(animate);
 }
@@ -812,6 +896,9 @@ const keyHandlers = {
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
   KeyR: changeMaterialHandlerFactory('basic'),
+
+  // toggle UFO lights
+  KeyS: () => (toggleUfoSpotlight = true),
 
   // texture generation
   Digit1: () => (generateNewStars = true),
