@@ -129,8 +129,8 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
-let newStarsGenerated = false;
-let newFlowersGenerated = false;
+let generateNewStars = false;
+let generateNewFlowers = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars;
 
@@ -721,14 +721,14 @@ function update() {
     activeMaterialChanged = false;
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
-  if (newStarsGenerated) {
-    newStarsGenerated = false;
-    stars.children = [];
+  if (generateNewStars) {
+    generateNewStars = false;
+    stars.clear();
     generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
   }
-  if (newFlowersGenerated) {
-    newFlowersGenerated = false;
-    flowers.children = [];
+  if (generateNewFlowers) {
+    generateNewFlowers = false;
+    flowers.clear();
     generateProps(
       flowers,
       PROP_AMOUNTS.flowers,
@@ -802,12 +802,8 @@ const keyHandlers = {
   KeyR: changeMaterialHandlerFactory('basic'),
 
   // texture generation
-  Digit1: () => {
-    newStarsGenerated = true;
-  },
-  Digit2: () => {
-    newFlowersGenerated = true;
-  },
+  Digit1: () => (generateNewStars = true),
+  Digit2: () => (generateNewFlowers = true),
 };
 
 function onKeyDown(event) {
