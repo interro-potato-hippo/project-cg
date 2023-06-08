@@ -13,6 +13,9 @@ const COLORS = Object.freeze({
   white: new THREE.Color(0xffffff),
   brown: new THREE.Color(0xa96633),
   ambientLight: new THREE.Color(0xeec37f),
+  orange: new THREE.Color(0xea924b),
+  lightBlue: new THREE.Color(0xb8e9ee),
+  dodgerBlue: new THREE.Color(0x1e90ff),
 });
 
 // must be functions because they depend on textures initialized later
@@ -26,6 +29,12 @@ const MATERIAL_PARAMS = {
   treeLeftBranch: () => ({ color: COLORS.brown }),
   treeRightBranch: () => ({ color: COLORS.brown }),
   treeLeaf: () => ({ color: COLORS.darkGreen }),
+
+  // TODO: remove double side from these
+  houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseRoof: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseWindows: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseDoor: () => ({ vertexColors: true, side: THREE.DoubleSide }),
 };
 
 const DOME_RADIUS = 64;
@@ -42,6 +51,11 @@ const GEOMETRY = {
   treeLeftBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
   treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
   treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+
+  houseWalls: createHouseWallsGeometry(),
+  houseRoof: createHouseRoofGeometry(),
+  houseWindows: createHouseWindowsGeometry(),
+  houseDoor: createHouseDoorGeometry(),
 };
 const SPHERE_SCALING = {
   treeLeftLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
@@ -94,6 +108,7 @@ function createScene() {
   createLights();
   createTerrain();
   createSkyDome();
+  createHouse();
 
   createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
   createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
@@ -280,6 +295,222 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
       planeSize - PROP_RADIUS
     )
   );
+}
+
+function createHouse() {
+  const house = createGroup({ parent: scene });
+  createNamedMesh('houseWalls', house);
+  createNamedMesh('houseRoof', house);
+  createNamedMesh('houseWindows', house);
+  createNamedMesh('houseDoor', house);
+}
+
+function createHouseWallsGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // TODO: maybe don't use vertex colors?
+      // front wall
+      { x: 0, y: 0, z: 0, color: COLORS.white }, // v0
+      { x: 1, y: 2.5, z: 0, color: COLORS.white }, // v1
+      { x: 0, y: 2.5, z: 0, color: COLORS.white }, // v2
+      { x: 1, y: 0, z: 0, color: COLORS.white }, // v3
+      { x: 2.5, y: 0, z: 0, color: COLORS.white }, // v4
+      { x: 2.5, y: 1, z: 0, color: COLORS.white }, // v5
+      { x: 1, y: 1, z: 0, color: COLORS.white }, // v6
+      { x: 4.5, y: 0, z: 0, color: COLORS.white }, // v7
+      { x: 4.5, y: 2.5, z: 0, color: COLORS.white }, // v8
+      { x: 2.5, y: 2.5, z: 0, color: COLORS.white }, // v9
+      { x: 6, y: 0, z: 0, color: COLORS.white }, // v10
+      { x: 6, y: 1, z: 0, color: COLORS.white }, // v11
+      { x: 4.5, y: 1, z: 0, color: COLORS.white }, // v12
+      { x: 8, y: 0, z: 0, color: COLORS.white }, // v13
+      { x: 8, y: 2.5, z: 0, color: COLORS.white }, // v14
+      { x: 6, y: 2.5, z: 0, color: COLORS.white }, // v15
+      { x: 9.25, y: 0, z: 0, color: COLORS.white }, // v16
+      { x: 9.25, y: 2.5, z: 0, color: COLORS.white }, // v17
+      { x: 11.5, y: 0, z: 0, color: COLORS.white }, // v18
+      { x: 11.5, y: 2.5, z: 0, color: COLORS.white }, // v19
+      { x: 13, y: 0, z: 0, color: COLORS.white }, // v20
+      { x: 13, y: 1, z: 0, color: COLORS.white }, // v21
+      { x: 11.5, y: 1, z: 0, color: COLORS.white }, // v22
+      { x: 17, y: 0, z: 0, color: COLORS.white }, // v23
+      { x: 17, y: 2.5, z: 0, color: COLORS.white }, // v24
+      { x: 13, y: 2.5, z: 0, color: COLORS.white }, // v25
+      { x: 18.5, y: 0, z: 0, color: COLORS.white }, // v26
+      { x: 18.5, y: 1, z: 0, color: COLORS.white }, // v27
+      { x: 17, y: 1, z: 0, color: COLORS.white }, // v28
+      { x: 20, y: 0, z: 0, color: COLORS.white }, // v29
+      { x: 20, y: 2.5, z: 0, color: COLORS.white }, // v30
+      { x: 18.5, y: 2.5, z: 0, color: COLORS.white }, // v31
+      { x: 8, y: 4, z: 0, color: COLORS.white }, // v32
+      { x: 0, y: 4, z: 0, color: COLORS.white }, // v33
+      { x: 13, y: 4, z: 0, color: COLORS.white }, // v34
+      { x: 20, y: 4, z: 0, color: COLORS.white }, // v35
+
+      // right wall (for a definition of right... - the one with the window)
+      { x: 20, y: 0, z: -3.5, color: COLORS.white }, // v36
+      { x: 20, y: 2.5, z: -3.5, color: COLORS.white }, // v37
+      { x: 20, y: 0, z: -5, color: COLORS.white }, // v38
+      { x: 20, y: 1, z: -5, color: COLORS.white }, // v39
+      { x: 20, y: 1, z: -3.5, color: COLORS.white }, // v40
+      { x: 20, y: 0, z: -5.5, color: COLORS.white }, // v41
+      { x: 20, y: 2.5, z: -5.5, color: COLORS.white }, // v42
+      { x: 20, y: 2.5, z: -5, color: COLORS.white }, // v43
+      { x: 20, y: 4, z: -5.5, color: COLORS.white }, // v44
+
+      // left wall
+      { x: 0, y: 0, z: -5.5, color: COLORS.white }, // v45
+      { x: 0, y: 4, z: -5.5, color: COLORS.white }, // v46
+    ],
+    triangles: [
+      // front wall
+      [0, 1, 2],
+      [0, 3, 1],
+      [3, 4, 5],
+      [3, 5, 6],
+      [4, 7, 8],
+      [4, 8, 9],
+      [7, 10, 11],
+      [7, 11, 12],
+      [10, 13, 14],
+      [10, 14, 15],
+      [16, 18, 19],
+      [16, 19, 17],
+      [18, 20, 21],
+      [18, 21, 22],
+      [20, 23, 24],
+      [20, 24, 25],
+      [23, 26, 27],
+      [23, 27, 28],
+      [26, 29, 30],
+      [26, 30, 31],
+      [2, 14, 32],
+      [2, 32, 33],
+      [14, 25, 34],
+      [14, 34, 32],
+      [25, 30, 35],
+      [25, 35, 34],
+
+      // right wall (for a definition of right... - the one with the window)
+      [29, 36, 37],
+      [29, 37, 30],
+      [36, 38, 39],
+      [36, 39, 40],
+      [38, 41, 42],
+      [38, 42, 43],
+      [30, 42, 44],
+      [30, 44, 35],
+
+      // left wall
+      [45, 0, 33],
+      [45, 33, 46],
+
+      // back wall
+      [41, 45, 46],
+      [41, 46, 44],
+    ],
+  });
+}
+
+function createHouseRoofGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // base of the roof
+      { x: 0, y: 4, z: 0, color: COLORS.orange }, // v0
+      { x: 0, y: 4, z: -5.5, color: COLORS.orange }, // v1
+      { x: 20, y: 4, z: 0, color: COLORS.orange }, // v2
+      { x: 20, y: 4, z: -5.5, color: COLORS.orange }, // v3
+
+      // top of the roof
+      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v4
+      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v5
+    ],
+    triangles: [
+      // least deep (closest to z = 0) roof side
+      [0, 2, 5],
+      [0, 5, 4],
+
+      // most deep (closest to z = -5.5) roof side
+      [1, 3, 5],
+      [1, 5, 4],
+
+      // sides
+      [1, 0, 4],
+      [2, 3, 5],
+    ],
+  });
+}
+
+function createHouseWindowsGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      // leftmost window (as seen from the front)
+      { x: 1, y: 1, z: 0, color: COLORS.lightBlue }, // v0
+      { x: 2.5, y: 1, z: 0, color: COLORS.lightBlue }, // v1
+      { x: 2.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v2
+      { x: 1, y: 2.5, z: 0, color: COLORS.lightBlue }, // v3
+
+      // second-to-leftmost window (as seen from the front)
+      { x: 4.5, y: 1, z: 0, color: COLORS.lightBlue }, // v4
+      { x: 6, y: 1, z: 0, color: COLORS.lightBlue }, // v5
+      { x: 6, y: 2.5, z: 0, color: COLORS.lightBlue }, // v5
+      { x: 4.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v7
+
+      // second-to-rightmost window (as seen from the front)
+      { x: 11.5, y: 1, z: 0, color: COLORS.lightBlue }, // v8
+      { x: 13, y: 1, z: 0, color: COLORS.lightBlue }, // v9
+      { x: 13, y: 2.5, z: 0, color: COLORS.lightBlue }, // v10
+      { x: 11.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v11
+
+      // rightmost window (as seen from the front)
+      { x: 17, y: 1, z: 0, color: COLORS.lightBlue }, // v12
+      { x: 18.5, y: 1, z: 0, color: COLORS.lightBlue }, // v13
+      { x: 18.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v14
+      { x: 17, y: 2.5, z: 0, color: COLORS.lightBlue }, // v15
+
+      // side window
+      { x: 20, y: 1, z: -3.5, color: COLORS.lightBlue }, // v16
+      { x: 20, y: 1, z: -5, color: COLORS.lightBlue }, // v17
+      { x: 20, y: 2.5, z: -5, color: COLORS.lightBlue }, // v18
+      { x: 20, y: 2.5, z: -3.5, color: COLORS.lightBlue }, // v19
+    ],
+    triangles: [
+      // leftmost window (as seen from the front)
+      [0, 1, 2],
+      [0, 2, 3],
+
+      // second-to-leftmost window (as seen from the front)
+      [4, 5, 6],
+      [4, 6, 7],
+
+      // second-to-rightmost window (as seen from the front)
+      [8, 9, 10],
+      [8, 10, 11],
+
+      // rightmost window (as seen from the front)
+      [12, 13, 14],
+      [12, 14, 15],
+
+      // side window
+      [16, 17, 18],
+      [16, 18, 19],
+    ],
+  });
+}
+
+function createHouseDoorGeometry() {
+  return createBufferGeometry({
+    vertices: [
+      { x: 8, y: 0, z: 0, color: COLORS.dodgerBlue }, // v0
+      { x: 9.25, y: 0, z: 0, color: COLORS.dodgerBlue }, // v1
+      { x: 9.25, y: 2.5, z: 0, color: COLORS.dodgerBlue }, // v2
+      { x: 8, y: 2.5, z: 0, color: COLORS.dodgerBlue }, // v3
+    ],
+    triangles: [
+      [0, 1, 2],
+      [0, 2, 3],
+    ],
+  });
 }
 
 /**
