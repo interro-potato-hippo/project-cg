@@ -259,9 +259,7 @@ function createOrthographicCamera({
 }
 
 function refreshCameraParameters() {
-  const parameters = { aspect: window.innerWidth / window.innerHeight };
-
-  Object.assign(activeCamera, parameters);
+  activeCamera.aspect = window.innerWidth / window.innerHeight };
   activeCamera.updateProjectionMatrix();
 }
 
