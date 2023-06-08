@@ -12,48 +12,77 @@ const COLORS = Object.freeze({
   darkGreen: new THREE.Color(0x5e8c61),
   white: new THREE.Color(0xffffff),
   brown: new THREE.Color(0xa96633),
+  ambientLight: new THREE.Color(0xeec37f),
 });
-const MATERIAL = {
-  terrain: new THREE.MeshBasicMaterial({ wireframe: true, color: COLORS.green }),
-  oakTree: new THREE.MeshBasicMaterial({ color: COLORS.brown }),
-  treeLeaf: new THREE.MeshBasicMaterial({ color: COLORS.darkGreen }),
+
+// must be functions because they depend on textures initialized later
+const MATERIAL_PARAMS = {
+  sky: () => ({ vertexColors: true }),
+
+  skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
+  terrain: () => ({ color: COLORS.green, side: THREE.DoubleSide }),
+
+  oakTree: () => ({ color: COLORS.brown }),
+  treeLeftBranch: () => ({ color: COLORS.brown }),
+  treeRightBranch: () => ({ color: COLORS.brown }),
+  treeLeaf: () => ({ color: COLORS.darkGreen }),
 };
-const DOME_RADIUS = 50;
-const PROP_RADIUS = 0.1;
-const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS) ** 2;
+
+const DOME_RADIUS = 64;
+const PROP_RADIUS = 0.05;
+const INTER_PROP_PADDING = PROP_RADIUS / 2;
+const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
 const GEOMETRY = {
+  skyDome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32, 0, 2 * Math.PI, 0, Math.PI / 2),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
-  skydome: new THREE.SphereGeometry(DOME_RADIUS, 32, 32),
-  // height is replaced per instance of oak tree
+
+  // height is scaled per instance of oak tree
   oakTree: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
   treeLeftBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
   treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
-  treeLeftLeaf: { rx: 2.3, ry: 1.1, rz: 1.5 }, // store radius in all axis since SphereGeometry only has one radius
-  treeRightLeaf: { rx: 3, ry: 1.375, rz: 2.5 }, // store radius in all axis since SphereGeometry only has one radius
+  treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
+};
+const SPHERE_SCALING = {
+  treeLeftLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
+  treeRightLeaf: new THREE.Vector3(3, 1.375, 2.5),
 };
 const TEXTURE_SIZES = {
-  terrain: 64,
-  skydome: 128,
+  sky: 64,
 };
+const RENDER_TARGET_SIDE = 4096; // chosen semi-arbitrarily, allows for the circles to be smoothly rendered
 const PROP_AMOUNTS = {
-  terrain: 128, // flowers
-  skydome: 2048, // stars
+  stars: 512,
 };
 
-const CAMERA_GEOMETRY = Object.freeze({
+const ORBITAL_CAMERA = createPerspectiveCamera({
   fov: 80,
   near: 1,
   far: 1000,
+  x: -10,
+  y: 20,
+  z: -10,
 });
-const ORBITAL_CAMERA = createPerspectiveCamera({ x: -10, y: 20, z: -10 });
+const SKY_CAMERA = createOrthographicCamera({
+  left: -TEXTURE_SIZES.sky / 2,
+  right: TEXTURE_SIZES.sky / 2,
+  top: TEXTURE_SIZES.sky / 2,
+  bottom: -TEXTURE_SIZES.sky / 2,
+  near: 1,
+  far: 15,
+  y: 5,
+  atY: 10,
+});
+const NAMED_MESHES = {}; // meshes registered as they are created
 
 //////////////////////
 /* GLOBAL VARIABLES */
 //////////////////////
-
-let renderer, scene;
+let renderer, scene, bufferScene, skyTexture;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
+let activeMaterial = 'phong'; // starts as phong, may change afterwards
+let activeMaterialChanged = false; // used to know when to update the material of the meshes
+// ^ prevents logic in key event handlers, moving it to the update function
 
 /////////////////////
 /* CREATE SCENE(S) */
@@ -62,8 +91,9 @@ function createScene() {
   scene = new THREE.Scene();
   scene.add(new THREE.AxesHelper(20));
 
+  createLights();
   createTerrain();
-  createSkydome();
+  createSkyDome();
 
   createOakTree(8, new THREE.Vector3(15, 0, -26), new THREE.Euler(0, Math.PI / 3, 0));
   createOakTree(1.5, new THREE.Vector3(-28, 0, 4), new THREE.Euler(0, Math.PI / 2, 0));
@@ -71,123 +101,128 @@ function createScene() {
   createOakTree(4, new THREE.Vector3(-36, 0, -14), new THREE.Euler(0, Math.PI / 6, 0));
 }
 
+function createBufferScene() {
+  bufferScene = new THREE.Scene();
+
+  createBufferSky();
+
+  skyTexture = new THREE.WebGLRenderTarget(RENDER_TARGET_SIDE, RENDER_TARGET_SIDE, {
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.NearestFilter,
+  });
+}
+
 //////////////////////
 /* CREATE CAMERA(S) */
 //////////////////////
 function createCameras() {
-  const controls = new THREE.OrbitControls(activeCamera, renderer.domElement);
+  const controls = new THREE.OrbitControls(ORBITAL_CAMERA, renderer.domElement);
   controls.target.set(0, 0, 0);
   controls.update();
 }
 
-function createPerspectiveCamera({ x = 0, y = 0, z = 0 }) {
+function createPerspectiveCamera({
+  fov,
+  near,
+  far,
+  x = 0,
+  y = 0,
+  z = 0,
+  atX = 0,
+  atY = 0,
+  atZ = 0,
+}) {
   const aspect = window.innerWidth / window.innerHeight;
 
-  const camera = new THREE.PerspectiveCamera(
-    CAMERA_GEOMETRY.fov,
-    aspect,
-    CAMERA_GEOMETRY.near,
-    CAMERA_GEOMETRY.far
-  );
+  const camera = new THREE.PerspectiveCamera(fov, aspect, near, far);
   camera.position.set(x, y, z);
-  camera.lookAt(x, y, z);
+  camera.lookAt(atX, atY, atZ);
+  return camera;
+}
+
+function createOrthographicCamera({
+  left,
+  right,
+  top,
+  bottom,
+  near,
+  far,
+  x = 0,
+  y = 0,
+  z = 0,
+  atX = 0,
+  atY = 0,
+  atZ = 0,
+}) {
+  const camera = new THREE.OrthographicCamera(left, right, top, bottom, near, far);
+  camera.position.set(x, y, z);
+  camera.lookAt(atX, atY, atZ);
   return camera;
 }
 
 /////////////////////
 /* CREATE LIGHT(S) */
 /////////////////////
+function createLights() {
+  scene.add(new THREE.AmbientLight(COLORS.ambientLight));
+  // TODO: add directional lights
+}
 
 ////////////////////////
 /* CREATE OBJECT3D(S) */
 ////////////////////////
 function createTerrain() {
-  const plane = new THREE.Mesh(GEOMETRY.terrain, MATERIAL.terrain);
+  const plane = createNamedMesh('terrain', scene);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
-  scene.add(plane);
 }
 
-function createSkydome() {
-  const skydomeProps = {
-    scene: new THREE.Scene(),
-    texture: new THREE.WebGLRenderTarget(window.innerWidth, window.innerHeight, {
-      minFilter: THREE.LinearFilter,
-      magFilter: THREE.NearestFilter,
-    }),
-    geometry: new THREE.BufferGeometry(),
-    positions: [
-      [0, 0, 0],
-      [0, 0, 1],
-      [1, 0, 1],
-      [1, 0, 0],
-    ].flatMap((position) => position.map((coord) => coord * TEXTURE_SIZES.skydome)),
-    indices: [
-      [0, 1, 2],
-      [2, 3, 0],
-    ].flatMap((triangle) => triangle),
-    colors: [COLORS.darkPurple, COLORS.darkBlue, COLORS.darkBlue, COLORS.darkPurple].flatMap(
-      (color) => [color.r, color.g, color.b]
-    ),
-    camera: new THREE.OrthographicCamera(
-      -TEXTURE_SIZES.skydome / 2,
-      TEXTURE_SIZES.skydome / 2,
-      TEXTURE_SIZES.skydome / 2,
-      -TEXTURE_SIZES.skydome / 2,
-      1,
-      100
-    ),
-  };
+function createSkyDome() {
+  createNamedMesh('skyDome', scene);
+}
 
-  skydomeProps.geometry.setIndex(skydomeProps.indices);
-  skydomeProps.geometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(skydomeProps.positions, 3)
-  );
-  skydomeProps.geometry.setAttribute(
-    'color',
-    new THREE.Float32BufferAttribute(skydomeProps.colors, 3)
-  );
-  const skydome_mesh = new THREE.Mesh(
-    skydomeProps.geometry,
-    new THREE.MeshBasicMaterial({ vertexColors: true })
-  );
-  skydomeProps.scene.add(skydome_mesh);
+function createBufferSky() {
+  const sky = createGroup({
+    x: -TEXTURE_SIZES.sky / 2,
+    y: 10,
+    z: -TEXTURE_SIZES.sky / 2,
+    parent: bufferScene,
+  });
 
-  skydomeProps.camera.position.set(TEXTURE_SIZES.skydome / 2, 10, TEXTURE_SIZES.skydome / 2);
-  skydomeProps.camera.lookAt(TEXTURE_SIZES.skydome / 2, 0, TEXTURE_SIZES.skydome / 2);
-  skydomeProps.scene.add(skydomeProps.camera);
+  const geometry = createBufferGeometry({
+    vertices: [
+      { x: 0, y: 0, z: 0, color: COLORS.darkPurple },
+      { x: 0, y: 0, z: 1, color: COLORS.darkBlue },
+      { x: 1, y: 0, z: 1, color: COLORS.darkBlue },
+      { x: 1, y: 0, z: 0, color: COLORS.darkPurple },
+    ],
+    triangles: [
+      [2, 1, 0],
+      [0, 3, 2],
+    ],
+    scale: TEXTURE_SIZES.sky,
+  });
+  const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.sky()));
+  sky.add(mesh);
 
-  generateProps(skydomeProps.scene, PROP_AMOUNTS.skydome, TEXTURE_SIZES.skydome, {
+  // the negative y allows for the stars not to be directly on top of the sky
+  const stars = createGroup({ y: -1, parent: sky });
+  generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, {
     x: 1,
-    y: 1,
+    y: 0,
     z: 1,
   });
-  // creates the actual skydome sphere
-  const sphere = new THREE.Mesh(
-    GEOMETRY.skydome,
-    new THREE.MeshBasicMaterial({
-      map: skydomeProps.texture.texture,
-      side: THREE.BackSide,
-    })
-  );
-  sphere.rotateX(Math.PI / 2); // rotating it allows for a more "natural" dawn/dusk
-  scene.add(sphere);
-
-  renderer.setRenderTarget(skydomeProps.texture);
-  renderer.render(skydomeProps.scene, skydomeProps.camera, skydomeProps.texture);
-  renderer.setRenderTarget(null);
 }
 
 /**
  * Fills a texture with a given amount of props.
- * @param {THREE.Scene} scene - the scene where the props will be generated on
- * @param {int} amount - the amount of props to generate
- * @param {int} planeSize - the size of the plane the mesh is on
+ * @param {THREE.Group} parent - the parent to which the props will be added
+ * @param {number} amount - the amount of props to generate
+ * @param {number} planeSize - the size of the plane the mesh is on
  * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @param {Array} colors - the available colors for the props to be generated; by default, they're all white
  */
 function generateProps(
-  scene,
+  parent,
   amount,
   planeSize,
   freedom = { x: 0, y: 0, z: 0 },
@@ -195,7 +230,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white })
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.BackSide })
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
@@ -216,13 +251,13 @@ function generateProps(
     dot.rotateX(-Math.PI / 2);
     dot.material.color.set(colors[Math.floor(Math.random() * colors.length)]);
     occupiedPositions.push(position);
-    scene.add(dot);
+    parent.add(dot);
   }
 }
 
 /**
  * Generates a random position within a plane.
- * @param {int} planeSize - the size of the plane where the props will be placed on
+ * @param {number} planeSize - the size of the plane where the props will be placed on
  * @param {Object} freedom - multipliers stating whether props may have non-zero coordinates on a given axis; by default, they can't
  * @param {THREE.Vector3} basePoint - the base point of the plane; by default, it's the origin
  * @returns a new THREE.Vector3 with coordinates within the plane
@@ -261,13 +296,12 @@ function createOakTree(trunkHeight, position, rotation) {
   scene.add(treeGroup);
 
   // Create trunk
-  const oakTrunk = new THREE.Mesh(GEOMETRY.oakTree, MATERIAL.oakTree);
+  const oakTrunk = createNamedMesh('oakTree', treeGroup);
   oakTrunk.scale.setY(trunkHeight);
   oakTrunk.position.setY(trunkHeight / 2); // Cylinder is centered by default
-  treeGroup.add(oakTrunk);
 
   // Create left branch
-  const leftBranch = new THREE.Mesh(GEOMETRY.treeLeftBranch, MATERIAL.oakTree);
+  const leftBranch = createNamedMesh('treeLeftBranch', treeGroup);
 
   const leftBranchIncl = Math.PI / 6; // 30 deg
   const leftBranchX =
@@ -283,10 +317,9 @@ function createOakTree(trunkHeight, position, rotation) {
 
   leftBranch.position.set(leftBranchX, trunkHeight + leftBranchY, 0);
   leftBranch.rotation.set(0, 0, -leftBranchIncl);
-  treeGroup.add(leftBranch);
 
   // Create right branch
-  const rightBranch = new THREE.Mesh(GEOMETRY.treeRightBranch, MATERIAL.oakTree);
+  const rightBranch = createNamedMesh('treeRightBranch', treeGroup);
 
   const rightBranchIncl = Math.PI / 3; // 60 deg
 
@@ -297,58 +330,75 @@ function createOakTree(trunkHeight, position, rotation) {
     0
   );
 
-  treeGroup.add(rightBranch);
-
-  const leftLeaf = new THREE.Mesh(
-    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
-    MATERIAL.treeLeaf
-  );
+  const leftLeaf = createNamedMesh('treeLeaf', treeGroup);
   leftLeaf.position.set(
     leftBranchX * 2,
-    trunkHeight + leftBranchY * 2 + GEOMETRY.treeLeftLeaf.ry / 2,
+    trunkHeight + leftBranchY * 2 + SPHERE_SCALING.treeLeftLeaf.y / 2,
     0
   );
-  leftLeaf.scale.set(GEOMETRY.treeLeftLeaf.rx, GEOMETRY.treeLeftLeaf.ry, GEOMETRY.treeLeftLeaf.rz);
+  leftLeaf.scale.copy(SPHERE_SCALING.treeLeftLeaf);
 
-  treeGroup.add(leftLeaf);
-
-  const rightLeaf = new THREE.Mesh(
-    new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
-    MATERIAL.treeLeaf
-  );
+  const rightLeaf = createNamedMesh('treeLeaf', treeGroup);
   rightLeaf.position.set(
     (-GEOMETRY.treeRightBranch.parameters.height * 2) / 3,
-    trunkHeight + leftBranchY * 2 + GEOMETRY.treeLeftLeaf.ry / 2,
+    trunkHeight + leftBranchY * 2 + SPHERE_SCALING.treeLeftLeaf.y / 2,
     0
   );
-  rightLeaf.scale.set(
-    GEOMETRY.treeRightLeaf.rx,
-    GEOMETRY.treeRightLeaf.ry,
-    GEOMETRY.treeRightLeaf.rz
-  );
-
-  treeGroup.add(rightLeaf);
+  rightLeaf.scale.copy(SPHERE_SCALING.treeRightLeaf);
 }
 
-//////////////////////
-/* CHECK COLLISIONS */
-//////////////////////
-function checkCollisions() {}
+/**
+ * Creates a buffer geometry from a given set of parameters.
+ * @param {Object} p - an object containing the input parameters
+ * @param {{x: number, y: number, z: number, color: THREE.Color}[]} p.vertices - an array of vertices
+ * @param {number[][]} p.triangles - an array of triangles, given as an array of indices
+ * @param {number} p.scale - multiplier to be applied to all vertex coordinates (default: 1)
+ * @returns {THREE.BufferGeometry} - a THREE.BufferGeometry with the given attributes
+ *
+ * Note that triangle indices correspond to the indices of the vertices array.
+ * The returned geometry should be used with a mesh with vertexColors set to true.
+ */
+function createBufferGeometry({ vertices, triangles, scale = 1 }) {
+  const geometry = new THREE.BufferGeometry();
+  geometry.setIndex(triangles.flatMap((triangle) => triangle));
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(
+      vertices.flatMap((vertex) => [vertex.x, vertex.y, vertex.z]).map((coord) => coord * scale),
+      3
+    )
+  );
+  geometry.setAttribute(
+    'color',
+    new THREE.Float32BufferAttribute(
+      vertices.map((vertex) => vertex.color).flatMap((color) => [color.r, color.g, color.b]),
+      3
+    )
+  );
 
-///////////////////////
-/* HANDLE COLLISIONS */
-///////////////////////
-function handleCollisions() {}
+  return geometry;
+}
 
 ////////////
 /* UPDATE */
 ////////////
-function update() {}
+function update() {
+  if (activeMaterialChanged) {
+    activeMaterialChanged = false;
+    Object.values(NAMED_MESHES).forEach(
+      (mesh) => (mesh.material = mesh.userData.materials[activeMaterial])
+    );
+  }
+}
 
 /////////////
 /* DISPLAY */
 /////////////
 function render() {
+  renderer.setRenderTarget(skyTexture);
+  renderer.render(bufferScene, SKY_CAMERA);
+
+  renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
 }
 
@@ -362,14 +412,18 @@ function init() {
   renderer.setSize(window.innerWidth, window.innerHeight);
   document.body.appendChild(renderer.domElement);
 
+  createBufferScene();
   createScene();
   createCameras();
+
+  window.addEventListener('keydown', onKeyDown);
 }
 
 /////////////////////
 /* ANIMATION CYCLE */
 /////////////////////
 function animate() {
+  update();
   render();
   requestAnimationFrame(animate);
 }
@@ -389,9 +443,78 @@ function onResize() {
 ///////////////////////
 /* KEY DOWN CALLBACK */
 ///////////////////////
-function onKeyDown(e) {}
+const keyHandlers = {
+  KeyQ: changeMaterialHandlerFactory('gouraud'),
+  KeyW: changeMaterialHandlerFactory('phong'),
+  KeyE: changeMaterialHandlerFactory('cartoon'),
+  KeyR: changeMaterialHandlerFactory('basic'),
+};
+
+function onKeyDown(event) {
+  let { code } = event;
+
+  // Treat numpad digits like the number row
+  if (/^Numpad\d$/.test(code)) {
+    code = code.replace('Numpad', 'Digit');
+  }
+
+  keyHandlers[code]?.(event);
+}
+
+function changeMaterialHandlerFactory(material) {
+  return () => {
+    activeMaterial = material;
+    activeMaterialChanged = true;
+  };
+}
 
 ///////////////////////
 /* KEY UP CALLBACK */
 ///////////////////////
 function onKeyUp(e) {}
+
+///////////////
+/* UTILITIES */
+///////////////
+/**
+ * Create a THREE.Group on the given position and with the given scale.
+ *
+ * Automatically adds the created Group to the given parent.
+ */
+function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
+  const group = new THREE.Group();
+  group.position.set(x, y, z);
+  group.scale.set(...scale);
+
+  if (parent) {
+    parent.add(group);
+  } else {
+    scene.add(group);
+  }
+
+  return group;
+}
+
+/**
+ * Create a mesh using the parameters defined in GEOMETRY and MATERIAL_PARAMS,
+ * registering it in NAMED_MESHES to allow dynamic behavior such as material switching.
+ *
+ * This should not be used for buffer scene elements, as they are not dynamic.
+ * @param {string} name - the mesh's name, per GEOMETRY and MATERIAL_PARAMS
+ * @param {THREE.Object3D} parent - the parent to which the props will be added
+ * @returns {THREE.Mesh} - the newly created mesh
+ */
+function createNamedMesh(name, parent) {
+  const params = MATERIAL_PARAMS[name]();
+  const materials = {
+    basic: new THREE.MeshBasicMaterial({ ...params }),
+    gouraud: new THREE.MeshLambertMaterial({ ...params }),
+    phong: new THREE.MeshPhongMaterial({ ...params }),
+    cartoon: new THREE.MeshToonMaterial({ ...params }),
+  };
+  const mesh = new THREE.Mesh(GEOMETRY[name], materials[activeMaterial]);
+  Object.assign(mesh.userData, { name, materials });
+  NAMED_MESHES[name] = mesh;
+  parent.add(mesh);
+  return mesh;
+}
