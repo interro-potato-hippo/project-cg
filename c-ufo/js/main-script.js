@@ -28,8 +28,8 @@ const MATERIAL_PARAMS = {
   moon: () => ({ color: COLORS.moonYellow, emissive: COLORS.moonYellow }),
 
   treeTrunk: () => ({ color: COLORS.brown }),
-  treeLeftBranch: () => ({ color: COLORS.brown }),
-  treeRightBranch: () => ({ color: COLORS.brown }),
+  treePrimaryBranch: () => ({ color: COLORS.brown }),
+  treeSecondaryBranch: () => ({ color: COLORS.brown }),
   treeLeaf: () => ({ color: COLORS.darkGreen }),
 
   ufoBody: () => ({ color: COLORS.imperialRed }),
@@ -70,12 +70,12 @@ const GEOMETRY = {
     Math.PI / 2
   ),
   terrain: new THREE.CircleGeometry(DOME_RADIUS, 128),
-  moon: new THREE.SphereGeometry(5, 32, 32),
+  moon: new THREE.SphereGeometry(5, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
   // height is scaled per instance of oak tree
   treeTrunk: new THREE.CylinderGeometry(0.5, 0.5, 1, CYLINDER_SEGMENTS),
-  treeLeftBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
-  treeRightBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
+  treePrimaryBranch: new THREE.CylinderGeometry(0.5, 0.5, 4, CYLINDER_SEGMENTS),
+  treeSecondaryBranch: new THREE.CylinderGeometry(0.4, 0.4, 4, CYLINDER_SEGMENTS),
   treeLeaf: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
 
   ufoBody: new THREE.SphereGeometry(1, SPHERE_SEGMENTS, SPHERE_SEGMENTS),
@@ -90,8 +90,8 @@ const GEOMETRY = {
 };
 const UFO_SPHERE_COUNT = 8;
 const SPHERE_SCALING = {
-  treeLeftLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
-  treeRightLeaf: new THREE.Vector3(3, 1.375, 2.5),
+  treePrimaryBranchLeaf: new THREE.Vector3(2.3, 1.1, 1.5),
+  treeSecondaryBranchLeaf: new THREE.Vector3(3, 1.375, 2.5),
 
   ufoBody: new THREE.Vector3(3.5, 1, 3.5),
   ufoCockpit: new THREE.Vector3(1.5, 1.5, 1.5),
@@ -578,51 +578,54 @@ function createOakTree(trunkHeight, position, rotation) {
   oakTrunk.scale.setY(trunkHeight);
   oakTrunk.position.setY(trunkHeight / 2); // Cylinder is centered by default
 
-  // Create left branch
-  const leftBranch = createNamedMesh('treeLeftBranch', treeGroup);
+  // Create primary branch
+  const primaryBranch = createNamedMesh('treePrimaryBranch', treeGroup);
 
-  const leftBranchIncl = Math.PI / 6; // 30 deg
-  const leftBranchX =
-    Math.cos(Math.PI / 2 - leftBranchIncl) *
-      (GEOMETRY.treeLeftBranch.parameters.height / 2 +
-        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(leftBranchIncl)) -
+  const primaryBranchIncl = Math.PI / 6; // 30 deg
+  // Calculate position to perfectly align the base of the branch with the trunk
+  const primaryBranchX =
+    Math.sin(primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom / Math.tan(primaryBranchIncl)) -
     GEOMETRY.treeTrunk.parameters.radiusTop;
-  const leftBranchY =
-    Math.cos(leftBranchIncl) *
-      (GEOMETRY.treeLeftBranch.parameters.height / 2 +
-        GEOMETRY.treeLeftBranch.parameters.radiusBottom / Math.tan(Math.PI / 2 - leftBranchIncl)) -
+  const primaryBranchY =
+    Math.cos(primaryBranchIncl) *
+      (GEOMETRY.treePrimaryBranch.parameters.height / 2 +
+        GEOMETRY.treePrimaryBranch.parameters.radiusBottom * Math.tan(primaryBranchIncl)) -
     GEOMETRY.treeTrunk.parameters.radiusTop;
 
-  leftBranch.position.set(leftBranchX, trunkHeight + leftBranchY, 0);
-  leftBranch.rotation.set(0, 0, -leftBranchIncl);
+  primaryBranch.position.set(primaryBranchX, trunkHeight + primaryBranchY, 0);
+  primaryBranch.rotation.setZ(-primaryBranchIncl);
 
-  // Create right branch
-  const rightBranch = createNamedMesh('treeRightBranch', treeGroup);
+  // Create secondary branch
+  const secondaryBranch = createNamedMesh('treeSecondaryBranch', treeGroup);
 
-  const rightBranchIncl = Math.PI / 3; // 60 deg
-
-  rightBranch.rotation.set(0, 0, rightBranchIncl);
-  rightBranch.position.set(
-    -GEOMETRY.treeRightBranch.parameters.height / 4,
-    trunkHeight + GEOMETRY.treeRightBranch.parameters.height / 2,
+  const secondaryBranchIncl = Math.PI / 3; // 60 deg
+  // Position secondary branch in a way that its base is inside the primary branch
+  secondaryBranch.position.set(
+    -GEOMETRY.treeSecondaryBranch.parameters.height / 4,
+    trunkHeight + GEOMETRY.treeSecondaryBranch.parameters.height / 2,
     0
   );
+  secondaryBranch.rotation.setZ(secondaryBranchIncl);
 
-  const leftLeaf = createNamedMesh('treeLeaf', treeGroup);
-  leftLeaf.position.set(
-    leftBranchX * 2,
-    trunkHeight + leftBranchY * 2 + SPHERE_SCALING.treeLeftLeaf.y / 2,
+  // Position leaf above top of primary branch
+  const primaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  primaryBranchLeaf.position.set(
+    primaryBranchX * 2,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  leftLeaf.scale.copy(SPHERE_SCALING.treeLeftLeaf);
+  primaryBranchLeaf.scale.copy(SPHERE_SCALING.treePrimaryBranchLeaf);
 
-  const rightLeaf = createNamedMesh('treeLeaf', treeGroup);
-  rightLeaf.position.set(
-    (-GEOMETRY.treeRightBranch.parameters.height * 2) / 3,
-    trunkHeight + leftBranchY * 2 + SPHERE_SCALING.treeLeftLeaf.y / 2,
+  // Position leaf above top of secondary branch
+  const secondaryBranchLeaf = createNamedMesh('treeLeaf', treeGroup);
+  secondaryBranchLeaf.position.set(
+    (-GEOMETRY.treeSecondaryBranch.parameters.height * 2) / 3,
+    trunkHeight + primaryBranchY * 2 + SPHERE_SCALING.treePrimaryBranchLeaf.y / 2,
     0
   );
-  rightLeaf.scale.copy(SPHERE_SCALING.treeRightLeaf);
+  secondaryBranchLeaf.scale.copy(SPHERE_SCALING.treeSecondaryBranchLeaf);
 }
 
 function createUfo(initialPosition) {
