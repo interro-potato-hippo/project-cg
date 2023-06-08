@@ -546,9 +546,7 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
 function update() {
   if (activeMaterialChanged) {
     activeMaterialChanged = false;
-    NAMED_MESHES.forEach(
-      (mesh) => (mesh.material = mesh.userData.materials[activeMaterial])
-    );
+    NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
 }
 
