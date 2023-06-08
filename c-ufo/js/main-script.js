@@ -51,7 +51,7 @@ const LIGHT_INTENSITY = Object.freeze({
   directional: 1,
   ufoSpotlight: 2,
 });
-const UFO_SPOTLIGHT_ANGLE = Math.PI / 3;
+const UFO_SPOTLIGHT_ANGLE = Math.PI / 6;
 const UFO_SPOTLIGHT_PENUMBRA = 0.3;
 
 const DOME_RADIUS = 64;
