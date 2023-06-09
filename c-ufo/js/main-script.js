@@ -1007,8 +1007,8 @@ const keyHandlers = {
   ArrowRight: moveUfoHandlerFactory('positiveZ'),
 
   // texture generation
-  Digit1: keyActionFactory(() => (generateNewStars = true)),
-  Digit2: keyActionFactory(() => (generateNewFlowers = true)),
+  Digit1: keyActionFactory(() => (generateNewFlowers = true)),
+  Digit2: keyActionFactory(() => (generateNewStars = true)),
 
   // EXTRA: toggle orbital camera
   KeyO: keyActionFactory(() => (toggleActiveCamera = true)),
