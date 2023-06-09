@@ -1001,10 +1001,10 @@ const keyHandlers = {
   ),
 
   // ufo movement
-  ArrowUp: moveUfoHandlerFactory('positiveX'),
-  ArrowDown: moveUfoHandlerFactory('negativeX'),
-  ArrowLeft: moveUfoHandlerFactory('negativeZ'),
-  ArrowRight: moveUfoHandlerFactory('positiveZ'),
+  ArrowUp: moveUfoHandlerFactory('positiveZ'),
+  ArrowDown: moveUfoHandlerFactory('negativeZ'),
+  ArrowLeft: moveUfoHandlerFactory('positiveX'),
+  ArrowRight: moveUfoHandlerFactory('negativeX'),
 
   // texture generation
   Digit1: keyActionFactory(() => (generateNewFlowers = true)),
