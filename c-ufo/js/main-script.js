@@ -49,10 +49,10 @@ const MATERIAL_PARAMS = {
   ufoSphere: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
 
   // TODO: remove double side from these
-  houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
-  houseRoof: () => ({ vertexColors: true, side: THREE.DoubleSide }),
-  houseWindows: () => ({ vertexColors: true, side: THREE.DoubleSide }),
-  houseDoor: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseWalls: () => ({ vertexColors: true }),
+  houseRoof: () => ({ vertexColors: true }),
+  houseWindows: () => ({ vertexColors: true }),
+  houseDoor: () => ({ vertexColors: true }),
 };
 
 const LIGHT_INTENSITY = Object.freeze({
@@ -144,10 +144,10 @@ const SKY_CAMERA = createOrthographicCamera({
   atY: 10,
 });
 const FIELD_CAMERA = createOrthographicCamera({
-  left: -TEXTURE_SIZES.sky / 2,
-  right: TEXTURE_SIZES.sky / 2,
-  top: TEXTURE_SIZES.sky / 2,
-  bottom: -TEXTURE_SIZES.sky / 2,
+  left: -TEXTURE_SIZES.field / 2,
+  right: TEXTURE_SIZES.field / 2,
+  top: TEXTURE_SIZES.field / 2,
+  bottom: -TEXTURE_SIZES.field / 2,
   near: 1,
   far: 15,
   y: 5,
@@ -174,11 +174,8 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
-let generateNewStars = false;
-let generateNewFlowers = false;
-let toggleDirectionalLight = false;
-let toggleUfoSpotlight = false;
-let toggleUfoSphereLights = false;
+let generateNewStars = true;
+let generateNewFlowers = true;
 const ufoMovementFlags = {};
 let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
@@ -593,8 +590,8 @@ function createHouseRoofGeometry() {
       [0, 5, 4],
 
       // most deep (closest to z = -5.5) roof side
-      [1, 3, 5],
-      [1, 5, 4],
+      [3, 1, 4],
+      [3, 4, 5],
 
       // sides
       [1, 0, 4],
@@ -842,12 +839,10 @@ function update(timeDelta) {
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
   if (generateNewStars) {
-    generateNewStars = false;
     stars.clear();
     generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
   }
   if (generateNewFlowers) {
-    generateNewFlowers = false;
     flowers.clear();
     generateProps(flowers, PROP_AMOUNTS.flowers, TEXTURE_SIZES.field, { x: 1, y: 0, z: 1 }, [
       COLORS.white,
@@ -855,20 +850,6 @@ function update(timeDelta) {
       COLORS.lilac,
       COLORS.lightBlue,
     ]);
-  }
-  if (toggleDirectionalLight) {
-    toggleDirectionalLight = false;
-    directionalLight.intensity = directionalLight.intensity === 0 ? LIGHT_INTENSITY.directional : 0;
-  }
-  if (toggleUfoSpotlight) {
-    toggleUfoSpotlight = false;
-    ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
-  }
-  if (toggleUfoSphereLights) {
-    toggleUfoSphereLights = false;
-    UFO_SPHERE_LIGHTS.forEach((light) => {
-      light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphere : 0;
-    });
   }
   if (updateProjectionMatrix) {
     updateProjectionMatrix = false;
@@ -896,11 +877,17 @@ function update(timeDelta) {
 /* DISPLAY */
 /////////////
 function render() {
-  renderer.setRenderTarget(skyTexture);
-  renderer.render(bufferScene, SKY_CAMERA);
+  if (generateNewStars) {
+    renderer.setRenderTarget(skyTexture);
+    renderer.render(bufferScene, SKY_CAMERA);
+    generateNewStars = false;
+  }
 
-  renderer.setRenderTarget(fieldTexture);
-  renderer.render(bufferScene, FIELD_CAMERA);
+  if (generateNewFlowers) {
+    renderer.setRenderTarget(fieldTexture);
+    renderer.render(bufferScene, FIELD_CAMERA);
+    generateNewFlowers = false;
+  }
 
   renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
@@ -961,11 +948,13 @@ const keyHandlers = {
   KeyR: changeMaterialHandlerFactory('basic'),
 
   // toggle directional light
-  KeyD: keyActionFactory(() => (toggleDirectionalLight = true)),
+  KeyD: keyActionFactory(() => (directionalLight.visible = !directionalLight.visible)),
 
   // toggle UFO lights
-  KeyS: keyActionFactory(() => (toggleUfoSpotlight = true)),
-  KeyP: keyActionFactory(() => (toggleUfoSphereLights = true)),
+  KeyS: keyActionFactory(() => (ufoSpotlight.visible = !ufoSpotlight.visible)),
+  KeyP: keyActionFactory(() =>
+    UFO_SPHERE_LIGHTS.forEach((light) => (light.visible = !light.visible))
+  ),
 
   // ufo movement
   ArrowUp: moveUfoHandlerFactory('positiveX'),
