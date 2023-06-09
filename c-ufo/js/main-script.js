@@ -69,7 +69,7 @@ const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADD
 const MOON_POSITION_COORD = Math.sqrt((DOME_RADIUS - MOON_DOME_PADDING) ** 2 / 2);
 const MOON_POSITION = new THREE.Vector3(MOON_POSITION_COORD, MOON_POSITION_COORD, 0);
 const PROP_RADIUS = 0.05;
-const PROP_POSITION_PADDING = PROP_RADIUS * 4; // padding between props and terrain border
+const PROP_POSITION_PADDING = PROP_RADIUS * 4; // padding between props and texture border
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
