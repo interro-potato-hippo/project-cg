@@ -178,7 +178,7 @@ let generateNewFlowers = false;
 let toggleDirectionalLight = false;
 let toggleUfoSpotlight = false;
 let toggleUfoSphereLights = false;
-let ufoMovementFlags = {};
+const ufoMovementFlags = {};
 let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
 let flowers, stars, directionalLight, ufoSpotlight, ufo;
