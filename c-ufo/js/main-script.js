@@ -144,10 +144,10 @@ const SKY_CAMERA = createOrthographicCamera({
   atY: 10,
 });
 const FIELD_CAMERA = createOrthographicCamera({
-  left: -TEXTURE_SIZES.sky / 2,
-  right: TEXTURE_SIZES.sky / 2,
-  top: TEXTURE_SIZES.sky / 2,
-  bottom: -TEXTURE_SIZES.sky / 2,
+  left: -TEXTURE_SIZES.field / 2,
+  right: TEXTURE_SIZES.field / 2,
+  top: TEXTURE_SIZES.field / 2,
+  bottom: -TEXTURE_SIZES.field / 2,
   near: 1,
   far: 15,
   y: 5,
