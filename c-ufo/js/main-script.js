@@ -137,9 +137,9 @@ const FIXED_CAMERA = createPerspectiveCamera({
   fov: 80,
   near: 1,
   far: 1000,
-  x: -40,
+  x: -32,
   y: 40,
-  z: -40,
+  z: -50,
 });
 const SKY_CAMERA = createOrthographicCamera({
   left: -TEXTURE_SIZES.sky / 2,
@@ -454,7 +454,8 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
 }
 
 function createHouse() {
-  const house = createGroup({ x: -10, y: 2.1, z: 15, parent: scene });
+  const house = createGroup({ x: 10, y: 2.1, z: 9.5, parent: scene });
+  house.rotateY(Math.PI);
   createNamedMesh('houseWalls', house);
   createNamedMesh('houseRoof', house);
   createNamedMesh('houseWindows', house);
