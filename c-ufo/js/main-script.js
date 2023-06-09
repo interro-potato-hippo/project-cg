@@ -202,7 +202,6 @@ function createScene() {
   // Move all objects downwards so that (0, 0, 0) is above
   // ground for VR
   rootGroup = createGroup({ y: -5, parent: scene });
-  rootGroup.add(new THREE.AxesHelper(20));
 
   createLights();
   createTerrain();
