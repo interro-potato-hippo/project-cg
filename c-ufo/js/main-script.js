@@ -161,6 +161,7 @@ const CLOCK = new THREE.Clock();
 /* GLOBAL VARIABLES */
 //////////////////////
 let renderer, scene, bufferScene, skyTexture, fieldTexture, terrainHeightMap;
+let rootGroup;
 let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
@@ -179,7 +180,8 @@ let flowers, stars, directionalLight, ufoSpotlight, ufo;
 /////////////////////
 function createScene() {
   scene = new THREE.Scene();
-  scene.add(new THREE.AxesHelper(20));
+  rootGroup = createGroup({y: -5, parent: scene});
+  rootGroup.add(new THREE.AxesHelper(20));
 
   createLights();
   createTerrain();
@@ -271,11 +273,11 @@ function refreshCameraParameters() {
 /////////////////////
 function createLights() {
   const ambientLight = new THREE.AmbientLight(COLORS.moonYellow, LIGHT_INTENSITY.ambient);
-  scene.add(ambientLight);
+  rootGroup.add(ambientLight);
 
   directionalLight = new THREE.DirectionalLight(COLORS.moonYellow, LIGHT_INTENSITY.directional);
   directionalLight.position.copy(MOON_POSITION);
-  scene.add(directionalLight);
+  rootGroup.add(directionalLight);
 }
 
 ////////////////////////
@@ -286,11 +288,11 @@ function createTerrain() {
   const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.terrain() });
   const plane = new THREE.Mesh(GEOMETRY.terrain, material);
   plane.rotateX(-Math.PI / 2); // we rotate it so that it is in the xOz plane
-  scene.add(plane);
+  rootGroup.add(plane);
 }
 
 function createMoon() {
-  const moon = createNamedMesh('moon', scene);
+  const moon = createNamedMesh('moon', rootGroup);
   moon.position.copy(MOON_POSITION);
 }
 
@@ -298,7 +300,7 @@ function createSkyDome() {
   // the sky dome doesn't need to be a named mesh, as it won't be dynamically changed
   const material = new THREE.MeshPhongMaterial({ ...MATERIAL_PARAMS.skyDome() });
   const plane = new THREE.Mesh(GEOMETRY.skyDome, material);
-  scene.add(plane);
+  rootGroup.add(plane);
 }
 
 function createBufferSky() {
@@ -443,7 +445,7 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
 }
 
 function createHouse() {
-  const house = createGroup({ x: -10, y: 2.1, z: 15, parent: scene });
+  const house = createGroup({ x: -10, y: 2.1, z: 15, parent: rootGroup });
   createNamedMesh('houseWalls', house);
   createNamedMesh('houseRoof', house);
   createNamedMesh('houseWindows', house);
@@ -669,7 +671,7 @@ function createOakTree(trunkHeight, position, rotation) {
   const treeGroup = new THREE.Group();
   treeGroup.position.copy(position);
   treeGroup.rotation.copy(rotation);
-  scene.add(treeGroup);
+  rootGroup.add(treeGroup);
 
   // Create trunk
   const oakTrunk = createNamedMesh('treeTrunk', treeGroup);
@@ -729,7 +731,7 @@ function createOakTree(trunkHeight, position, rotation) {
 function createUfo(initialPosition) {
   ufo = new THREE.Group();
   ufo.position.copy(initialPosition);
-  scene.add(ufo);
+  rootGroup.add(ufo);
 
   const body = createNamedMesh('ufoBody', ufo);
   body.scale.copy(ELLIPSOID_SCALING.ufoBody);
@@ -984,7 +986,7 @@ function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   if (parent) {
     parent.add(group);
   } else {
-    scene.add(group);
+    rootGroup.add(group);
   }
 
   return group;
