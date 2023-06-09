@@ -180,7 +180,7 @@ let flowers, stars, directionalLight, ufoSpotlight, ufo;
 /////////////////////
 function createScene() {
   scene = new THREE.Scene();
-  rootGroup = createGroup({y: -5, parent: scene});
+  rootGroup = createGroup({ y: -5, parent: scene });
   rootGroup.add(new THREE.AxesHelper(20));
 
   createLights();
