@@ -175,9 +175,6 @@ let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let generateNewStars = false;
 let generateNewFlowers = false;
-let toggleDirectionalLight = false;
-let toggleUfoSpotlight = false;
-let toggleUfoSphereLights = false;
 const ufoMovementFlags = {};
 let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
@@ -854,20 +851,6 @@ function update(timeDelta) {
       COLORS.lightBlue,
     ]);
   }
-  if (toggleDirectionalLight) {
-    toggleDirectionalLight = false;
-    directionalLight.intensity = directionalLight.intensity === 0 ? LIGHT_INTENSITY.directional : 0;
-  }
-  if (toggleUfoSpotlight) {
-    toggleUfoSpotlight = false;
-    ufoSpotlight.intensity = ufoSpotlight.intensity === 0 ? LIGHT_INTENSITY.ufoSpotlight : 0;
-  }
-  if (toggleUfoSphereLights) {
-    toggleUfoSphereLights = false;
-    UFO_SPHERE_LIGHTS.forEach((light) => {
-      light.intensity = light.intensity === 0 ? LIGHT_INTENSITY.ufoSphere : 0;
-    });
-  }
   if (updateProjectionMatrix) {
     updateProjectionMatrix = false;
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -955,11 +938,13 @@ const keyHandlers = {
   KeyR: changeMaterialHandlerFactory('basic'),
 
   // toggle directional light
-  KeyD: keyActionFactory(() => (toggleDirectionalLight = true)),
+  KeyD: keyActionFactory(() => (directionalLight.visible = !directionalLight.visible)),
 
   // toggle UFO lights
-  KeyS: keyActionFactory(() => (toggleUfoSpotlight = true)),
-  KeyP: keyActionFactory(() => (toggleUfoSphereLights = true)),
+  KeyS: keyActionFactory(() => (ufoSpotlight.visible = !ufoSpotlight.visible)),
+  KeyP: keyActionFactory(() =>
+    UFO_SPHERE_LIGHTS.forEach((light) => (light.visible = !light.visible))
+  ),
 
   // ufo movement
   ArrowUp: moveUfoHandlerFactory('positiveX'),
