@@ -24,7 +24,7 @@ const COLORS = Object.freeze({
 // must be functions because they depend on textures initialized later
 const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
-  field: () => ({ vertexColors: true }),
+  field: () => ({ color: COLORS.darkGreen }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({
@@ -354,20 +354,10 @@ function createBufferField() {
     parent: bufferScene,
   });
 
-  const geometry = createBufferGeometry({
-    vertices: [
-      { x: 0, y: 0, z: 0, color: COLORS.darkGreen },
-      { x: 0, y: 0, z: 1, color: COLORS.darkGreen },
-      { x: 1, y: 0, z: 1, color: COLORS.darkGreen },
-      { x: 1, y: 0, z: 0, color: COLORS.darkGreen },
-    ],
-    triangles: [
-      [0, 1, 2],
-      [0, 2, 3],
-    ],
-    scale: TEXTURE_SIZES.field,
-  });
+  const geometry = new THREE.PlaneGeometry(TEXTURE_SIZES.field, TEXTURE_SIZES.field);
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
+  mesh.rotation.set(-Math.PI / 2, 0, 0);
+  mesh.position.set(TEXTURE_SIZES.field / 2, 0, TEXTURE_SIZES.field / 2);
   field.add(mesh);
 
   flowers = createGroup({ y: 1, parent: field });
