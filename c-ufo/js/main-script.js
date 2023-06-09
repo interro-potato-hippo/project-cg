@@ -942,7 +942,9 @@ const keyHandlers = {
 
   // toggle UFO lights
   KeyS: keyActionFactory(() => (ufoSpotlight.visible = !ufoSpotlight.visible)),
-  KeyP: keyActionFactory(() => (UFO_SPHERE_LIGHTS.forEach(light => light.visible = !light.visible))),
+  KeyP: keyActionFactory(() =>
+    UFO_SPHERE_LIGHTS.forEach((light) => (light.visible = !light.visible))
+  ),
 
   // ufo movement
   ArrowUp: moveUfoHandlerFactory('positiveX'),
