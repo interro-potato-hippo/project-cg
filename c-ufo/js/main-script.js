@@ -472,71 +472,71 @@ function createHouse() {
 
 function createHouseWallsGeometry() {
   return createBufferGeometry({
+    defaultVertexColor: COLORS.white,
     vertices: [
-      // TODO: maybe don't use vertex colors?
       // front wall
-      { x: 0, y: 0, z: 0, color: COLORS.white }, // v0
-      { x: 1, y: 2.5, z: 0, color: COLORS.white }, // v1
-      { x: 0, y: 2.5, z: 0, color: COLORS.white }, // v2
-      { x: 1, y: 0, z: 0, color: COLORS.white }, // v3
-      { x: 2.5, y: 0, z: 0, color: COLORS.white }, // v4
-      { x: 2.5, y: 1, z: 0, color: COLORS.white }, // v5
-      { x: 1, y: 1, z: 0, color: COLORS.white }, // v6
-      { x: 4.5, y: 0, z: 0, color: COLORS.white }, // v7
-      { x: 4.5, y: 2.5, z: 0, color: COLORS.white }, // v8
-      { x: 2.5, y: 2.5, z: 0, color: COLORS.white }, // v9
-      { x: 6, y: 0, z: 0, color: COLORS.white }, // v10
-      { x: 6, y: 1, z: 0, color: COLORS.white }, // v11
-      { x: 4.5, y: 1, z: 0, color: COLORS.white }, // v12
-      { x: 8, y: 0, z: 0, color: COLORS.white }, // v13
-      { x: 8, y: 2.5, z: 0, color: COLORS.white }, // v14
-      { x: 6, y: 2.5, z: 0, color: COLORS.white }, // v15
-      { x: 9.25, y: 0, z: 0, color: COLORS.white }, // v16
-      { x: 9.25, y: 2.5, z: 0, color: COLORS.white }, // v17
-      { x: 11.5, y: 0, z: 0, color: COLORS.white }, // v18
-      { x: 11.5, y: 2.5, z: 0, color: COLORS.white }, // v19
-      { x: 13, y: 0, z: 0, color: COLORS.white }, // v20
-      { x: 13, y: 1, z: 0, color: COLORS.white }, // v21
-      { x: 11.5, y: 1, z: 0, color: COLORS.white }, // v22
-      { x: 17, y: 0, z: 0, color: COLORS.white }, // v23
-      { x: 17, y: 2.5, z: 0, color: COLORS.white }, // v24
-      { x: 13, y: 2.5, z: 0, color: COLORS.white }, // v25
-      { x: 18.5, y: 0, z: 0, color: COLORS.white }, // v26
-      { x: 18.5, y: 1, z: 0, color: COLORS.white }, // v27
-      { x: 17, y: 1, z: 0, color: COLORS.white }, // v28
-      { x: 20, y: 0, z: 0, color: COLORS.white }, // v29
-      { x: 20, y: 2.5, z: 0, color: COLORS.white }, // v30
-      { x: 18.5, y: 2.5, z: 0, color: COLORS.white }, // v31
-      { x: 8, y: 4, z: 0, color: COLORS.white }, // v32
-      { x: 0, y: 4, z: 0, color: COLORS.white }, // v33
-      { x: 13, y: 4, z: 0, color: COLORS.white }, // v34
-      { x: 20, y: 4, z: 0, color: COLORS.white }, // v35
+      { x: 0, y: 0, z: 0 }, // v0
+      { x: 1, y: 2.5, z: 0 }, // v1
+      { x: 0, y: 2.5, z: 0 }, // v2
+      { x: 1, y: 0, z: 0 }, // v3
+      { x: 2.5, y: 0, z: 0 }, // v4
+      { x: 2.5, y: 1, z: 0 }, // v5
+      { x: 1, y: 1, z: 0 }, // v6
+      { x: 4.5, y: 0, z: 0 }, // v7
+      { x: 4.5, y: 2.5, z: 0 }, // v8
+      { x: 2.5, y: 2.5, z: 0 }, // v9
+      { x: 6, y: 0, z: 0 }, // v10
+      { x: 6, y: 1, z: 0 }, // v11
+      { x: 4.5, y: 1, z: 0 }, // v12
+      { x: 8, y: 0, z: 0 }, // v13
+      { x: 8, y: 2.5, z: 0 }, // v14
+      { x: 6, y: 2.5, z: 0 }, // v15
+      { x: 9.25, y: 0, z: 0 }, // v16
+      { x: 9.25, y: 2.5, z: 0 }, // v17
+      { x: 11.5, y: 0, z: 0 }, // v18
+      { x: 11.5, y: 2.5, z: 0 }, // v19
+      { x: 13, y: 0, z: 0 }, // v20
+      { x: 13, y: 1, z: 0 }, // v21
+      { x: 11.5, y: 1, z: 0 }, // v22
+      { x: 17, y: 0, z: 0 }, // v23
+      { x: 17, y: 2.5, z: 0 }, // v24
+      { x: 13, y: 2.5, z: 0 }, // v25
+      { x: 18.5, y: 0, z: 0 }, // v26
+      { x: 18.5, y: 1, z: 0 }, // v27
+      { x: 17, y: 1, z: 0 }, // v28
+      { x: 20, y: 0, z: 0 }, // v29
+      { x: 20, y: 2.5, z: 0 }, // v30
+      { x: 18.5, y: 2.5, z: 0 }, // v31
+      { x: 8, y: 4, z: 0 }, // v32
+      { x: 0, y: 4, z: 0 }, // v33
+      { x: 13, y: 4, z: 0 }, // v34
+      { x: 20, y: 4, z: 0 }, // v35
 
       // right wall (for a definition of right... - the one with the window)
-      { x: 20, y: 0, z: -3.5, color: COLORS.white }, // v36
-      { x: 20, y: 2.5, z: -3.5, color: COLORS.white }, // v37
-      { x: 20, y: 0, z: -5, color: COLORS.white }, // v38
-      { x: 20, y: 1, z: -5, color: COLORS.white }, // v39
-      { x: 20, y: 1, z: -3.5, color: COLORS.white }, // v40
-      { x: 20, y: 0, z: -5.5, color: COLORS.white }, // v41
-      { x: 20, y: 2.5, z: -5.5, color: COLORS.white }, // v42
-      { x: 20, y: 2.5, z: -5, color: COLORS.white }, // v43
-      { x: 20, y: 4, z: -5.5, color: COLORS.white }, // v44
+      { x: 20, y: 0, z: -3.5 }, // v36
+      { x: 20, y: 2.5, z: -3.5 }, // v37
+      { x: 20, y: 0, z: -5 }, // v38
+      { x: 20, y: 1, z: -5 }, // v39
+      { x: 20, y: 1, z: -3.5 }, // v40
+      { x: 20, y: 0, z: -5.5 }, // v41
+      { x: 20, y: 2.5, z: -5.5 }, // v42
+      { x: 20, y: 2.5, z: -5 }, // v43
+      { x: 20, y: 4, z: -5.5 }, // v44
 
       // left wall
-      { x: 0, y: 0, z: -5.5, color: COLORS.white }, // v45
-      { x: 0, y: 4, z: -5.5, color: COLORS.white }, // v46
+      { x: 0, y: 0, z: -5.5 }, // v45
+      { x: 0, y: 4, z: -5.5 }, // v46
 
       // repeated vertices -- avoids shading issues
-      { x: 0, y: 0, z: 0, color: COLORS.white }, // v47 - equiv v0, but for left wall
-      { x: 20, y: 0, z: 0, color: COLORS.white }, // v48 - equiv v29, but for right wall
-      { x: 20, y: 2.5, z: 0, color: COLORS.white }, // v49 - equiv v30, but for right wall
-      { x: 0, y: 4, z: 0, color: COLORS.white }, // v50 - equiv v33, but for left wall
-      { x: 20, y: 4, z: 0, color: COLORS.white }, // v51 - equiv v35, but for right wall
-      { x: 20, y: 0, z: -5.5, color: COLORS.white }, // v52 - equiv v41, but for back wall
-      { x: 20, y: 4, z: -5.5, color: COLORS.white }, // v53 - equiv v44, but for back wall
-      { x: 0, y: 0, z: -5.5, color: COLORS.white }, // v54 - equiv v45, but for back wall
-      { x: 0, y: 4, z: -5.5, color: COLORS.white }, // v55 - equiv v46, but for back wall
+      { x: 0, y: 0, z: 0 }, // v47 - equiv v0, but for left wall
+      { x: 20, y: 0, z: 0 }, // v48 - equiv v29, but for right wall
+      { x: 20, y: 2.5, z: 0 }, // v49 - equiv v30, but for right wall
+      { x: 0, y: 4, z: 0 }, // v50 - equiv v33, but for left wall
+      { x: 20, y: 4, z: 0 }, // v51 - equiv v35, but for right wall
+      { x: 20, y: 0, z: -5.5 }, // v52 - equiv v41, but for back wall
+      { x: 20, y: 4, z: -5.5 }, // v53 - equiv v44, but for back wall
+      { x: 0, y: 0, z: -5.5 }, // v54 - equiv v45, but for back wall
+      { x: 0, y: 4, z: -5.5 }, // v55 - equiv v46, but for back wall
     ],
     triangles: [
       // front wall
@@ -590,26 +590,27 @@ function createHouseWallsGeometry() {
 
 function createHouseRoofGeometry() {
   return createBufferGeometry({
+    defaultVertexColor: COLORS.orange,
     vertices: [
       // base of the roof
-      { x: 0, y: 4, z: 0, color: COLORS.orange }, // v0
-      { x: 0, y: 4, z: -5.5, color: COLORS.orange }, // v1
-      { x: 20, y: 4, z: 0, color: COLORS.orange }, // v2
-      { x: 20, y: 4, z: -5.5, color: COLORS.orange }, // v3
+      { x: 0, y: 4, z: 0 }, // v0
+      { x: 0, y: 4, z: -5.5 }, // v1
+      { x: 20, y: 4, z: 0 }, // v2
+      { x: 20, y: 4, z: -5.5 }, // v3
 
       // top of the roof
-      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v4
-      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v5
+      { x: 0, y: 6, z: -2.75 }, // v4
+      { x: 20, y: 6, z: -2.75 }, // v5
 
       // repeated vertices -- avoids shading issues
-      { x: 0, y: 4, z: 0, color: COLORS.orange }, // v6 - equiv v0, but for sides
-      { x: 0, y: 4, z: -5.5, color: COLORS.orange }, // v7 - equiv v1, but for sides
-      { x: 20, y: 4, z: 0, color: COLORS.orange }, // v8 - equiv v2, but for sides
-      { x: 20, y: 4, z: -5.5, color: COLORS.orange }, // v9 - equiv v3, but for sides
-      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v10 - equiv v4, but for most deep
-      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v11 - equiv v4, but for sides
-      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v12 - equiv v5, but for most deep
-      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v13 - equiv v5, but for sides
+      { x: 0, y: 4, z: 0 }, // v6 - equiv v0, but for sides
+      { x: 0, y: 4, z: -5.5 }, // v7 - equiv v1, but for sides
+      { x: 20, y: 4, z: 0 }, // v8 - equiv v2, but for sides
+      { x: 20, y: 4, z: -5.5 }, // v9 - equiv v3, but for sides
+      { x: 0, y: 6, z: -2.75 }, // v10 - equiv v4, but for most deep
+      { x: 0, y: 6, z: -2.75 }, // v11 - equiv v4, but for sides
+      { x: 20, y: 6, z: -2.75 }, // v12 - equiv v5, but for most deep
+      { x: 20, y: 6, z: -2.75 }, // v13 - equiv v5, but for sides
     ],
     triangles: [
       // least deep (closest to z = 0) roof side
@@ -629,36 +630,37 @@ function createHouseRoofGeometry() {
 
 function createHouseWindowsGeometry() {
   return createBufferGeometry({
+    defaultVertexColor: COLORS.lightBlue,
     vertices: [
       // leftmost window (as seen from the front)
-      { x: 1, y: 1, z: 0, color: COLORS.lightBlue }, // v0
-      { x: 2.5, y: 1, z: 0, color: COLORS.lightBlue }, // v1
-      { x: 2.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v2
-      { x: 1, y: 2.5, z: 0, color: COLORS.lightBlue }, // v3
+      { x: 1, y: 1, z: 0 }, // v0
+      { x: 2.5, y: 1, z: 0 }, // v1
+      { x: 2.5, y: 2.5, z: 0 }, // v2
+      { x: 1, y: 2.5, z: 0 }, // v3
 
       // second-to-leftmost window (as seen from the front)
-      { x: 4.5, y: 1, z: 0, color: COLORS.lightBlue }, // v4
-      { x: 6, y: 1, z: 0, color: COLORS.lightBlue }, // v5
-      { x: 6, y: 2.5, z: 0, color: COLORS.lightBlue }, // v5
-      { x: 4.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v7
+      { x: 4.5, y: 1, z: 0 }, // v4
+      { x: 6, y: 1, z: 0 }, // v5
+      { x: 6, y: 2.5, z: 0 }, // v5
+      { x: 4.5, y: 2.5, z: 0 }, // v7
 
       // second-to-rightmost window (as seen from the front)
-      { x: 11.5, y: 1, z: 0, color: COLORS.lightBlue }, // v8
-      { x: 13, y: 1, z: 0, color: COLORS.lightBlue }, // v9
-      { x: 13, y: 2.5, z: 0, color: COLORS.lightBlue }, // v10
-      { x: 11.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v11
+      { x: 11.5, y: 1, z: 0 }, // v8
+      { x: 13, y: 1, z: 0 }, // v9
+      { x: 13, y: 2.5, z: 0 }, // v10
+      { x: 11.5, y: 2.5, z: 0 }, // v11
 
       // rightmost window (as seen from the front)
-      { x: 17, y: 1, z: 0, color: COLORS.lightBlue }, // v12
-      { x: 18.5, y: 1, z: 0, color: COLORS.lightBlue }, // v13
-      { x: 18.5, y: 2.5, z: 0, color: COLORS.lightBlue }, // v14
-      { x: 17, y: 2.5, z: 0, color: COLORS.lightBlue }, // v15
+      { x: 17, y: 1, z: 0 }, // v12
+      { x: 18.5, y: 1, z: 0 }, // v13
+      { x: 18.5, y: 2.5, z: 0 }, // v14
+      { x: 17, y: 2.5, z: 0 }, // v15
 
       // side window
-      { x: 20, y: 1, z: -3.5, color: COLORS.lightBlue }, // v16
-      { x: 20, y: 1, z: -5, color: COLORS.lightBlue }, // v17
-      { x: 20, y: 2.5, z: -5, color: COLORS.lightBlue }, // v18
-      { x: 20, y: 2.5, z: -3.5, color: COLORS.lightBlue }, // v19
+      { x: 20, y: 1, z: -3.5 }, // v16
+      { x: 20, y: 1, z: -5 }, // v17
+      { x: 20, y: 2.5, z: -5 }, // v18
+      { x: 20, y: 2.5, z: -3.5 }, // v19
     ],
     triangles: [
       // leftmost window (as seen from the front)
@@ -686,11 +688,12 @@ function createHouseWindowsGeometry() {
 
 function createHouseDoorGeometry() {
   return createBufferGeometry({
+    defaultVertexColor: COLORS.dodgerBlue,
     vertices: [
-      { x: 8, y: 0, z: 0, color: COLORS.dodgerBlue }, // v0
-      { x: 9.25, y: 0, z: 0, color: COLORS.dodgerBlue }, // v1
-      { x: 9.25, y: 2.5, z: 0, color: COLORS.dodgerBlue }, // v2
-      { x: 8, y: 2.5, z: 0, color: COLORS.dodgerBlue }, // v3
+      { x: 8, y: 0, z: 0 }, // v0
+      { x: 9.25, y: 0, z: 0 }, // v1
+      { x: 9.25, y: 2.5, z: 0 }, // v2
+      { x: 8, y: 2.5, z: 0 }, // v3
     ],
     triangles: [
       [0, 1, 2],
@@ -830,12 +833,13 @@ function createUfo(initialPosition) {
  * @param {{x: number, y: number, z: number, color: THREE.Color}[]} p.vertices - an array of vertices
  * @param {number[][]} p.triangles - an array of triangles, given as an array of indices
  * @param {number} p.scale - multiplier to be applied to all vertex coordinates (default: 1)
+ * @param {THREE.Color} p.defaultVertexColor - color to be used for vertices without color (optional)
  * @returns {THREE.BufferGeometry} - a THREE.BufferGeometry with the given attributes
  *
  * Note that triangle indices correspond to the indices of the vertices array.
  * The returned geometry should be used with a mesh with vertexColors set to true.
  */
-function createBufferGeometry({ vertices, triangles, scale = 1 }) {
+function createBufferGeometry({ vertices, triangles, scale = 1, defaultVertexColor }) {
   const geometry = new THREE.BufferGeometry();
   geometry.setIndex(triangles.flatMap((triangle) => triangle));
   geometry.setAttribute(
@@ -848,7 +852,9 @@ function createBufferGeometry({ vertices, triangles, scale = 1 }) {
   geometry.setAttribute(
     'color',
     new THREE.Float32BufferAttribute(
-      vertices.map((vertex) => vertex.color).flatMap((color) => [color.r, color.g, color.b]),
+      vertices
+        .map((vertex) => vertex.color ?? defaultVertexColor)
+        .flatMap((color) => [color.r, color.g, color.b]),
       3
     )
   );
