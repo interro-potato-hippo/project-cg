@@ -869,6 +869,11 @@ function update(timeDelta) {
     activeCamera = activeCamera == ORBITAL_CAMERA ? FIXED_CAMERA : ORBITAL_CAMERA;
     refreshCameraParameters();
   }
+  if (toggleActiveCamera) {
+    toggleActiveCamera = false;
+    activeCamera = activeCamera == ORBITAL_CAMERA ? FIXED_CAMERA : ORBITAL_CAMERA;
+    refreshCameraParameters();
+  }
 
   // Move UFO at constant velocity on key press
   const ufoDeltaVector = Object.entries(ufoMovementFlags)
