@@ -47,7 +47,6 @@ const MATERIAL_PARAMS = {
   ufoSpotlight: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
   ufoSphere: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
 
-  // TODO: remove double side from these
   houseWalls: () => ({ vertexColors: true }),
   houseRoof: () => ({ vertexColors: true }),
   houseWindows: () => ({ vertexColors: true }),
@@ -199,8 +198,7 @@ let flowers, stars, directionalLight, ufoSpotlight, ufo;
 /////////////////////
 function createScene() {
   scene = new THREE.Scene();
-  // Move all objects downwards so that (0, 0, 0) is above
-  // ground for VR
+  // Move all objects downwards so that (0, 0, 0) is above ground for VR
   rootGroup = createGroup({ y: -5, parent: scene });
 
   createLights();
@@ -407,7 +405,7 @@ function generateProps(
 ) {
   const prop = new THREE.Mesh(
     new THREE.CircleGeometry(PROP_RADIUS, 32),
-    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.DoubleSide }) // TODO: change side
+    new THREE.MeshBasicMaterial({ color: COLORS.white, side: THREE.DoubleSide })
   );
   const occupiedPositions = []; // props cannot be generated on top of each other
   for (let i = 0; i < amount; i++) {
