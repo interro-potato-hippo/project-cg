@@ -989,7 +989,7 @@ const keyHandlers = {
   KeyQ: changeMaterialHandlerFactory('gouraud'),
   KeyW: changeMaterialHandlerFactory('phong'),
   KeyE: changeMaterialHandlerFactory('cartoon'),
-  KeyR: changeMaterialHandlerFactory('basic'),
+  KeyR: toggleReactionToLightsHandler,
 
   // toggle directional light
   KeyD: keyActionFactory(() => (directionalLight.visible = !directionalLight.visible)),
@@ -1044,6 +1044,15 @@ function changeMaterialHandlerFactory(material) {
     activeMaterial = material;
     activeMaterialChanged = true;
   });
+}
+
+function toggleReactionToLightsHandler(...args) {
+  const handler = keyActionFactory(() => {
+    activeMaterial = activeMaterial === 'basic' ? 'phong' : 'basic';
+    activeMaterialChanged = true;
+  });
+
+  handler(...args);
 }
 
 function moveUfoHandlerFactory(direction) {
