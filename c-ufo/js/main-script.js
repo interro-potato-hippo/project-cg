@@ -356,7 +356,7 @@ function createBufferField() {
 
   const geometry = new THREE.PlaneGeometry(TEXTURE_SIZES.field, TEXTURE_SIZES.field);
   const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial(MATERIAL_PARAMS.field()));
-  mesh.rotation.set(-Math.PI / 2, 0, 0);
+  mesh.rotateX(-Math.PI / 2);
   mesh.position.set(TEXTURE_SIZES.field / 2, 0, TEXTURE_SIZES.field / 2);
   field.add(mesh);
 
