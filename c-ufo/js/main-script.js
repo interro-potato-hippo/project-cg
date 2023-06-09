@@ -1041,12 +1041,7 @@ function createGroup({ x = 0, y = 0, z = 0, scale = [1, 1, 1], parent }) {
   group.position.set(x, y, z);
   group.scale.set(...scale);
 
-  if (parent) {
-    parent.add(group);
-  } else {
-    rootGroup.add(group);
-  }
-
+  parent.add(group);
   return group;
 }
 
