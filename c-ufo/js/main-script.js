@@ -173,8 +173,8 @@ let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change a
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
-let generateNewStars = false;
-let generateNewFlowers = false;
+let generateNewStars = true;
+let generateNewFlowers = true;
 const ufoMovementFlags = {};
 let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
@@ -837,12 +837,10 @@ function update(timeDelta) {
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
   if (generateNewStars) {
-    generateNewStars = false;
     stars.clear();
     generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
   }
   if (generateNewFlowers) {
-    generateNewFlowers = false;
     flowers.clear();
     generateProps(flowers, PROP_AMOUNTS.flowers, TEXTURE_SIZES.field, { x: 1, y: 0, z: 1 }, [
       COLORS.white,
@@ -877,11 +875,17 @@ function update(timeDelta) {
 /* DISPLAY */
 /////////////
 function render() {
-  renderer.setRenderTarget(skyTexture);
-  renderer.render(bufferScene, SKY_CAMERA);
+  if (generateNewStars) {
+    renderer.setRenderTarget(skyTexture);
+    renderer.render(bufferScene, SKY_CAMERA);
+    generateNewStars = false;
+  }
 
-  renderer.setRenderTarget(fieldTexture);
-  renderer.render(bufferScene, FIELD_CAMERA);
+  if (generateNewFlowers) {
+    renderer.setRenderTarget(fieldTexture);
+    renderer.render(bufferScene, FIELD_CAMERA);
+    generateNewFlowers = false;
+  }
 
   renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
