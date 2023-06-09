@@ -49,10 +49,10 @@ const MATERIAL_PARAMS = {
   ufoSphere: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
 
   // TODO: remove double side from these
-  houseWalls: () => ({ vertexColors: true, side: THREE.FrontSide }),
-  houseRoof: () => ({ vertexColors: true, side: THREE.FrontSide }),
-  houseWindows: () => ({ vertexColors: true, side: THREE.FrontSide }),
-  houseDoor: () => ({ vertexColors: true, side: THREE.FrontSide }),
+  houseWalls: () => ({ vertexColors: true }),
+  houseRoof: () => ({ vertexColors: true }),
+  houseWindows: () => ({ vertexColors: true }),
+  houseDoor: () => ({ vertexColors: true }),
 };
 
 const LIGHT_INTENSITY = Object.freeze({
