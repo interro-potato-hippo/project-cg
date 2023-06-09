@@ -24,12 +24,11 @@ const COLORS = Object.freeze({
 // must be functions because they depend on textures initialized later
 const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
-  field: () => ({ color: COLORS.darkGreen }),
+  field: () => ({ color: COLORS.green }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({
     map: fieldTexture.texture,
-    color: COLORS.green,
     side: THREE.DoubleSide,
     bumpMap: terrainHeightMap,
     bumpScale: 1,
