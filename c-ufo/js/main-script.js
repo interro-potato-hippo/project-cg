@@ -43,7 +43,7 @@ const MATERIAL_PARAMS = {
   treeLeaf: () => ({ color: COLORS.darkGreen }),
 
   ufoBody: () => ({ color: COLORS.imperialRed }),
-  ufoCockpit: () => ({ color: COLORS.skyBlue }),
+  ufoCockpit: () => ({ color: COLORS.skyBlue, opacity: 0.75, transparent: true }),
   ufoSpotlight: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
   ufoSphere: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
 
