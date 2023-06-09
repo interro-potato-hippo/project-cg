@@ -522,6 +522,17 @@ function createHouseWallsGeometry() {
       // left wall
       { x: 0, y: 0, z: -5.5, color: COLORS.white }, // v45
       { x: 0, y: 4, z: -5.5, color: COLORS.white }, // v46
+
+      // repeated vertices -- avoids shading issues
+      { x: 0, y: 0, z: 0, color: COLORS.white }, // v47 - equiv v0, but for left wall
+      { x: 20, y: 0, z: 0, color: COLORS.white }, // v48 - equiv v29, but for right wall
+      { x: 20, y: 2.5, z: 0, color: COLORS.white }, // v49 - equiv v30, but for right wall
+      { x: 0, y: 4, z: 0, color: COLORS.white }, // v50 - equiv v33, but for left wall
+      { x: 20, y: 4, z: 0, color: COLORS.white }, // v51 - equiv v35, but for right wall
+      { x: 20, y: 0, z: -5.5, color: COLORS.white }, // v52 - equiv v41, but for back wall
+      { x: 20, y: 4, z: -5.5, color: COLORS.white }, // v53 - equiv v44, but for back wall
+      { x: 0, y: 0, z: -5.5, color: COLORS.white }, // v54 - equiv v45, but for back wall
+      { x: 0, y: 4, z: -5.5, color: COLORS.white }, // v55 - equiv v46, but for back wall
     ],
     triangles: [
       // front wall
@@ -553,22 +564,22 @@ function createHouseWallsGeometry() {
       [25, 35, 34],
 
       // right wall (for a definition of right... - the one with the window)
-      [29, 36, 37],
-      [29, 37, 30],
+      [48, 36, 37],
+      [48, 37, 49],
       [36, 38, 39],
       [36, 39, 40],
       [38, 41, 42],
       [38, 42, 43],
-      [30, 42, 44],
-      [30, 44, 35],
+      [49, 42, 44],
+      [49, 44, 51],
 
       // left wall
-      [45, 0, 33],
-      [45, 33, 46],
+      [45, 47, 50],
+      [45, 50, 46],
 
       // back wall
-      [41, 45, 46],
-      [41, 46, 44],
+      [52, 54, 55],
+      [52, 55, 53],
     ],
   });
 }
@@ -585,6 +596,16 @@ function createHouseRoofGeometry() {
       // top of the roof
       { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v4
       { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v5
+
+      // repeated vertices -- avoids shading issues
+      { x: 0, y: 4, z: 0, color: COLORS.orange }, // v6 - equiv v0, but for sides
+      { x: 0, y: 4, z: -5.5, color: COLORS.orange }, // v7 - equiv v1, but for sides
+      { x: 20, y: 4, z: 0, color: COLORS.orange }, // v8 - equiv v2, but for sides
+      { x: 20, y: 4, z: -5.5, color: COLORS.orange }, // v9 - equiv v3, but for sides
+      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v10 - equiv v4, but for most deep
+      { x: 0, y: 6, z: -2.75, color: COLORS.orange }, // v11 - equiv v4, but for sides
+      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v12 - equiv v5, but for most deep
+      { x: 20, y: 6, z: -2.75, color: COLORS.orange }, // v13 - equiv v5, but for sides
     ],
     triangles: [
       // least deep (closest to z = 0) roof side
@@ -592,12 +613,12 @@ function createHouseRoofGeometry() {
       [0, 5, 4],
 
       // most deep (closest to z = -5.5) roof side
-      [3, 1, 4],
-      [3, 4, 5],
+      [3, 1, 10],
+      [3, 10, 12],
 
       // sides
-      [1, 0, 4],
-      [2, 3, 5],
+      [7, 6, 11],
+      [8, 9, 13],
     ],
   });
 }
