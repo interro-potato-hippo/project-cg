@@ -998,14 +998,10 @@ function keyActionFactory(handler) {
 }
 
 function changeMaterialHandlerFactory(material) {
-  return (event, isDown) => {
-    if (!isDown || event.repeat) {
-      return;
-    }
-
+  return keyActionFactory(() => {
     activeMaterial = material;
     activeMaterialChanged = true;
-  };
+  });
 }
 
 function moveUfoHandlerFactory(direction) {
