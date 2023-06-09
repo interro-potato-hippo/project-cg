@@ -854,19 +854,15 @@ function update(timeDelta) {
     ]);
   }
   if (updateProjectionMatrix) {
-    const isVr = renderer.xr.isPresenting;
-    if (isVr) {
-      renderer.xr.isPresenting = false;
-    }
+    const isXrPresenting = renderer.xr.isPresenting;
+    renderer.xr.isPresenting = false;
     updateProjectionMatrix = false;
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     if (window.innerHeight > 0 && window.innerWidth > 0) {
-      refreshCameraParameters(isVr ? renderer.xr.getCamera() : activeCamera);
+      refreshCameraParameters(isXrPresenting ? renderer.xr.getCamera() : activeCamera);
     }
-    if (isVr) {
-      renderer.xr.isPresenting = true;
-    }
+    renderer.xr.isPresenting = isXrPresenting;
   }
 
   // Move UFO at constant velocity on key press
