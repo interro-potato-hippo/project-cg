@@ -133,6 +133,14 @@ const ORBITAL_CAMERA = createPerspectiveCamera({
   y: 20,
   z: -10,
 });
+const FIXED_CAMERA = createPerspectiveCamera({
+  fov: 80,
+  near: 1,
+  far: 1000,
+  x: -32,
+  y: 40,
+  z: -50,
+});
 const SKY_CAMERA = createOrthographicCamera({
   left: -TEXTURE_SIZES.sky / 2,
   right: TEXTURE_SIZES.sky / 2,
@@ -169,12 +177,13 @@ const CLOCK = new THREE.Clock();
 /* GLOBAL VARIABLES */
 //////////////////////
 let renderer, scene, bufferScene, skyTexture, fieldTexture, terrainHeightMap;
-let activeCamera = ORBITAL_CAMERA; // starts as the orbital camera, may change afterwards
+let activeCamera = FIXED_CAMERA; // starts as the fixed camera, may change afterwards
 let activeMaterial = 'phong'; // starts as phong, may change afterwards
 // lines below prevent logic in key event handlers, moving it to the update function
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let generateNewStars = true;
 let generateNewFlowers = true;
+let toggleActiveCamera = false;
 const ufoMovementFlags = {};
 let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
@@ -445,7 +454,8 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
 }
 
 function createHouse() {
-  const house = createGroup({ x: -10, y: 2.1, z: 15, parent: scene });
+  const house = createGroup({ x: 10, y: 2.1, z: 9.5, parent: scene });
+  house.rotateY(Math.PI);
   createNamedMesh('houseWalls', house);
   createNamedMesh('houseRoof', house);
   createNamedMesh('houseWindows', house);
@@ -847,6 +857,11 @@ function update(timeDelta) {
       refreshCameraParameters();
     }
   }
+  if (toggleActiveCamera) {
+    toggleActiveCamera = false;
+    activeCamera = activeCamera == ORBITAL_CAMERA ? FIXED_CAMERA : ORBITAL_CAMERA;
+    refreshCameraParameters();
+  }
 
   // Move UFO at constant velocity on key press
   const ufoDeltaVector = Object.entries(ufoMovementFlags)
@@ -949,6 +964,9 @@ const keyHandlers = {
   // texture generation
   Digit1: keyActionFactory(() => (generateNewStars = true)),
   Digit2: keyActionFactory(() => (generateNewFlowers = true)),
+
+  // EXTRA: toggle orbital camera
+  KeyO: keyActionFactory(() => (toggleActiveCamera = true)),
 };
 
 function onKeyDown(event) {
