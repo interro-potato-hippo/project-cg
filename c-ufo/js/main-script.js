@@ -888,12 +888,12 @@ function update(timeDelta) {
   if (toggleActiveCamera) {
     toggleActiveCamera = false;
     activeCamera = activeCamera == ORBITAL_CAMERA ? FIXED_CAMERA : ORBITAL_CAMERA;
-    refreshCameraParameters();
+    refreshCameraParameters(activeCamera);
   }
   if (toggleActiveCamera) {
     toggleActiveCamera = false;
     activeCamera = activeCamera == ORBITAL_CAMERA ? FIXED_CAMERA : ORBITAL_CAMERA;
-    refreshCameraParameters();
+    refreshCameraParameters(activeCamera);
   }
 
   // Move UFO at constant velocity on key press
