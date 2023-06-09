@@ -183,7 +183,7 @@ let activeMaterial = 'phong'; // starts as phong, may change afterwards
 let activeMaterialChanged = false; // used to know when to update the material of the meshes
 let generateNewStars = true;
 let generateNewFlowers = true;
-let toggleOrbitalCamera = false;
+let toggleActiveCamera = false;
 const ufoMovementFlags = {};
 let updateProjectionMatrix = false;
 // ^ prevents logic in key event handlers, moving it to the update function
@@ -857,8 +857,8 @@ function update(timeDelta) {
       refreshCameraParameters();
     }
   }
-  if (toggleOrbitalCamera) {
-    toggleOrbitalCamera = false;
+  if (toggleActiveCamera) {
+    toggleActiveCamera = false;
     activeCamera = activeCamera == ORBITAL_CAMERA ? FIXED_CAMERA : ORBITAL_CAMERA;
     refreshCameraParameters();
   }
@@ -966,7 +966,7 @@ const keyHandlers = {
   Digit2: keyActionFactory(() => (generateNewFlowers = true)),
 
   // EXTRA: toggle orbital camera
-  KeyO: keyActionFactory(() => (toggleOrbitalCamera = true)),
+  KeyO: keyActionFactory(() => (toggleActiveCamera = true)),
 };
 
 function onKeyDown(event) {
