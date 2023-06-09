@@ -837,12 +837,10 @@ function update(timeDelta) {
     NAMED_MESHES.forEach((mesh) => (mesh.material = mesh.userData.materials[activeMaterial]));
   }
   if (generateNewStars) {
-    generateNewStars = false;
     stars.clear();
     generateProps(stars, PROP_AMOUNTS.stars, TEXTURE_SIZES.sky, { x: 1, y: 0, z: 1 });
   }
   if (generateNewFlowers) {
-    generateNewFlowers = false;
     flowers.clear();
     generateProps(flowers, PROP_AMOUNTS.flowers, TEXTURE_SIZES.field, { x: 1, y: 0, z: 1 }, [
       COLORS.white,
@@ -879,9 +877,11 @@ function update(timeDelta) {
 function render() {
   renderer.setRenderTarget(skyTexture);
   renderer.render(bufferScene, SKY_CAMERA);
+  generateNewStars = false;
 
   renderer.setRenderTarget(fieldTexture);
   renderer.render(bufferScene, FIELD_CAMERA);
+  generateNewFlowers = false;
 
   renderer.setRenderTarget(null);
   renderer.render(scene, activeCamera);
