@@ -275,9 +275,9 @@ function createOrthographicCamera({
   return camera;
 }
 
-function refreshCameraParameters() {
-  activeCamera.aspect = window.innerWidth / window.innerHeight;
-  activeCamera.updateProjectionMatrix();
+function refreshCameraParameters(camera) {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
 }
 
 /////////////////////
@@ -852,11 +852,18 @@ function update(timeDelta) {
     ]);
   }
   if (updateProjectionMatrix) {
+    const isVr = renderer.xr.isPresenting;
+    if (isVr) {
+      renderer.xr.isPresenting = false;
+    }
     updateProjectionMatrix = false;
     renderer.setSize(window.innerWidth, window.innerHeight);
 
     if (window.innerHeight > 0 && window.innerWidth > 0) {
-      refreshCameraParameters();
+      refreshCameraParameters(isVr ? renderer.xr.getCamera() : activeCamera);
+    }
+    if (isVr) {
+      renderer.xr.isPresenting = true;
     }
   }
 
@@ -878,15 +885,19 @@ function update(timeDelta) {
 /////////////
 function render() {
   if (generateNewStars) {
+    renderer.xr.enabled = false;
     renderer.setRenderTarget(skyTexture);
     renderer.render(bufferScene, SKY_CAMERA);
     generateNewStars = false;
+    renderer.xr.enabled = true;
   }
 
   if (generateNewFlowers) {
+    renderer.xr.enabled = false;
     renderer.setRenderTarget(fieldTexture);
     renderer.render(bufferScene, FIELD_CAMERA);
     generateNewFlowers = false;
+    renderer.xr.enabled = true;
   }
 
   renderer.setRenderTarget(null);
