@@ -49,10 +49,10 @@ const MATERIAL_PARAMS = {
   ufoSphere: () => ({ color: COLORS.lightCyan, emissive: COLORS.darkBlue }),
 
   // TODO: remove double side from these
-  houseWalls: () => ({ vertexColors: true, side: THREE.DoubleSide }),
-  houseRoof: () => ({ vertexColors: true, side: THREE.DoubleSide }),
-  houseWindows: () => ({ vertexColors: true, side: THREE.DoubleSide }),
-  houseDoor: () => ({ vertexColors: true, side: THREE.DoubleSide }),
+  houseWalls: () => ({ vertexColors: true, side: THREE.FrontSide }),
+  houseRoof: () => ({ vertexColors: true, side: THREE.FrontSide }),
+  houseWindows: () => ({ vertexColors: true, side: THREE.FrontSide }),
+  houseDoor: () => ({ vertexColors: true, side: THREE.FrontSide }),
 };
 
 const LIGHT_INTENSITY = Object.freeze({
@@ -588,8 +588,8 @@ function createHouseRoofGeometry() {
       [0, 5, 4],
 
       // most deep (closest to z = -5.5) roof side
-      [1, 3, 5],
-      [1, 5, 4],
+      [3, 1, 4],
+      [3, 4, 5],
 
       // sides
       [1, 0, 4],
