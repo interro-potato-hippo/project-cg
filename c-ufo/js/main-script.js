@@ -24,12 +24,11 @@ const COLORS = Object.freeze({
 // must be functions because they depend on textures initialized later
 const MATERIAL_PARAMS = {
   sky: () => ({ vertexColors: true }),
-  field: () => ({ color: COLORS.darkGreen }),
+  field: () => ({ color: COLORS.green }),
 
   skyDome: () => ({ map: skyTexture.texture, side: THREE.BackSide }),
   terrain: () => ({
     map: fieldTexture.texture,
-    color: COLORS.green,
     side: THREE.DoubleSide,
     bumpMap: terrainHeightMap,
     bumpScale: 1,
@@ -70,6 +69,7 @@ const MOON_DOME_PADDING = 10; // moon will be placed as if on a dome with a PADD
 const MOON_POSITION_COORD = Math.sqrt((DOME_RADIUS - MOON_DOME_PADDING) ** 2 / 2);
 const MOON_POSITION = new THREE.Vector3(MOON_POSITION_COORD, MOON_POSITION_COORD, 0);
 const PROP_RADIUS = 0.05;
+const PROP_POSITION_PADDING = PROP_RADIUS * 4; // padding between props and texture border
 const INTER_PROP_PADDING = PROP_RADIUS / 2;
 const MIN_PROP_DISTANCE_SQ = (2 * PROP_RADIUS + INTER_PROP_PADDING) ** 2;
 
@@ -432,18 +432,18 @@ function generatePropPosition(planeSize, freedom, basePoint = new THREE.Vector3(
   return new THREE.Vector3(
     THREE.Math.clamp(
       freedom.x * Math.random() * planeSize,
-      basePoint.x + PROP_RADIUS,
-      planeSize - PROP_RADIUS
+      basePoint.x + PROP_POSITION_PADDING,
+      planeSize - PROP_POSITION_PADDING
     ),
     THREE.Math.clamp(
       freedom.y * Math.random() * planeSize,
-      basePoint.y + PROP_RADIUS,
-      planeSize - PROP_RADIUS
+      basePoint.y + PROP_POSITION_PADDING,
+      planeSize - PROP_POSITION_PADDING
     ),
     THREE.Math.clamp(
       freedom.z * Math.random() * planeSize,
-      basePoint.z + PROP_RADIUS,
-      planeSize - PROP_RADIUS
+      basePoint.z + PROP_POSITION_PADDING,
+      planeSize - PROP_POSITION_PADDING
     )
   );
 }
